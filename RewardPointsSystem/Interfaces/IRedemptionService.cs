@@ -3,16 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
 using RewardPointsSystem.Models;
 
 namespace RewardPointsSystem.Interfaces
 {
-    public interface IUserService
+    public interface IRedemptionService
     {
-        void AddUser(User user);
-        User GetUserByEmail(string email);
-        IEnumerable<User> GetAllUsers();
+        Redemption RedeemProduct(User user, Product product);
     }
 }
-
 
