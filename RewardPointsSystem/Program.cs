@@ -10,24 +10,24 @@ class Program
         var transactionService = new PointsTransactionService();
         var redemptionService = new RedemptionService(transactionService);
 
-        // Add User
-        var user = new User("John Doe", "john@agdata.com", "EMP001");
+        
+        var user = new User("Harshal Behare", "harshal.behare@agdata.com", "EMP001");
         userService.AddUser(user);
 
-        // Add Product
+        
         var product = new Product { Name = "Coffee Mug", RequiredPoints = 50, Stock = 10 };
         productService.AddProduct(product);
 
-        // Add Points
+      
         user.AddPoints(100);
         transactionService.AddTransaction(user, 100, "Earn");
         Console.WriteLine($"{user.Name} Balance: {user.PointsBalance}");
 
-        // Redeem Product
+        
         var redemption = redemptionService.RedeemProduct(user, product);
         Console.WriteLine($"{user.Name} redeemed {redemption.Product.Name} | New Balance: {user.PointsBalance}");
 
-        // Print Transactions
+        
         Console.WriteLine("\n--- Transaction History ---");
         foreach (var tx in transactionService.GetAllTransactions())
         {
