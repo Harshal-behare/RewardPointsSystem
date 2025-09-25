@@ -9,6 +9,8 @@
 *.user
 *.userosscache
 *.sln.docstates
+WARP.md
+ARCHITECTURE_IMPROVEMENTS.md
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

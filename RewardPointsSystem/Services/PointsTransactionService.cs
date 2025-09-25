@@ -1,29 +1,54 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using RewardPointsSystem.Models;
+using RewardPointsSystem.Interfaces;
 
 namespace RewardPointsSystem.Services
 {
-    public class PointsTransactionService
+    public class PointsTransactionService : IPointsTransactionService
     {
-        private readonly List<PointsTransaction> _transactions = new();
+        private readonly IUnitOfWork _unitOfWork;
 
-        public void AddTransaction(User user, int points, string type)
+        public PointsTransactionService(IUnitOfWork unitOfWork)
         {
-            var transaction = new PointsTransaction
-            {
-                User = user,
-                Points = points,
-                Type = type
-            };
-            _transactions.Add(transaction);
+            _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public IEnumerable<PointsTransaction> GetAllTransactions() => _transactions;
+        public PointsTransaction AddTransaction(User user, int points, string type, string description = "")
+        {
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+
+            var transaction = new PointsTransaction(user, points, type, description);
+            _unitOfWork.PointsTransactions.Add(transaction);
+            _unitOfWork.Complete();
+            
+            return transaction;
+        }
+
+        public IEnumerable<PointsTransaction> GetUserTransactions(Guid userId)
+        {
+            return _unitOfWork.PointsTransactions.Find(t => t.User.Id == userId)
+                .OrderByDescending(t => t.Timestamp);
+        }
+
+        public IEnumerable<PointsTransaction> GetAllTransactions()
+        {
+            return _unitOfWork.PointsTransactions.GetAll()
+                .OrderByDescending(t => t.Timestamp);
+        }
+
+        public IEnumerable<PointsTransaction> GetTransactionsByType(string type)
+        {
+            return _unitOfWork.PointsTransactions.Find(t => t.Type.Equals(type, StringComparison.OrdinalIgnoreCase))
+                .OrderByDescending(t => t.Timestamp);
+        }
+
+        public int GetUserBalance(Guid userId)
+        {
+            var user = _unitOfWork.Users.GetById(userId);
+            return user?.PointsBalance ?? 0;
+        }
     }
 }
-
