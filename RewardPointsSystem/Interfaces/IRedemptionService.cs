@@ -1,9 +1,5 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 using RewardPointsSystem.Models;
 
 namespace RewardPointsSystem.Interfaces
@@ -11,6 +7,9 @@ namespace RewardPointsSystem.Interfaces
     public interface IRedemptionService
     {
         Redemption RedeemProduct(User user, Product product);
+        IEnumerable<Redemption> GetUserRedemptions(Guid userId);
+        IEnumerable<Redemption> GetAllRedemptions();
+        Redemption GetRedemptionById(Guid id);
     }
 }
 

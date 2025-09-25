@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System;
 
 namespace RewardPointsSystem.Models
 {
@@ -11,7 +7,11 @@ namespace RewardPointsSystem.Models
         public Guid Id { get; private set; } = Guid.NewGuid();
         public User User { get; set; }
         public Product Product { get; set; }
-        public DateTime Date { get; private set; } = DateTime.Now;
+        public DateTime Timestamp { get; private set; } = DateTime.UtcNow;
+        public int PointsRedeemed { get; set; }
+        
+        // Alias for backward compatibility
+        public DateTime Date => Timestamp;
     }
 }
 
