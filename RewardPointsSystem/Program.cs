@@ -77,7 +77,7 @@ namespace RewardPointsSystem
 
             Console.WriteLine("\n5. Creating Event...");
             var salesEvent = await eventService.CreateEventAsync("Q4 Sales Competition", "Quarterly sales performance competition", DateTime.UtcNow.AddDays(1), 1000);
-            Console.WriteLine($"   ✅ Created event: {salesEvent.Name} with {salesEvent.PointsReward} points pool");
+            Console.WriteLine($"   ✅ Created event: {salesEvent.Name} with {salesEvent.TotalPointsPool} points pool");
 
             Console.WriteLine("\n6. Registering Participants...");
             await participationService.RegisterParticipantAsync(salesEvent.Id, employee1.Id);

@@ -5,6 +5,11 @@ using RewardPointsSystem.Models.Core;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IUserRoleService
+    /// Responsibility: Manage user-role assignments only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IUserRoleService
     {
         Task AssignRoleAsync(Guid userId, Guid roleId, Guid assignedBy);

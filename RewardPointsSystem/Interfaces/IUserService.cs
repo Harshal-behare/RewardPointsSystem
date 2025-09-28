@@ -5,6 +5,11 @@ using RewardPointsSystem.Models.Core;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IUserService
+    /// Responsibility: Manage user accounts only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IUserService
     {
         Task<User> CreateUserAsync(string email, string employeeId, string firstName, string lastName);
@@ -12,10 +17,13 @@ namespace RewardPointsSystem.Interfaces
         Task<User> GetUserByEmailAsync(string email);
         Task<User> GetUserByEmployeeIdAsync(string employeeId);
         Task<IEnumerable<User>> GetActiveUsersAsync();
-        Task UpdateUserAsync(Guid id, UserUpdateDto updates);
+        Task<User> UpdateUserAsync(Guid id, UserUpdateDto updates);
         Task DeactivateUserAsync(Guid id);
     }
 
+    /// <summary>
+    /// DTO for updating user information - Architecture Compliant
+    /// </summary>
     public class UserUpdateDto
     {
         public string FirstName { get; set; }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Interfaces;
 using RewardPointsSystem.Models.Events;
+using RewardPointsSystem.DTOs;
 
 namespace RewardPointsSystem.Services.Events
 {
@@ -33,7 +34,7 @@ namespace RewardPointsSystem.Services.Events
                 throw new InvalidOperationException($"Points already awarded to this user for this event");
 
             var totalAwarded = await GetTotalPointsAwardedAsync(eventId);
-            if (totalAwarded + points > eventEntity.PointsReward)
+            if (totalAwarded + points > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
             participant.PointsAwarded = points;
@@ -56,7 +57,7 @@ namespace RewardPointsSystem.Services.Events
             var totalPointsRequired = winners.Sum(w => w.Points);
             var totalAwarded = await GetTotalPointsAwardedAsync(eventId);
 
-            if (totalAwarded + totalPointsRequired > eventEntity.PointsReward)
+            if (totalAwarded + totalPointsRequired > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
             foreach (var winner in winners)
@@ -78,7 +79,7 @@ namespace RewardPointsSystem.Services.Events
                 throw new InvalidOperationException($"Event with ID {eventId} not found");
 
             var totalAwarded = await GetTotalPointsAwardedAsync(eventId);
-            return eventEntity.PointsReward - totalAwarded;
+            return eventEntity.TotalPointsPool - totalAwarded;
         }
 
         private async Task<int> GetTotalPointsAwardedAsync(Guid eventId)

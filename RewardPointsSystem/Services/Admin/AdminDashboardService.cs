@@ -50,13 +50,10 @@ namespace RewardPointsSystem.Services.Admin
             return new DashboardStats
             {
                 TotalUsers = users.Count(),
-                ActiveUsers = activeUsers.Count(),
-                TotalEvents = events.Count(),
                 ActiveEvents = activeEvents.Count(),
-                CompletedEvents = completedEvents.Count(),
+                PendingRedemptions = redemptions.Count(r => r.Status == RedemptionStatus.Pending),
                 TotalPointsAwarded = accounts.Sum(a => a.TotalEarned),
                 TotalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed),
-                PendingRedemptions = redemptions.Count(r => r.Status == RedemptionStatus.Pending),
                 UserEventParticipation = userEventParticipation,
                 UserPointsEarned = userPointsEarned
             };

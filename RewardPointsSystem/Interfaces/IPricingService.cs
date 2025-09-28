@@ -5,13 +5,16 @@ using RewardPointsSystem.Models.Products;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IPricingService
+    /// Responsibility: Manage product pricing only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IPricingService
     {
-        Task<ProductPricing> SetPricingAsync(Guid productId, decimal standardPrice, decimal premiumPrice);
-        Task<ProductPricing> UpdatePricingAsync(Guid productId, decimal standardPrice, decimal premiumPrice);
-        Task<ProductPricing> GetPricingAsync(Guid productId);
-        Task<IEnumerable<ProductPricing>> GetAllPricingsAsync();
-        Task RemovePricingAsync(Guid productId);
-        Task<decimal> CalculateUserPriceAsync(Guid productId, Guid userId);
+        Task SetProductPriceAsync(Guid productId, int points, DateTime effectiveFrom);
+        Task<int> GetCurrentPriceAsync(Guid productId);
+        Task<IEnumerable<ProductPricing>> GetPriceHistoryAsync(Guid productId);
+        Task UpdatePriceAsync(Guid productId, int newPoints);
     }
 }

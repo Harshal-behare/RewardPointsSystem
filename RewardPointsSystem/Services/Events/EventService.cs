@@ -1,11 +1,18 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Interfaces;
 using RewardPointsSystem.Models.Events;
+using RewardPointsSystem.DTOs;
 
 namespace RewardPointsSystem.Services.Events
 {
+    /// <summary>
+    /// Service: EventService
+    /// Responsibility: Manage event lifecycle only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public class EventService : IEventService
     {
         private readonly IUnitOfWork _unitOfWork;
@@ -19,68 +26,68 @@ namespace RewardPointsSystem.Services.Events
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Event name is required", nameof(name));
+            
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Event description is required", nameof(description));
+            
             if (pointsPool <= 0)
-                throw new ArgumentException("Points pool must be greater than zero", nameof(pointsPool));
+                throw new ArgumentException("Points pool must be positive", nameof(pointsPool));
+            
+            if (date < DateTime.UtcNow.Date)
+                throw new ArgumentException("Cannot create events in the past");
 
             var eventEntity = new Event
             {
-                Name = name,
-                Description = description,
-                StartDate = date,
-                EndDate = date.AddHours(4),
-                PointsReward = pointsPool,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
+                Name = name.Trim(),
+                Description = description.Trim(),
+                EventDate = date,
+                TotalPointsPool = pointsPool,
+                Status = EventStatus.Upcoming,
+                CreatedBy = Guid.Empty, // TODO: Get from current user context
+                CreatedAt = DateTime.UtcNow
             };
 
             await _unitOfWork.Events.AddAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
+            
             return eventEntity;
         }
 
-        public async Task<Event> UpdateEventAsync(Guid id, EventUpdateDto updates)
+        public async Task<Event> UpdateEventAsync(Guid id, UpdateEventDto updates)
         {
-            if (updates == null)
-                throw new ArgumentNullException(nameof(updates));
-
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new InvalidOperationException($"Event with ID {id} not found");
+                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+
+            if (eventEntity.Status == EventStatus.Completed || eventEntity.Status == EventStatus.Cancelled)
+                throw new InvalidOperationException("Cannot modify completed or cancelled events");
 
             if (!string.IsNullOrWhiteSpace(updates.Name))
-                eventEntity.Name = updates.Name;
-
+                eventEntity.Name = updates.Name.Trim();
+            
             if (!string.IsNullOrWhiteSpace(updates.Description))
-                eventEntity.Description = updates.Description;
+                eventEntity.Description = updates.Description.Trim();
+            
+            if (updates.EventDate != default)
+                eventEntity.EventDate = updates.EventDate;
+            
+            if (updates.TotalPointsPool > 0)
+                eventEntity.TotalPointsPool = updates.TotalPointsPool;
 
-            if (updates.EventDate.HasValue)
-            {
-                eventEntity.StartDate = updates.EventDate.Value;
-                eventEntity.EndDate = updates.EventDate.Value.AddHours(4);
-            }
-
-            if (updates.TotalPointsPool.HasValue)
-                eventEntity.PointsReward = updates.TotalPointsPool.Value;
-
-            eventEntity.UpdatedAt = DateTime.UtcNow;
-            await _unitOfWork.Events.UpdateAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
             return eventEntity;
         }
 
         public async Task<IEnumerable<Event>> GetUpcomingEventsAsync()
         {
-            var currentDate = DateTime.UtcNow;
-            return await _unitOfWork.Events.FindAsync(e => e.IsActive && e.StartDate > currentDate);
+            var events = await _unitOfWork.Events.GetAllAsync();
+            return events.Where(e => e.Status == EventStatus.Upcoming);
         }
 
         public async Task<IEnumerable<Event>> GetActiveEventsAsync()
         {
-            var currentDate = DateTime.UtcNow;
-            return await _unitOfWork.Events.FindAsync(e => e.IsActive && e.StartDate <= currentDate && e.EndDate >= currentDate);
+            var events = await _unitOfWork.Events.GetAllAsync();
+            return events.Where(e => e.Status == EventStatus.Active);
         }
 
         public async Task<Event> GetEventByIdAsync(Guid id)
@@ -92,11 +99,14 @@ namespace RewardPointsSystem.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new InvalidOperationException($"Event with ID {id} not found");
+                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
 
-            eventEntity.EndDate = DateTime.UtcNow;
-            eventEntity.UpdatedAt = DateTime.UtcNow;
-            await _unitOfWork.Events.UpdateAsync(eventEntity);
+            if (eventEntity.Status != EventStatus.Active)
+                throw new InvalidOperationException($"Only active events can be completed. Current status: {eventEntity.Status}");
+
+            eventEntity.Status = EventStatus.Completed;
+            eventEntity.CompletedAt = DateTime.UtcNow;
+
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -104,11 +114,13 @@ namespace RewardPointsSystem.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new InvalidOperationException($"Event with ID {id} not found");
+                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
 
-            eventEntity.IsActive = false;
-            eventEntity.UpdatedAt = DateTime.UtcNow;
-            await _unitOfWork.Events.UpdateAsync(eventEntity);
+            if (eventEntity.Status == EventStatus.Completed)
+                throw new InvalidOperationException("Cannot cancel completed events");
+
+            eventEntity.Status = EventStatus.Cancelled;
+
             await _unitOfWork.SaveChangesAsync();
         }
     }

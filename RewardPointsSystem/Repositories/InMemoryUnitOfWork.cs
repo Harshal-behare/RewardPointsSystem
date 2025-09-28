@@ -52,12 +52,12 @@ namespace RewardPointsSystem.Repositories
 
         // Account repositories
         public IRepository<RewardAccount> RewardAccounts => _rewardAccounts.Value;
-        public IRepository<PointsTransaction> PointsTransactions => _pointsTransactions.Value;
+        public IRepository<PointsTransaction> Transactions => _pointsTransactions.Value;
 
         // Product repositories
         public IRepository<Product> Products => _products.Value;
-        public IRepository<ProductPricing> ProductPricings => _productPricings.Value;
-        public IRepository<InventoryItem> InventoryItems => _inventoryItems.Value;
+        public IRepository<ProductPricing> Pricing => _productPricings.Value;
+        public IRepository<InventoryItem> Inventory => _inventoryItems.Value;
 
         // Operation repositories
         public IRepository<Redemption> Redemptions => _redemptions.Value;

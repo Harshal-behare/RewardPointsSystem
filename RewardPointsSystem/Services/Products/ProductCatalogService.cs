@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Interfaces;
 using RewardPointsSystem.Models.Products;
+using RewardPointsSystem.Models.Operations;
 using RewardPointsSystem.DTOs;
 
 namespace RewardPointsSystem.Services.Products

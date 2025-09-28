@@ -21,12 +21,12 @@ namespace RewardPointsSystem.Interfaces
 
         // Account repositories
         IRepository<RewardAccount> RewardAccounts { get; }
-        IRepository<PointsTransaction> PointsTransactions { get; }
+        IRepository<PointsTransaction> Transactions { get; }
 
         // Product repositories
         IRepository<Product> Products { get; }
-        IRepository<ProductPricing> ProductPricings { get; }
-        IRepository<InventoryItem> InventoryItems { get; }
+        IRepository<ProductPricing> Pricing { get; }
+        IRepository<InventoryItem> Inventory { get; }
 
         // Operation repositories
         IRepository<Redemption> Redemptions { get; }

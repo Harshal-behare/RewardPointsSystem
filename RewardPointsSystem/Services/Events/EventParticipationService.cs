@@ -18,7 +18,7 @@ namespace RewardPointsSystem.Services.Events
         public async Task RegisterParticipantAsync(Guid eventId, Guid userId)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(eventId);
-            if (eventEntity == null || !eventEntity.IsActive)
+            if (eventEntity == null || eventEntity.Status == EventStatus.Cancelled)
                 throw new InvalidOperationException($"Event with ID {eventId} not found or inactive");
 
             var user = await _unitOfWork.Users.GetByIdAsync(userId);

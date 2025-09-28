@@ -5,6 +5,11 @@ using RewardPointsSystem.Models.Accounts;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: ITransactionService
+    /// Responsibility: Record transactions only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface ITransactionService
     {
         Task RecordEarnedPointsAsync(Guid userId, int points, Guid eventId, string description);

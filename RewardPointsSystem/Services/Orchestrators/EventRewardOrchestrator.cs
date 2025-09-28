@@ -34,105 +34,51 @@ namespace RewardPointsSystem.Services.Orchestrators
             _transactionService = transactionService;
         }
 
-        public async Task<EventParticipationResult> ProcessEventParticipationAsync(Guid eventId, Guid userId)
+        public async Task<bool> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy)
         {
             try
             {
-                // 1. Validate event eligibility
-                var isEligible = await ValidateEventEligibilityAsync(eventId, userId);
-                if (!isEligible)
-                    throw new InvalidOperationException($"User {userId} is not eligible for event {eventId}");
-
-                // 2. Register participant
-                await _participationService.RegisterParticipantAsync(eventId, userId);
-
-                // 3. Get the participation record
-                var participants = await _participationService.GetEventParticipantsAsync(eventId);
-                var participation = participants.FirstOrDefault(p => p.UserId == userId && p.EventId == eventId);
-
-                return new EventParticipationResult
-                {
-                    Success = true,
-                    Message = "Successfully registered for event",
-                    Participation = participation,
-                    Transaction = null // No transaction until points are awarded
-                };
-            }
-            catch (Exception ex)
-            {
-                return new EventParticipationResult
-                {
-                    Success = false,
-                    Message = $"Failed to process event participation: {ex.Message}",
-                    Participation = null,
-                    Transaction = null
-                };
-            }
-        }
-
-        public async Task<IEnumerable<PointsTransaction>> ProcessBulkEventParticipationAsync(Guid eventId, IEnumerable<Guid> userIds)
-        {
-            var transactions = new List<PointsTransaction>();
-
-            foreach (var userId in userIds)
-            {
-                try
-                {
-                    var result = await ProcessEventParticipationAsync(eventId, userId);
-                    if (result.Success && result.Transaction != null)
-                    {
-                        transactions.Add(result.Transaction);
-                    }
-                }
-                catch
-                {
-                    // Continue with other users even if one fails
-                    continue;
-                }
-            }
-
-            return transactions;
-        }
-
-        public async Task<EventRewardSummary> GetEventRewardSummaryAsync(Guid eventId)
-        {
-            var eventObj = await _eventService.GetEventByIdAsync(eventId);
-            var participants = await _participationService.GetEventParticipantsAsync(eventId);
-            
-            var totalPointsAwarded = participants
-                .Where(p => p.PointsAwarded.HasValue)
-                .Sum(p => p.PointsAwarded.Value);
-
-            return new EventRewardSummary
-            {
-                EventId = eventId,
-                EventName = eventObj?.Name ?? "Unknown Event",
-                TotalParticipants = participants.Count(),
-                TotalPointsAwarded = totalPointsAwarded,
-                GeneratedAt = DateTime.UtcNow
-            };
-        }
-
-        public async Task<bool> ValidateEventEligibilityAsync(Guid eventId, Guid userId)
-        {
-            try
-            {
-                // Check if event exists and is active
+                // 1. Validate event status (EventService)
                 var eventObj = await _eventService.GetEventByIdAsync(eventId);
                 if (eventObj == null)
-                    return false;
+                    throw new ArgumentException($"Event with ID {eventId} not found");
 
-                if (eventObj.Status != EventStatus.Upcoming && eventObj.Status != EventStatus.Active)
-                    return false;
+                if (eventObj.Status != EventStatus.Active && eventObj.Status != EventStatus.Completed)
+                    throw new InvalidOperationException($"Event must be Active or Completed to award points. Current status: {eventObj.Status}");
 
-                // Check if user is already registered
-                var isAlreadyRegistered = await _participationService.IsUserRegisteredAsync(eventId, userId);
-                if (isAlreadyRegistered)
-                    return false; // Already registered
+                // 2. Verify participation (EventParticipationService)
+                var isRegistered = await _participationService.IsUserRegisteredAsync(eventId, userId);
+                if (!isRegistered)
+                    throw new InvalidOperationException($"User {userId} is not registered for event {eventId}");
+
+                // 3. Check points pool (PointsAwardingService)
+                var remainingPoints = await _pointsAwardingService.GetRemainingPointsPoolAsync(eventId);
+                if (remainingPoints < points)
+                    throw new InvalidOperationException($"Insufficient points in pool. Remaining: {remainingPoints}, Requested: {points}");
+
+                // Check if user already awarded
+                var hasBeenAwarded = await _pointsAwardingService.HasUserBeenAwardedAsync(eventId, userId);
+                if (hasBeenAwarded)
+                    throw new InvalidOperationException($"User {userId} has already been awarded points for event {eventId}");
+
+                // 4. Award points (PointsAwardingService)
+                await _pointsAwardingService.AwardPointsAsync(eventId, userId, points, position);
+
+                // 5. Update balance (RewardAccountService)
+                // Ensure account exists
+                var account = await _accountService.GetAccountAsync(userId);
+                if (account == null)
+                    await _accountService.CreateAccountAsync(userId);
+
+                await _accountService.AddPointsAsync(userId, points);
+
+                // 6. Record transaction (TransactionService)
+                await _transactionService.RecordEarnedPointsAsync(userId, points, eventId, 
+                    $"Event reward - Position {position} in {eventObj.Name}");
 
                 return true;
             }
-            catch
+            catch (Exception)
             {
                 return false;
             }

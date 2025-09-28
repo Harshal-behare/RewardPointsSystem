@@ -5,6 +5,11 @@ using RewardPointsSystem.Models.Events;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IEventParticipationService
+    /// Responsibility: Manage event participants only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IEventParticipationService
     {
         Task RegisterParticipantAsync(Guid eventId, Guid userId);

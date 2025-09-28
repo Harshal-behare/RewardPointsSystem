@@ -4,6 +4,11 @@ using RewardPointsSystem.Models.Accounts;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IRewardAccountService
+    /// Responsibility: Manage point balances only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IRewardAccountService
     {
         Task<RewardAccount> CreateAccountAsync(Guid userId);

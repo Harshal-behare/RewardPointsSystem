@@ -2,9 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using RewardPointsSystem.Models.Products;
+using RewardPointsSystem.DTOs;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IProductCatalogService
+    /// Responsibility: Manage product information only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IProductCatalogService
     {
         Task<Product> CreateProductAsync(string name, string description, string category);
@@ -12,13 +18,5 @@ namespace RewardPointsSystem.Interfaces
         Task<IEnumerable<Product>> GetActiveProductsAsync();
         Task<IEnumerable<Product>> GetProductsByCategoryAsync(string category);
         Task DeactivateProductAsync(Guid id);
-    }
-
-    public class ProductUpdateDto
-    {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public string Category { get; set; }
-        public string ImageUrl { get; set; }
     }
 }

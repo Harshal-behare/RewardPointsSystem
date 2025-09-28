@@ -33,7 +33,7 @@ namespace RewardPointsSystem.Services.Accounts
                 Timestamp = DateTime.UtcNow
             };
 
-            await _unitOfWork.PointsTransactions.AddAsync(transaction);
+            await _unitOfWork.Transactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -55,13 +55,13 @@ namespace RewardPointsSystem.Services.Accounts
                 Timestamp = DateTime.UtcNow
             };
 
-            await _unitOfWork.PointsTransactions.AddAsync(transaction);
+            await _unitOfWork.Transactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
         }
 
         public async Task<IEnumerable<PointsTransaction>> GetUserTransactionsAsync(Guid userId)
         {
-            return await _unitOfWork.PointsTransactions.FindAsync(t => t.UserId == userId);
+            return await _unitOfWork.Transactions.FindAsync(t => t.UserId == userId);
         }
 
         public async Task<IEnumerable<PointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to)
@@ -69,7 +69,7 @@ namespace RewardPointsSystem.Services.Accounts
             if (from > to)
                 throw new ArgumentException("From date must be before to date");
 
-            return await _unitOfWork.PointsTransactions.FindAsync(t => t.Timestamp >= from && t.Timestamp <= to);
+            return await _unitOfWork.Transactions.FindAsync(t => t.Timestamp >= from && t.Timestamp <= to);
         }
     }
 }

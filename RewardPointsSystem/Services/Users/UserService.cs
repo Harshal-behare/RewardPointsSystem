@@ -76,7 +76,7 @@ namespace RewardPointsSystem.Services.Users
             return await _unitOfWork.Users.FindAsync(u => u.IsActive);
         }
 
-        public async Task UpdateUserAsync(Guid id, UserUpdateDto updates)
+        public async Task<User> UpdateUserAsync(Guid id, UserUpdateDto updates)
         {
             if (updates == null)
                 throw new ArgumentNullException(nameof(updates));
@@ -102,6 +102,8 @@ namespace RewardPointsSystem.Services.Users
             user.UpdatedAt = DateTime.UtcNow;
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
+            
+            return user;
         }
 
         public async Task DeactivateUserAsync(Guid id)

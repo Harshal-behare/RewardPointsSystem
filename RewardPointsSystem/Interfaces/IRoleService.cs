@@ -5,6 +5,11 @@ using RewardPointsSystem.Models.Core;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IRoleService
+    /// Responsibility: Manage system roles only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IRoleService
     {
         Task<Role> CreateRoleAsync(string name, string description);
