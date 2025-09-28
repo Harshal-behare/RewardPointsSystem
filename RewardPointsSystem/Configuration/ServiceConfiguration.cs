@@ -4,6 +4,9 @@ using RewardPointsSystem.Repositories;
 using RewardPointsSystem.Services.Users;
 using RewardPointsSystem.Services.Events;
 using RewardPointsSystem.Services.Accounts;
+using RewardPointsSystem.Services.Products;
+using RewardPointsSystem.Services.Orchestrators;
+using RewardPointsSystem.Services.Admin;
 
 namespace RewardPointsSystem.Configuration
 {
@@ -27,6 +30,16 @@ namespace RewardPointsSystem.Configuration
             // Account Services
             services.AddScoped<IRewardAccountService, RewardAccountService>();
             services.AddScoped<ITransactionService, TransactionService>();
+
+            // Product Services
+            services.AddScoped<IProductCatalogService, ProductCatalogService>();
+            services.AddScoped<IPricingService, PricingService>();
+            services.AddScoped<IInventoryService, InventoryService>();
+
+            // Orchestrators
+            services.AddScoped<IEventRewardOrchestrator, EventRewardOrchestrator>();
+            services.AddScoped<IRedemptionOrchestrator, RedemptionOrchestrator>();
+            services.AddScoped<IAdminDashboardService, AdminDashboardService>();
             
             return services;
         }
