@@ -1,109 +1,154 @@
 using System;
 using System.Linq;
-using RewardPointsSystem.Models;
-using RewardPointsSystem.Services;
-using RewardPointsSystem.Repositories;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using RewardPointsSystem.Configuration;
 using RewardPointsSystem.Interfaces;
 
-class Program
+namespace RewardPointsSystem
 {
-    static void Main(string[] args)
+    class Program
     {
-        Console.WriteLine("=== AGDATA Reward Points System - Milestone 1 ===");
-        Console.WriteLine("\nInitializing services...\n");
-
-        // Initialize Unit of Work and Services (simulating DI container)
-        var unitOfWork = new InMemoryUnitOfWork();
-        var roleService = new RoleService();
-        var inventoryService = new InventoryService();
-        var userService = new UserService(unitOfWork, roleService);
-        var productService = new ProductService(unitOfWork, inventoryService);
-        var redemptionService = new RedemptionService(unitOfWork, inventoryService, userService, roleService);
-
-        try
+        static async Task Main(string[] args)
         {
-            // 1. Create and add a user
-            Console.WriteLine("1. Creating user...");
-            var user = new User("Harshal Behare", "harshal.behare@agdata.com", "EMP001");
-            userService.AddUser(user);
-            Console.WriteLine($"   ✓ User created: {user.Name} (ID: {user.Id})");
-            Console.WriteLine($"   ✓ Default role assigned: Employee");
+            Console.WriteLine("=== AGDATA Reward Points System - SRP Architecture Demo ===\n");
 
-            // 2. Create and add products
-            Console.WriteLine("\n2. Creating products...");
-            var coffeeMug = new Product("Coffee Mug", 50, "Merchandise", "AGDATA branded coffee mug");
-            productService.AddProduct(coffeeMug);
-            inventoryService.AddInventoryItem(coffeeMug.Id, 10);
-            Console.WriteLine($"   ✓ Product created: {coffeeMug.Name} (50 points, 10 in stock)");
-
-            var tShirt = new Product("AGDATA T-Shirt", 100, "Merchandise", "Company branded t-shirt");
-            productService.AddProduct(tShirt);
-            inventoryService.AddInventoryItem(tShirt.Id, 5);
-            Console.WriteLine($"   ✓ Product created: {tShirt.Name} (100 points, 5 in stock)");
-
-            // 3. Award points to user
-            Console.WriteLine("\n3. Awarding points to user...");
-            user.AddPoints(150);
-            var earnTransaction = new PointsTransaction(user, 150, "Earn", "Monthly performance bonus");
-            unitOfWork.PointsTransactions.Add(earnTransaction);
-            unitOfWork.Complete();
-            Console.WriteLine($"   ✓ Awarded 150 points to {user.Name}");
-            Console.WriteLine($"   ✓ Current balance: {user.PointsBalance} points");
-
-            // 4. Display available products
-            Console.WriteLine("\n4. Available products:");
-            foreach (var product in productService.GetAllProducts())
-            {
-                var stock = inventoryService.GetAvailableQuantity(product.Id);
-                Console.WriteLine($"   - {product.Name}: {product.RequiredPoints} points (Stock: {stock})");
-            }
-
-            // 5. Redeem a product
-            Console.WriteLine("\n5. Redeeming product...");
-            var redemption = redemptionService.RedeemProduct(user, coffeeMug);
-            Console.WriteLine($"   ✓ {user.Name} redeemed {redemption.Product.Name}");
-            Console.WriteLine($"   ✓ New balance: {user.PointsBalance} points");
-            Console.WriteLine($"   ✓ Coffee Mug stock: {inventoryService.GetAvailableQuantity(coffeeMug.Id)}");
-
-            // 6. Display transaction history
-            Console.WriteLine("\n6. Transaction History:");
-            var transactions = unitOfWork.PointsTransactions.Find(t => t.User.Id == user.Id);
-            foreach (var tx in transactions)
-            {
-                var sign = tx.Type == "Earn" ? "+" : "-";
-                Console.WriteLine($"   {tx.Timestamp:yyyy-MM-dd HH:mm:ss} | {sign}{Math.Abs(tx.Points)} points | {tx.Description}");
-            }
-
-            // 7. Demonstrate role management
-            Console.WriteLine("\n7. Role Management Demo:");
-            var adminRole = roleService.GetRoleByName("Admin");
-            userService.AssignRoleToUser(user.Id, adminRole.Id);
-            Console.WriteLine($"   ✓ Assigned Admin role to {user.Name}");
+            // Build the service container
+            var services = new ServiceCollection();
+            services.RegisterRewardPointsServices();
             
-            var permissions = roleService.GetUserPermissions(user);
-            Console.WriteLine($"   ✓ User now has {permissions.Count()} permissions");
+            var serviceProvider = services.BuildServiceProvider();
 
-            // 8. Try to redeem another product
-            Console.WriteLine("\n8. Attempting to redeem T-Shirt...");
             try
             {
-                var redemption2 = redemptionService.RedeemProduct(user, tShirt);
-                Console.WriteLine($"   ✓ {user.Name} redeemed {redemption2.Product.Name}");
-                Console.WriteLine($"   ✓ Final balance: {user.PointsBalance} points");
+                await RunDemoAsync(serviceProvider);
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine($"   ✗ Redemption failed: {ex.Message}");
+                Console.WriteLine($"Error: {ex.Message}");
+            }
+            finally
+            {
+                serviceProvider?.Dispose();
             }
 
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"\nError: {ex.Message}");
+            Console.WriteLine("\nPress any key to exit...");
+            Console.ReadKey();
         }
 
-        Console.WriteLine("\n=== End of Demo ===");
-        Console.WriteLine("\nPress any key to exit...");
-        Console.ReadKey();
+        private static async Task RunDemoAsync(IServiceProvider serviceProvider)
+        {
+            // Get services
+            var userService = serviceProvider.GetRequiredService<IUserService>();
+            var roleService = serviceProvider.GetRequiredService<IRoleService>();
+            var userRoleService = serviceProvider.GetRequiredService<IUserRoleService>();
+            var eventService = serviceProvider.GetRequiredService<IEventService>();
+            var participationService = serviceProvider.GetRequiredService<IEventParticipationService>();
+            var pointsAwardingService = serviceProvider.GetRequiredService<IPointsAwardingService>();
+            var rewardAccountService = serviceProvider.GetRequiredService<IRewardAccountService>();
+            var transactionService = serviceProvider.GetRequiredService<ITransactionService>();
+            var productService = serviceProvider.GetRequiredService<IProductCatalogService>();
+
+            Console.WriteLine("1. Creating Roles...");
+            var adminRole = await roleService.CreateRoleAsync("Admin", "System Administrator");
+            var employeeRole = await roleService.CreateRoleAsync("Employee", "Regular Employee");
+            Console.WriteLine($"   ✅ Created roles: {adminRole.Name}, {employeeRole.Name}");
+
+            Console.WriteLine("\n2. Creating Users...");
+            var admin = await userService.CreateUserAsync(new CreateUserDto 
+            { 
+                FirstName = "John", 
+                LastName = "Admin", 
+                Email = "admin@agdata.com", 
+                EmployeeId = "EMP001" 
+            });
+            
+            var employee1 = await userService.CreateUserAsync(new CreateUserDto 
+            { 
+                FirstName = "Alice", 
+                LastName = "Smith", 
+                Email = "alice@agdata.com", 
+                EmployeeId = "EMP002" 
+            });
+
+            var employee2 = await userService.CreateUserAsync(new CreateUserDto 
+            { 
+                FirstName = "Bob", 
+                LastName = "Johnson", 
+                Email = "bob@agdata.com", 
+                EmployeeId = "EMP003" 
+            });
+            
+            Console.WriteLine($"   ✅ Created users: {admin.FirstName} {admin.LastName}, {employee1.FirstName} {employee1.LastName}, {employee2.FirstName} {employee2.LastName}");
+
+            Console.WriteLine("\n3. Assigning Roles...");
+            await userRoleService.AssignRoleAsync(admin.Id, adminRole.Id);
+            await userRoleService.AssignRoleAsync(employee1.Id, employeeRole.Id);
+            await userRoleService.AssignRoleAsync(employee2.Id, employeeRole.Id);
+            Console.WriteLine("   ✅ Roles assigned successfully");
+
+            Console.WriteLine("\n4. Creating Reward Accounts...");
+            await rewardAccountService.CreateAccountAsync(employee1.Id);
+            await rewardAccountService.CreateAccountAsync(employee2.Id);
+            Console.WriteLine("   ✅ Reward accounts created");
+
+            Console.WriteLine("\n5. Creating Event...");
+            var salesEvent = await eventService.CreateEventAsync(new CreateEventDto
+            {
+                Name = "Q3 Sales Competition",
+                Description = "Quarterly sales performance competition",
+                StartDate = DateTime.UtcNow.AddDays(-1),
+                EndDate = DateTime.UtcNow.AddDays(30),
+                PointsReward = 1000,
+                MaxParticipants = 10
+            });
+            Console.WriteLine($"   ✅ Created event: {salesEvent.Name} with {salesEvent.PointsReward} points pool");
+
+            Console.WriteLine("\n6. Registering Participants...");
+            await participationService.RegisterParticipantAsync(salesEvent.Id, employee1.Id);
+            await participationService.RegisterParticipantAsync(salesEvent.Id, employee2.Id);
+            Console.WriteLine("   ✅ Participants registered");
+
+            Console.WriteLine("\n7. Awarding Points...");
+            var winner1 = await pointsAwardingService.AwardPointsAsync(salesEvent.Id, employee1.Id, 600, 1);
+            var winner2 = await pointsAwardingService.AwardPointsAsync(salesEvent.Id, employee2.Id, 400, 2);
+            Console.WriteLine($"   ✅ Points awarded: {employee1.FirstName} - 600pts (1st), {employee2.FirstName} - 400pts (2nd)");
+
+            Console.WriteLine("\n8. Recording Transactions...");
+            await transactionService.RecordEarnedPointsAsync(employee1.Id, 600, salesEvent.Id, $"1st place in {salesEvent.Name}");
+            await transactionService.RecordEarnedPointsAsync(employee2.Id, 400, salesEvent.Id, $"2nd place in {salesEvent.Name}");
+            Console.WriteLine("   ✅ Transactions recorded");
+
+            Console.WriteLine("\n9. Updating Account Balances...");
+            await rewardAccountService.AddPointsAsync(employee1.Id, 600);
+            await rewardAccountService.AddPointsAsync(employee2.Id, 400);
+            Console.WriteLine("   ✅ Account balances updated");
+
+            Console.WriteLine("\n10. Creating Products...");
+            var laptop = await productService.CreateProductAsync("MacBook Pro", "High-performance laptop", "Electronics");
+            var giftCard = await productService.CreateProductAsync("Amazon Gift Card", "$100 Amazon gift card", "Gift Cards");
+            Console.WriteLine($"   ✅ Created products: {laptop.Name}, {giftCard.Name}");
+
+            Console.WriteLine("\n11. Checking System State...");
+            var alice_balance = await rewardAccountService.GetBalanceAsync(employee1.Id);
+            var bob_balance = await rewardAccountService.GetBalanceAsync(employee2.Id);
+            var activeProducts = await productService.GetActiveProductsAsync();
+            var activeEvents = await eventService.GetActiveEventsAsync();
+
+            Console.WriteLine($"   📊 Alice's Balance: {alice_balance} points");
+            Console.WriteLine($"   📊 Bob's Balance: {bob_balance} points");
+            Console.WriteLine($"   📊 Active Products: {activeProducts.Count()}");
+            Console.WriteLine($"   📊 Active Events: {activeEvents.Count()}");
+
+            Console.WriteLine("\n✅ System Demo Completed Successfully!");
+            Console.WriteLine("\n🎯 Architecture Summary:");
+            Console.WriteLine("   - 11 Domain Models ✅");
+            Console.WriteLine("   - 14 Service Interfaces ✅");
+            Console.WriteLine("   - Repository Pattern ✅");
+            Console.WriteLine("   - Dependency Injection ✅");
+            Console.WriteLine("   - Single Responsibility Principle ✅");
+            Console.WriteLine("   - Clean Architecture ✅");
+        }
     }
 }
