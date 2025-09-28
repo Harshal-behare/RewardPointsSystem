@@ -73,9 +73,9 @@ namespace RewardPointsSystem
             Console.WriteLine($"   Created roles: {adminRole.Name}, {employeeRole.Name}");
 
             // Create users and demonstrate validation
-            var admin = await userService.CreateUserAsync("admin@agdata.com", "EMP001", "John", "AdminUser");
-            var employee1 = await userService.CreateUserAsync("alice@agdata.com", "EMP002", "Alice", "Smith");
-            var employee2 = await userService.CreateUserAsync("bob@agdata.com", "EMP003", "Bob", "Johnson");
+            var admin = await userService.CreateUserAsync("admin@agdata.com", "EMP001", "Admin", "AdminUser");
+            var employee1 = await userService.CreateUserAsync("harshal@agdata.com", "EMP002", "Harshal", "Behare");
+            var employee2 = await userService.CreateUserAsync("rohit@agdata.com", "EMP003", "Rohit", "Sharma");
             Console.WriteLine($"  Created users: {admin.FirstName}, {employee1.FirstName}, {employee2.FirstName}");
             
             // Try to create duplicate user (should handle gracefully)
@@ -215,7 +215,7 @@ namespace RewardPointsSystem
             // ========================================
             Console.WriteLine(" MILESTONE 1 - COMPLETION SUMMARY");
             Console.WriteLine(" Design Business Logic:");
-            Console.WriteLine("    Key Entities: User, Event, Product, Redemption, Points Transaction");
+            Console.WriteLine("    Key Entities: User, Event, Product, Redemption, PointsTransaction , RewardAccount");
             Console.WriteLine("    Data Models: C# classes with properties and constructors");
             Console.WriteLine("    Relationships: User has many Redemptions, Events link to transactions");
             Console.WriteLine("    OOP Principles: Encapsulation, inheritance, interfaces for services");
