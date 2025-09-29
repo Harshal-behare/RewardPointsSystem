@@ -227,7 +227,7 @@ namespace RewardPointsSystem
             Console.WriteLine("    Redemption Service: Simulate redemption logic + balance validation");
             Console.WriteLine();
             Console.WriteLine(" In-Memory Data Storage:");
-            Console.WriteLine("    Collections (List<T>, Dictionary<K,V>) for data storage");
+            Console.WriteLine("    Collections (List<T>  for data storage");
             Console.WriteLine("    CRUD operations without database");
             Console.WriteLine("    Data persistence during application runtime");
             Console.WriteLine();
