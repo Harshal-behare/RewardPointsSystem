@@ -34,7 +34,7 @@ namespace RewardPointsSystem.Services.Orchestrators
             _transactionService = transactionService;
         }
 
-        public async Task<bool> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy)
+        public async Task<EventRewardResult> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy)
         {
             try
             {
@@ -76,11 +76,33 @@ namespace RewardPointsSystem.Services.Orchestrators
                 await _transactionService.RecordEarnedPointsAsync(userId, points, eventId, 
                     $"Event reward - Position {position} in {eventObj.Name}");
 
-                return true;
+                // Get updated participation record
+                var participants = await _participationService.GetEventParticipantsAsync(eventId);
+                var participation = participants.FirstOrDefault(p => p.UserId == userId);
+
+                // Get transaction record
+                var transactions = await _transactionService.GetUserTransactionsAsync(userId);
+                var transaction = transactions.OrderByDescending(t => t.Timestamp).FirstOrDefault();
+
+                return new EventRewardResult
+                {
+                    Success = true,
+                    Message = $"Successfully awarded {points} points for position {position} in {eventObj.Name}",
+                    EventName = eventObj.Name,
+                    Participation = participation,
+                    Transaction = transaction
+                };
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return false;
+                return new EventRewardResult
+                {
+                    Success = false,
+                    Message = $"Failed to process event reward: {ex.Message}",
+                    EventName = null,
+                    Participation = null,
+                    Transaction = null
+                };
             }
         }
     }

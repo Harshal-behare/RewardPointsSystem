@@ -110,6 +110,7 @@ namespace RewardPointsSystem.Services.Orchestrators
                 throw new InvalidOperationException($"Only pending redemptions can be approved. Current status: {redemption.Status}");
 
             redemption.Status = RedemptionStatus.Approved;
+            redemption.ApprovedAt = DateTime.UtcNow;
             await _unitOfWork.SaveChangesAsync();
         }
 

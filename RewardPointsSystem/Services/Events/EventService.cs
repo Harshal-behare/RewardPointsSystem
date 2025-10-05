@@ -95,6 +95,20 @@ namespace RewardPointsSystem.Services.Events
             return await _unitOfWork.Events.GetByIdAsync(id);
         }
 
+        public async Task ActivateEventAsync(Guid id)
+        {
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
+            if (eventEntity == null)
+                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+
+            if (eventEntity.Status != EventStatus.Upcoming)
+                throw new InvalidOperationException($"Only upcoming events can be activated. Current status: {eventEntity.Status}");
+
+            eventEntity.Status = EventStatus.Active;
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task CompleteEventAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);

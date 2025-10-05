@@ -28,6 +28,33 @@ namespace RewardPointsSystem
 
             try
             {
+                // ========================================
+                // SYSTEM HEALTH CHECK (Commented Out)
+                // ========================================
+                // Uncomment the lines below to run a comprehensive health check
+                // This will verify all system components are working correctly
+                // Comment out RunMilestone1DemoAsync() when running health check
+                // ========================================
+                
+                // Console.WriteLine("Running System Health Check...");
+                // Console.WriteLine("");
+                // var healthCheckService = serviceProvider.GetRequiredService<ISystemHealthCheckService>();
+                // var healthResult = await healthCheckService.RunFullHealthCheckAsync();
+                // Console.WriteLine(healthResult.DetailedReport);
+                // Console.WriteLine("");
+                // if (healthResult.IsHealthy)
+                // {
+                //     Console.WriteLine("✓ System is healthy and ready to use!");
+                // }
+                // else
+                // {
+                //     Console.WriteLine($"✗ System has {healthResult.FailedChecks} failed checks.");
+                // }
+                // return;
+
+                // ========================================
+                // MILESTONE 1 DEMO (Default)
+                // ========================================
                 await RunMilestone1DemoAsync(serviceProvider);
             }
             catch (Exception ex)

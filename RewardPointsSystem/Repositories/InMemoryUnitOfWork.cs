@@ -30,7 +30,7 @@ namespace RewardPointsSystem.Repositories
         {
             _users = new Lazy<IRepository<User>>(() => new InMemoryRepository<User>());
             _roles = new Lazy<IRepository<Role>>(() => new InMemoryRepository<Role>());
-            _userRoles = new Lazy<IRepository<UserRole>>(() => new InMemoryRepository<UserRole>());
+            _userRoles = new Lazy<IRepository<UserRole>>(() => new InMemoryUserRoleRepository());
             _events = new Lazy<IRepository<Event>>(() => new InMemoryRepository<Event>());
             _eventParticipants = new Lazy<IRepository<EventParticipant>>(() => new InMemoryRepository<EventParticipant>());
             _rewardAccounts = new Lazy<IRepository<RewardAccount>>(() => new InMemoryRepository<RewardAccount>());

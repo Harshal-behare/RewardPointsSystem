@@ -12,7 +12,7 @@ namespace RewardPointsSystem.Interfaces
     /// </summary>
     public interface IEventRewardOrchestrator
     {
-        Task<bool> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy);
+        Task<EventRewardResult> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy);
     }
 
     /// <summary>
