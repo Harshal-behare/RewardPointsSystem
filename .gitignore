@@ -11,6 +11,8 @@
 *.sln.docstates
 *.md
 !README.md
+!agdata-srp-architecture.md
+!Project_Description.md 
 *.txt
 
 # User-specific files (MonoDevelop/Xamarin Studio)

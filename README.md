@@ -19,24 +19,28 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 ## ✨ Key Features
 
 ### Event Management
+
 - Create and manage events with dedicated point pools
 - Track event lifecycle (Upcoming → Active → Completed/Cancelled)
 - Register participants and track attendance
 - Award points to event winners with validation
 
 ### Points & Accounts
+
 - Automatic reward account creation for users
 - Real-time balance tracking
 - Point earning and redemption workflows
 - Complete transaction history with timestamps
 
 ### Product Catalog
+
 - Product catalog management
 - Dynamic pricing with history support
 - Real-time inventory tracking
 - Stock reservation system
 
 ### Redemption Workflow
+
 - Multi-stage redemption process (Pending → Approved → Delivered)
 - Stock reservation during redemption
 - Automatic refunds on cancellation
@@ -64,6 +68,7 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 ### Core Components
 
 **11 Domain Models** organized by domain:
+
 - Core: `User`, `Role`, `UserRole`
 - Events: `Event`, `EventParticipant`
 - Accounts: `PointsAccount`, `PointsTransaction`
@@ -71,6 +76,7 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 - Operations: `Redemption`
 
 **14 Services** with single responsibilities:
+
 - **User Management**: UserService, RoleService, UserRoleService
 - **Event Operations**: EventService, EventParticipationService, PointsAwardingService
 - **Account Management**: PointsAccountService, TransactionService
@@ -88,17 +94,20 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 ### Installation
 
 1. **Clone the repository**
+
    ```bash
    git clone <repository-url>
    cd RewardPointsSystem
    ```
 
 2. **Restore dependencies**
+
    ```bash
    dotnet restore
    ```
 
 3. **Build the solution**
+
    ```bash
    dotnet build
    ```
@@ -128,18 +137,18 @@ dotnet test --collect:"XPlat Code Coverage"
 
 The project includes **132 comprehensive unit tests** with **100% pass rate**:
 
-| Test File | Tests | Coverage |
-|-----------|-------|----------|
-| UserServiceTests | 14 | User CRUD, validation, duplicates |
-| RoleServiceTests | 8 | Role management operations |
-| UserRoleServiceTests | 9 | Role assignments |
-| EventServiceTests | 18 | Event lifecycle, transitions |
-| EventParticipationServiceTests | 11 | Participant tracking |
-| PointsAccountServiceTests | 11 | Account and balance management |
-| TransactionServiceTests | 7 | Transaction recording |
-| PointsAwardingServiceTests | 11 | Points allocation, pool limits |
-| ProductServicesTests | 27 | Catalog, pricing, inventory |
-| OrchestratorTests | 16 | Full workflow orchestration |
+| Test File                      | Tests | Coverage                          |
+| ------------------------------ | ----- | --------------------------------- |
+| UserServiceTests               | 14    | User CRUD, validation, duplicates |
+| RoleServiceTests               | 8     | Role management operations        |
+| UserRoleServiceTests           | 9     | Role assignments                  |
+| EventServiceTests              | 18    | Event lifecycle, transitions      |
+| EventParticipationServiceTests | 11    | Participant tracking              |
+| PointsAccountServiceTests      | 11    | Account and balance management    |
+| TransactionServiceTests        | 7     | Transaction recording             |
+| PointsAwardingServiceTests     | 11    | Points allocation, pool limits    |
+| ProductServicesTests           | 27    | Catalog, pricing, inventory       |
+| OrchestratorTests              | 16    | Full workflow orchestration       |
 
 **Test Framework**: xUnit + FluentAssertions  
 **Test Approach**: Unit tests with real implementations and in-memory storage
@@ -151,15 +160,16 @@ The project includes **132 comprehensive unit tests** with **100% pass rate**:
 ```csharp
 // Coordinate complete event-to-reward workflow
 var result = await eventRewardOrchestrator.ProcessEventRewardAsync(
-    eventId, 
-    userId, 
-    pointsAwarded: 500, 
+    eventId,
+    userId,
+    pointsAwarded: 500,
     position: 1,
     adminId
 );
 ```
 
 **Orchestrated Steps:**
+
 1. ✅ Validate event status (Active or Completed)
 2. ✅ Verify user is registered participant
 3. ✅ Check remaining points pool availability
@@ -185,6 +195,7 @@ await redemptionOrchestrator.CancelRedemptionAsync(result.Redemption.Id);
 ```
 
 **Orchestrated Steps:**
+
 1. ✅ Verify user account and balance
 2. ✅ Get current product price
 3. ✅ Validate sufficient balance
@@ -204,7 +215,7 @@ var user = await userService.CreateUserAsync("john.doe@company.com", "John", "Do
 
 // Create event
 var event = await eventService.CreateEventAsync(
-    "Q4 Sales Competition", 
+    "Q4 Sales Competition",
     "Top performers win rewards",
     DateTime.UtcNow.AddDays(30),
     pointsPool: 10000
@@ -219,8 +230,8 @@ await eventService.CompleteEventAsync(event.Id);
 
 // Award points (using orchestrator)
 var result = await eventRewardOrchestrator.ProcessEventRewardAsync(
-    event.Id, 
-    user.Id, 
+    event.Id,
+    user.Id,
     500, // points
     1,   // position
     adminId
@@ -251,7 +262,7 @@ if (redemption.Success)
     // Approve and deliver
     await redemptionOrchestrator.ApproveRedemptionAsync(redemption.Redemption.Id);
     await redemptionOrchestrator.DeliverRedemptionAsync(
-        redemption.Redemption.Id, 
+        redemption.Redemption.Id,
         "Delivered to office mailroom"
     );
 }
@@ -296,25 +307,26 @@ This registers all 14 services with **Scoped** lifetime.
 
 Comprehensive documentation is available in the repository:
 
-- **[WARP.md](WARP.md)** - Complete project guide with architecture, patterns, and conventions
 - **[agdata-srp-architecture.md](agdata-srp-architecture.md)** - Detailed SRP implementation guide
 - **[Project_Description.md](Project_Description.md)** - Business requirements and entity relationships
-- **[UNIT_TESTS_IMPLEMENTATION_GUIDE.md](UNIT_TESTS_IMPLEMENTATION_GUIDE.md)** - Testing strategy and guidelines
 
 ## 🛡️ Validation Rules
 
 ### User Validations
+
 - ✅ Unique email addresses (enforced at create/update)
 - ✅ Required first and last names (no empty/whitespace)
 - ✅ Valid email format
 
 ### Event Validations
+
 - ✅ Event date cannot be in the past
 - ✅ Points pool must be positive
 - ✅ Cannot modify completed/cancelled events
 - ✅ Only Active/Completed events can award points
 
 ### Points Validations
+
 - ✅ Points must be positive integers
 - ✅ User balance cannot go negative
 - ✅ No duplicate awards per user per event
@@ -322,6 +334,7 @@ Comprehensive documentation is available in the repository:
 - ✅ Pool must have sufficient balance
 
 ### Redemption Validations
+
 - ✅ User must have reward account
 - ✅ Sufficient point balance required
 - ✅ Product must be in stock
@@ -355,7 +368,6 @@ RewardPointsSystem/
 │   ├── UnitTests/                     # Unit tests (132 tests)
 │   ├── Integration/                   # Integration tests
 │   └── Helpers/                       # Test utilities
-├── WARP.md                            # Complete project guide
 ├── agdata-srp-architecture.md         # SRP architecture guide
 ├── Project_Description.md             # Business requirements
 └── README.md                          # This file
@@ -375,15 +387,15 @@ RewardPointsSystem/
 
 The project follows C# production-grade naming conventions:
 
-| Element | Convention | Example |
-|---------|-----------|---------|
-| Classes, Methods, Properties | PascalCase | `UserService`, `CreateUserAsync()` |
-| Interfaces | PascalCase with 'I' prefix | `IUserService` |
-| Local variables, parameters | camelCase | `userId`, `pointsAwarded` |
-| Private fields | _camelCase | `_unitOfWork`, `_logger` |
-| Constants | ALL_CAPS | `MAX_POINTS` |
-| Async methods | Suffix with "Async" | `ProcessRedemptionAsync()` |
-| Booleans | Is/Has/Can/Should prefix | `IsActive`, `HasBalance` |
+| Element                      | Convention                 | Example                            |
+| ---------------------------- | -------------------------- | ---------------------------------- |
+| Classes, Methods, Properties | PascalCase                 | `UserService`, `CreateUserAsync()` |
+| Interfaces                   | PascalCase with 'I' prefix | `IUserService`                     |
+| Local variables, parameters  | camelCase                  | `userId`, `pointsAwarded`          |
+| Private fields               | \_camelCase                | `_unitOfWork`, `_logger`           |
+| Constants                    | ALL_CAPS                   | `MAX_POINTS`                       |
+| Async methods                | Suffix with "Async"        | `ProcessRedemptionAsync()`         |
+| Booleans                     | Is/Has/Can/Should prefix   | `IsActive`, `HasBalance`           |
 
 ## 📈 Future Enhancements
 
@@ -416,6 +428,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 Created as a demonstration of production-grade C# architecture with emphasis on:
+
 - Clean code principles
 - Single Responsibility Principle
 - Test-driven development
@@ -424,7 +437,7 @@ Created as a demonstration of production-grade C# architecture with emphasis on:
 ## 📞 Support
 
 For questions or issues, please:
-- Review the [WARP.md](WARP.md) documentation
+
 - Check the [Project_Description.md](Project_Description.md) for business logic
 - Examine the unit tests for usage examples
 - Open an issue in the repository
@@ -432,4 +445,3 @@ For questions or issues, please:
 ---
 
 **Built with ❤️ using C# and .NET 8.0**
-
