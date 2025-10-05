@@ -5,26 +5,26 @@ using RewardPointsSystem.Models.Accounts;
 
 namespace RewardPointsSystem.Services.Accounts
 {
-    public class RewardAccountService : IRewardAccountService
+    public class PointsAccountService : IPointsAccountService
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public RewardAccountService(IUnitOfWork unitOfWork)
+        public PointsAccountService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<RewardAccount> CreateAccountAsync(Guid userId)
+        public async Task<PointsAccount> CreateAccountAsync(Guid userId)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
             if (user == null || !user.IsActive)
                 throw new InvalidOperationException($"User with ID {userId} not found or inactive");
 
-            var existingAccount = await _unitOfWork.RewardAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
+            var existingAccount = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
             if (existingAccount != null)
                 throw new InvalidOperationException($"Account already exists for user {userId}");
 
-            var account = new RewardAccount
+            var account = new PointsAccount
             {
                 UserId = userId,
                 CurrentBalance = 0,
@@ -34,14 +34,14 @@ namespace RewardPointsSystem.Services.Accounts
                 LastUpdatedAt = DateTime.UtcNow
             };
 
-            await _unitOfWork.RewardAccounts.AddAsync(account);
+            await _unitOfWork.PointsAccounts.AddAsync(account);
             await _unitOfWork.SaveChangesAsync();
             return account;
         }
 
-        public async Task<RewardAccount> GetAccountAsync(Guid userId)
+        public async Task<PointsAccount> GetAccountAsync(Guid userId)
         {
-            return await _unitOfWork.RewardAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
+            return await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
         }
 
         public async Task<int> GetBalanceAsync(Guid userId)
@@ -63,7 +63,7 @@ namespace RewardPointsSystem.Services.Accounts
             account.TotalEarned += points;
             account.LastUpdatedAt = DateTime.UtcNow;
 
-            await _unitOfWork.RewardAccounts.UpdateAsync(account);
+            await _unitOfWork.PointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -83,7 +83,7 @@ namespace RewardPointsSystem.Services.Accounts
             account.TotalRedeemed += points;
             account.LastUpdatedAt = DateTime.UtcNow;
 
-            await _unitOfWork.RewardAccounts.UpdateAsync(account);
+            await _unitOfWork.PointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
         }
 

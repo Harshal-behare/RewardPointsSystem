@@ -10,17 +10,17 @@ using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
-    public class RewardAccountServiceTests : IDisposable
+    public class PointsAccountServiceTests : IDisposable
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly RewardAccountService _accountService;
+        private readonly PointsAccountService _accountService;
 
-        public RewardAccountServiceTests()
+        public PointsAccountServiceTests()
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new RewardAccountService(_unitOfWork);
+            _accountService = new PointsAccountService(_unitOfWork);
         }
 
         public void Dispose()
@@ -189,14 +189,14 @@ namespace RewardPointsSystem.Tests.UnitTests
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly RewardAccountService _accountService;
+        private readonly PointsAccountService _accountService;
         private readonly TransactionService _transactionService;
 
         public TransactionServiceTests()
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new RewardAccountService(_unitOfWork);
+            _accountService = new PointsAccountService(_unitOfWork);
             _transactionService = new TransactionService(_unitOfWork);
         }
 

@@ -12,14 +12,14 @@ namespace RewardPointsSystem.Services.Orchestrators
     /// </summary>
     public class RedemptionOrchestrator : IRedemptionOrchestrator
     {
-        private readonly IRewardAccountService _accountService;
+        private readonly IPointsAccountService _accountService;
         private readonly IPricingService _pricingService;
         private readonly IInventoryService _inventoryService;
         private readonly ITransactionService _transactionService;
         private readonly IUnitOfWork _unitOfWork;
 
         public RedemptionOrchestrator(
-            IRewardAccountService accountService,
+            IPointsAccountService accountService,
             IPricingService pricingService,
             IInventoryService inventoryService,
             ITransactionService transactionService,
@@ -36,7 +36,7 @@ namespace RewardPointsSystem.Services.Orchestrators
         {
             try
             {
-                // 1. Check balance (RewardAccountService)
+                // 1. Check balance (PointsAccountService)
                 var hasAccount = await _accountService.GetAccountAsync(userId) != null;
                 if (!hasAccount)
                     throw new InvalidOperationException($"User {userId} does not have a reward account");
@@ -60,7 +60,7 @@ namespace RewardPointsSystem.Services.Orchestrators
                 // 5. Reserve stock (InventoryService)
                 await _inventoryService.ReserveStockAsync(productId, 1);
 
-                // 6. Deduct points (RewardAccountService)
+                // 6. Deduct points (PointsAccountService)
                 await _accountService.DeductPointsAsync(userId, pointsCost);
 
                 // 7. Record transaction (TransactionService)

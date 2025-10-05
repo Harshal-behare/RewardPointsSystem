@@ -17,14 +17,14 @@ namespace RewardPointsSystem.Services.Orchestrators
         private readonly IEventService _eventService;
         private readonly IEventParticipationService _participationService;
         private readonly IPointsAwardingService _pointsAwardingService;
-        private readonly IRewardAccountService _accountService;
+        private readonly IPointsAccountService _accountService;
         private readonly ITransactionService _transactionService;
 
         public EventRewardOrchestrator(
             IEventService eventService,
             IEventParticipationService participationService,
             IPointsAwardingService pointsAwardingService,
-            IRewardAccountService accountService,
+            IPointsAccountService accountService,
             ITransactionService transactionService)
         {
             _eventService = eventService;
@@ -64,7 +64,7 @@ namespace RewardPointsSystem.Services.Orchestrators
                 // 4. Award points (PointsAwardingService)
                 await _pointsAwardingService.AwardPointsAsync(eventId, userId, points, position);
 
-                // 5. Update balance (RewardAccountService)
+                // 5. Update balance (PointsAccountService)
                 // Ensure account exists
                 var account = await _accountService.GetAccountAsync(userId);
                 if (account == null)

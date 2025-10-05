@@ -79,7 +79,7 @@ namespace RewardPointsSystem
             var eventService = serviceProvider.GetRequiredService<IEventService>();
             var participationService = serviceProvider.GetRequiredService<IEventParticipationService>();
             var pointsAwardingService = serviceProvider.GetRequiredService<IPointsAwardingService>();
-            var accountService = serviceProvider.GetRequiredService<IRewardAccountService>();
+            var accountService = serviceProvider.GetRequiredService<IPointsAccountService>();
             var transactionService = serviceProvider.GetRequiredService<ITransactionService>();
             var productService = serviceProvider.GetRequiredService<IProductCatalogService>();
             var pricingService = serviceProvider.GetRequiredService<IPricingService>();
@@ -242,7 +242,7 @@ namespace RewardPointsSystem
             // ========================================
             Console.WriteLine(" MILESTONE 1 - COMPLETION SUMMARY");
             Console.WriteLine(" Design Business Logic:");
-            Console.WriteLine("    Key Entities: User, Event, Product, Redemption, PointsTransaction , RewardAccount");
+            Console.WriteLine("    Key Entities: User, Event, Product, Redemption, PointsTransaction, PointsAccount");
             Console.WriteLine("    Data Models: C# classes with properties and constructors");
             Console.WriteLine("    Relationships: User has many Redemptions, Events link to transactions");
             Console.WriteLine("    OOP Principles: Encapsulation, inheritance, interfaces for services");

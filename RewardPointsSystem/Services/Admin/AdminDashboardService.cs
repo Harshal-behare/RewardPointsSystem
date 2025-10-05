@@ -29,7 +29,7 @@ namespace RewardPointsSystem.Services.Admin
             var users = await _unitOfWork.Users.GetAllAsync();
             var events = await _unitOfWork.Events.GetAllAsync();
             var participants = await _unitOfWork.EventParticipants.GetAllAsync();
-            var accounts = await _unitOfWork.RewardAccounts.GetAllAsync();
+            var accounts = await _unitOfWork.PointsAccounts.GetAllAsync();
             var transactions = await _unitOfWork.Transactions.GetAllAsync();
             var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
 
@@ -88,7 +88,7 @@ namespace RewardPointsSystem.Services.Admin
         {
             var events = await _unitOfWork.Events.GetAllAsync();
             var participants = await _unitOfWork.EventParticipants.GetAllAsync();
-            var accounts = await _unitOfWork.RewardAccounts.GetAllAsync();
+            var accounts = await _unitOfWork.PointsAccounts.GetAllAsync();
             var transactions = await _unitOfWork.Transactions.GetAllAsync();
             var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
             var products = await _unitOfWork.Products.GetAllAsync();

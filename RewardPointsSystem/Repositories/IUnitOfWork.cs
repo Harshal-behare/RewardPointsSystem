@@ -20,7 +20,7 @@ namespace RewardPointsSystem.Interfaces
         IRepository<EventParticipant> EventParticipants { get; }
 
         // Account repositories
-        IRepository<RewardAccount> RewardAccounts { get; }
+        IRepository<PointsAccount> PointsAccounts { get; }
         IRepository<PointsTransaction> Transactions { get; }
 
         // Product repositories

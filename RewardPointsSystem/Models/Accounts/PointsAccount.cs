@@ -4,9 +4,9 @@ using System.ComponentModel.DataAnnotations;
 namespace RewardPointsSystem.Models.Accounts
 {
     /// <summary>
-    /// Represents a user's reward account with points balance
+    /// Represents a user's points account with points balance
     /// </summary>
-    public class RewardAccount
+    public class PointsAccount
     {
         public Guid Id { get; set; }
 
@@ -25,7 +25,7 @@ namespace RewardPointsSystem.Models.Accounts
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
 
-        public RewardAccount()
+        public PointsAccount()
         {
             Id = Guid.NewGuid();
             CurrentBalance = 0;

@@ -18,7 +18,7 @@ namespace RewardPointsSystem.Models.Products
         public string Description { get; set; }
 
         [StringLength(100, ErrorMessage = "Category cannot exceed 100 characters")]
-        public string Category { get; set; }
+        public string Category { get; set; } // "Electronics", "Gift Cards",  "Merchandise", "OfficeSupplies","Other"
 
         [Url(ErrorMessage = "Invalid URL format")]
         [StringLength(500, ErrorMessage = "Image URL cannot exceed 500 characters")]

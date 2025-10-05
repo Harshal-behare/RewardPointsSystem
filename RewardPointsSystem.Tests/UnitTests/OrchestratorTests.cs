@@ -18,7 +18,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         private readonly UserService _userService;
         private readonly EventService _eventService;
         private readonly EventParticipationService _participationService;
-        private readonly RewardAccountService _accountService;
+        private readonly PointsAccountService _accountService;
         private readonly TransactionService _transactionService;
         private readonly PointsAwardingService _pointsAwardingService;
         private readonly EventRewardOrchestrator _orchestrator;
@@ -29,7 +29,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);
-            _accountService = new RewardAccountService(_unitOfWork);
+            _accountService = new PointsAccountService(_unitOfWork);
             _transactionService = new TransactionService(_unitOfWork);
             _pointsAwardingService = new PointsAwardingService(_unitOfWork);
             _orchestrator = new EventRewardOrchestrator(
@@ -139,7 +139,7 @@ namespace RewardPointsSystem.Tests.UnitTests
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly RewardAccountService _accountService;
+        private readonly PointsAccountService _accountService;
         private readonly TransactionService _transactionService;
         private readonly ProductCatalogService _productService;
         private readonly PricingService _pricingService;
@@ -150,7 +150,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new RewardAccountService(_unitOfWork);
+            _accountService = new PointsAccountService(_unitOfWork);
             _transactionService = new TransactionService(_unitOfWork);
             _productService = new ProductCatalogService(_unitOfWork);
             _pricingService = new PricingService(_unitOfWork);

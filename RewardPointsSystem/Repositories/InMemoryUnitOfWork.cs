@@ -16,7 +16,7 @@ namespace RewardPointsSystem.Repositories
         private readonly Lazy<IRepository<UserRole>> _userRoles;
         private readonly Lazy<IRepository<Event>> _events;
         private readonly Lazy<IRepository<EventParticipant>> _eventParticipants;
-        private readonly Lazy<IRepository<RewardAccount>> _rewardAccounts;
+        private readonly Lazy<IRepository<PointsAccount>> _pointsAccounts;
         private readonly Lazy<IRepository<PointsTransaction>> _pointsTransactions;
         private readonly Lazy<IRepository<Product>> _products;
         private readonly Lazy<IRepository<ProductPricing>> _productPricings;
@@ -33,7 +33,7 @@ namespace RewardPointsSystem.Repositories
             _userRoles = new Lazy<IRepository<UserRole>>(() => new InMemoryUserRoleRepository());
             _events = new Lazy<IRepository<Event>>(() => new InMemoryRepository<Event>());
             _eventParticipants = new Lazy<IRepository<EventParticipant>>(() => new InMemoryRepository<EventParticipant>());
-            _rewardAccounts = new Lazy<IRepository<RewardAccount>>(() => new InMemoryRepository<RewardAccount>());
+            _pointsAccounts = new Lazy<IRepository<PointsAccount>>(() => new InMemoryRepository<PointsAccount>());
             _pointsTransactions = new Lazy<IRepository<PointsTransaction>>(() => new InMemoryRepository<PointsTransaction>());
             _products = new Lazy<IRepository<Product>>(() => new InMemoryRepository<Product>());
             _productPricings = new Lazy<IRepository<ProductPricing>>(() => new InMemoryRepository<ProductPricing>());
@@ -51,7 +51,7 @@ namespace RewardPointsSystem.Repositories
         public IRepository<EventParticipant> EventParticipants => _eventParticipants.Value;
 
         // Account repositories
-        public IRepository<RewardAccount> RewardAccounts => _rewardAccounts.Value;
+        public IRepository<PointsAccount> PointsAccounts => _pointsAccounts.Value;
         public IRepository<PointsTransaction> Transactions => _pointsTransactions.Value;
 
         // Product repositories
