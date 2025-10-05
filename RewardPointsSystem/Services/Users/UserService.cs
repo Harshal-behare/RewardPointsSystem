@@ -15,12 +15,10 @@ namespace RewardPointsSystem.Services.Users
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<User> CreateUserAsync(string email, string employeeId, string firstName, string lastName)
+        public async Task<User> CreateUserAsync(string email, string firstName, string lastName)
         {
             if (string.IsNullOrWhiteSpace(email))
                 throw new ArgumentException("Email is required", nameof(email));
-            if (string.IsNullOrWhiteSpace(employeeId))
-                throw new ArgumentException("Employee ID is required", nameof(employeeId));
             if (string.IsNullOrWhiteSpace(firstName))
                 throw new ArgumentException("First name is required", nameof(firstName));
             if (string.IsNullOrWhiteSpace(lastName))
@@ -30,14 +28,9 @@ namespace RewardPointsSystem.Services.Users
             if (existingUser != null)
                 throw new InvalidOperationException($"User with email {email} already exists");
 
-            var existingEmployee = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.EmployeeId == employeeId);
-            if (existingEmployee != null)
-                throw new InvalidOperationException($"User with employee ID {employeeId} already exists");
-
             var user = new User
             {
                 Email = email,
-                EmployeeId = employeeId,
                 FirstName = firstName,
                 LastName = lastName,
                 IsActive = true,
@@ -63,13 +56,6 @@ namespace RewardPointsSystem.Services.Users
             return await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == email);
         }
 
-        public async Task<User> GetUserByEmployeeIdAsync(string employeeId)
-        {
-            if (string.IsNullOrWhiteSpace(employeeId))
-                throw new ArgumentException("Employee ID is required", nameof(employeeId));
-
-            return await _unitOfWork.Users.SingleOrDefaultAsync(u => u.EmployeeId == employeeId);
-        }
 
         public async Task<IEnumerable<User>> GetActiveUsersAsync()
         {

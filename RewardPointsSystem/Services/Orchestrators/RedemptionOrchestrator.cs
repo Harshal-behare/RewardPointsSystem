@@ -41,15 +41,15 @@ namespace RewardPointsSystem.Services.Orchestrators
                 if (!hasAccount)
                     throw new InvalidOperationException($"User {userId} does not have a reward account");
 
-                // 2. Get price (PricingService)
-                var price = await _pricingService.GetCurrentPriceAsync(productId);
+                // 2. Get points cost (PricingService)
+                var pointsCost = await _pricingService.GetCurrentPointsCostAsync(productId);
 
                 // 3. Check sufficient balance
-                var hasSufficientBalance = await _accountService.HasSufficientBalanceAsync(userId, price);
+                var hasSufficientBalance = await _accountService.HasSufficientBalanceAsync(userId, pointsCost);
                 if (!hasSufficientBalance)
                 {
                     var currentBalance = await _accountService.GetBalanceAsync(userId);
-                    throw new InvalidOperationException($"Insufficient balance. Required: {price}, Available: {currentBalance}");
+                    throw new InvalidOperationException($"Insufficient balance. Required: {pointsCost}, Available: {currentBalance}");
                 }
 
                 // 4. Check stock (InventoryService)
@@ -61,14 +61,14 @@ namespace RewardPointsSystem.Services.Orchestrators
                 await _inventoryService.ReserveStockAsync(productId, 1);
 
                 // 6. Deduct points (RewardAccountService)
-                await _accountService.DeductPointsAsync(userId, price);
+                await _accountService.DeductPointsAsync(userId, pointsCost);
 
                 // 7. Record transaction (TransactionService)
                 var redemption = new Redemption
                 {
                     UserId = userId,
                     ProductId = productId,
-                    PointsSpent = price,
+                    PointsSpent = pointsCost,
                     Status = RedemptionStatus.Pending,
                     RequestedAt = DateTime.UtcNow
                 };
@@ -76,13 +76,13 @@ namespace RewardPointsSystem.Services.Orchestrators
                 await _unitOfWork.Redemptions.AddAsync(redemption);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _transactionService.RecordRedeemedPointsAsync(userId, price, redemption.Id, 
+                await _transactionService.RecordRedeemedPointsAsync(userId, pointsCost, redemption.Id, 
                     $"Product redemption - Redemption ID: {redemption.Id}");
 
                 return new RedemptionResult
                 {
                     Success = true,
-                    Message = $"Successfully processed redemption request for {price} points",
+                    Message = $"Successfully processed redemption request for {pointsCost} points",
                     Redemption = redemption,
                     Transaction = (await _transactionService.GetUserTransactionsAsync(userId))
                         .OrderByDescending(t => t.Timestamp).FirstOrDefault()

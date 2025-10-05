@@ -9,7 +9,7 @@ namespace RewardPointsSystem.Services.Products
 {
     /// <summary>
     /// Service: PricingService
-    /// Responsibility: Manage product pricing only
+    /// Responsibility: Manage product points cost (pricing in points) only
     /// </summary>
     public class PricingService : IPricingService
     {
@@ -20,7 +20,7 @@ namespace RewardPointsSystem.Services.Products
             _unitOfWork = unitOfWork;
         }
 
-        public async Task SetProductPriceAsync(Guid productId, int points, DateTime effectiveFrom)
+        public async Task SetProductPointsCostAsync(Guid productId, int points, DateTime effectiveFrom)
         {
             // Validate product exists
             var product = await _unitOfWork.Products.GetByIdAsync(productId);
@@ -53,7 +53,7 @@ namespace RewardPointsSystem.Services.Products
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<int> GetCurrentPriceAsync(Guid productId)
+        public async Task<int> GetCurrentPointsCostAsync(Guid productId)
         {
             var allPricing = await _unitOfWork.Pricing.GetAllAsync();
             var currentPricing = allPricing
@@ -70,7 +70,7 @@ namespace RewardPointsSystem.Services.Products
             return currentPricing.PointsCost;
         }
 
-        public async Task<IEnumerable<ProductPricing>> GetPriceHistoryAsync(Guid productId)
+        public async Task<IEnumerable<ProductPricing>> GetPointsCostHistoryAsync(Guid productId)
         {
             var allPricing = await _unitOfWork.Pricing.GetAllAsync();
             return allPricing
@@ -78,9 +78,9 @@ namespace RewardPointsSystem.Services.Products
                 .OrderByDescending(p => p.EffectiveFrom);
         }
 
-        public async Task UpdatePriceAsync(Guid productId, int newPoints)
+        public async Task UpdatePointsCostAsync(Guid productId, int newPoints)
         {
-            await SetProductPriceAsync(productId, newPoints, DateTime.UtcNow);
+            await SetProductPointsCostAsync(productId, newPoints, DateTime.UtcNow);
         }
     }
 }

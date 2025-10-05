@@ -7,14 +7,14 @@ namespace RewardPointsSystem.Interfaces
 {
     /// <summary>
     /// Interface: IPricingService
-    /// Responsibility: Manage product pricing only
+    /// Responsibility: Manage product points cost (pricing in points) only
     /// Architecture Compliant - SRP
     /// </summary>
     public interface IPricingService
     {
-        Task SetProductPriceAsync(Guid productId, int points, DateTime effectiveFrom);
-        Task<int> GetCurrentPriceAsync(Guid productId);
-        Task<IEnumerable<ProductPricing>> GetPriceHistoryAsync(Guid productId);
-        Task UpdatePriceAsync(Guid productId, int newPoints);
+        Task SetProductPointsCostAsync(Guid productId, int points, DateTime effectiveFrom);
+        Task<int> GetCurrentPointsCostAsync(Guid productId);
+        Task<IEnumerable<ProductPricing>> GetPointsCostHistoryAsync(Guid productId);
+        Task UpdatePointsCostAsync(Guid productId, int newPoints);
     }
 }

@@ -65,7 +65,7 @@ namespace RewardPointsSystem
             // USER SERVICE DEMONSTRATION
             // ========================================
             Console.WriteLine(" USER SERVICE: Add, update, and retrieve users");
-            Console.WriteLine("   Prevent duplicate users (by email or employee ID)");
+            Console.WriteLine("   Prevent duplicate users (by email)");
             
             // Create Admin and Employee roles
             var adminRole = await roleService.CreateRoleAsync("Admin", "System Administrator with full access");
@@ -73,15 +73,15 @@ namespace RewardPointsSystem
             Console.WriteLine($"   Created roles: {adminRole.Name}, {employeeRole.Name}");
 
             // Create users and demonstrate validation
-            var admin = await userService.CreateUserAsync("admin@agdata.com", "EMP001", "Admin", "AdminUser");
-            var employee1 = await userService.CreateUserAsync("harshal@agdata.com", "EMP002", "Harshal", "Behare");
-            var employee2 = await userService.CreateUserAsync("rohit@agdata.com", "EMP003", "Rohit", "Sharma");
+            var admin = await userService.CreateUserAsync("admin@agdata.com", "Admin", "AdminUser");
+            var employee1 = await userService.CreateUserAsync("harshal@agdata.com", "Harshal", "Behare");
+            var employee2 = await userService.CreateUserAsync("rohit@agdata.com", "Rohit", "Sharma");
             Console.WriteLine($"  Created users: {admin.FirstName}, {employee1.FirstName}, {employee2.FirstName}");
             
             // Try to create duplicate user (should handle gracefully)
             try
             {
-                await userService.CreateUserAsync("alice@agdata.com", "EMP004", "Duplicate", "User");
+                await userService.CreateUserAsync("harshal@agdata.com", "Duplicate", "User");
             }
             catch (Exception ex)
             {
@@ -131,11 +131,11 @@ namespace RewardPointsSystem
             var giftCard = await productService.CreateProductAsync("Amazon Gift Card", "$50 Amazon gift card for online shopping", "Gift Cards");
             Console.WriteLine($"  Created products: {laptop.Name}, {headphones.Name}, {giftCard.Name}");
 
-            // Set product pricing
-            await pricingService.SetProductPriceAsync(laptop.Id, 2000, DateTime.UtcNow);
-            await pricingService.SetProductPriceAsync(headphones.Id, 500, DateTime.UtcNow);
-            await pricingService.SetProductPriceAsync(giftCard.Id, 250, DateTime.UtcNow);
-            Console.WriteLine("  Product pricing configured");
+            // Set product points cost
+            await pricingService.SetProductPointsCostAsync(laptop.Id, 2000, DateTime.UtcNow);
+            await pricingService.SetProductPointsCostAsync(headphones.Id, 500, DateTime.UtcNow);
+            await pricingService.SetProductPointsCostAsync(giftCard.Id, 250, DateTime.UtcNow);
+            Console.WriteLine("  Product points cost configured");
 
             // Set up inventory
             await inventoryService.CreateInventoryAsync(laptop.Id, 5, 2);
