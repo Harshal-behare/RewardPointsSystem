@@ -1,19 +1,23 @@
 using System;
 using System.Collections.Generic;
-using RewardPointsSystem.Models;
+using System.Threading.Tasks;
+using RewardPointsSystem.Models.Products;
+using RewardPointsSystem.DTOs;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IInventoryService
+    /// Responsibility: Manage product stock only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IInventoryService
     {
-        void AddInventoryItem(Guid productId, int initialQuantity);
-        void AddStock(Guid productId, int quantity);
-        bool CheckAvailability(Guid productId, int quantity);
-        void ReserveStock(Guid productId, int quantity);
-        void ConfirmReservation(Guid productId, int quantity);
-        void CancelReservation(Guid productId, int quantity);
-        InventoryItem GetInventoryByProductId(Guid productId);
-        IEnumerable<InventoryItem> GetAllInventoryItems();
-        int GetAvailableQuantity(Guid productId);
+        Task<InventoryItem> CreateInventoryAsync(Guid productId, int quantity, int reorderLevel);
+        Task AddStockAsync(Guid productId, int quantity);
+        Task<bool> IsInStockAsync(Guid productId);
+        Task ReserveStockAsync(Guid productId, int quantity);
+        Task ReleaseReservationAsync(Guid productId, int quantity);
+        Task<IEnumerable<InventoryAlert>> GetLowStockItemsAsync();
     }
 }

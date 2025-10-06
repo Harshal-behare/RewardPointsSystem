@@ -1,20 +1,20 @@
 using System;
 using System.Collections.Generic;
-using RewardPointsSystem.Models;
+using System.Threading.Tasks;
+using RewardPointsSystem.Models.Core;
 
 namespace RewardPointsSystem.Interfaces
 {
+    /// <summary>
+    /// Interface: IRoleService
+    /// Responsibility: Manage system roles only
+    /// Architecture Compliant - SRP
+    /// </summary>
     public interface IRoleService
     {
-        Role CreateRole(string name, string description);
-        Role GetRoleById(Guid roleId);
-        Role GetRoleByName(string name);
-        IEnumerable<Role> GetAllRoles();
-        void UpdateRole(Role role);
-        void DeleteRole(Guid roleId);
-        void AssignPermissionToRole(Guid roleId, string permission);
-        void RemovePermissionFromRole(Guid roleId, string permission);
-        bool UserHasPermission(User user, string permission);
-        IEnumerable<string> GetUserPermissions(User user);
+        Task<Role> CreateRoleAsync(string name, string description);
+        Task<Role> GetRoleByNameAsync(string name);
+        Task<IEnumerable<Role>> GetAllRolesAsync();
+        Task UpdateRoleAsync(Guid id, string description);
     }
 }
