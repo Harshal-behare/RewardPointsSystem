@@ -266,6 +266,7 @@ namespace RewardPointsSystem.Api
             Console.WriteLine($"    Business Logic: Complete event-reward-redemption workflow");
             Console.WriteLine($"    Data Validation: Email uniqueness, balance checks, stock validation");
             Console.WriteLine($"    In-Memory Storage: No external database required");
+            Console.ReadKey();
         }
     }
 }
