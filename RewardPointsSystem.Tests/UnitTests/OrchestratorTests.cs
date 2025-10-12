@@ -1,13 +1,13 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RewardPointsSystem.Models.Operations;
-using RewardPointsSystem.Repositories;
-using RewardPointsSystem.Services.Accounts;
-using RewardPointsSystem.Services.Events;
-using RewardPointsSystem.Services.Orchestrators;
-using RewardPointsSystem.Services.Products;
-using RewardPointsSystem.Services.Users;
+using RewardPointsSystem.Domain.Entities.Operations;
+using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Services.Accounts;
+using RewardPointsSystem.Application.Services.Events;
+using RewardPointsSystem.Application.Services.Orchestrators;
+using RewardPointsSystem.Application.Services.Products;
+using RewardPointsSystem.Application.Services.Users;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests

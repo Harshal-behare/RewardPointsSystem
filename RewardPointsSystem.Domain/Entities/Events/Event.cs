@@ -1,7 +1,7 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 
-namespace RewardPointsSystem.Models.Events
+namespace RewardPointsSystem.Domain.Entities.Events
 {
     public enum EventStatus
     {
