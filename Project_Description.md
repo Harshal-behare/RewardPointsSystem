@@ -2,7 +2,16 @@
 
 ## What This Project Is
 
-This is a **Points-Based Redemption System** built in C#. It's a business application where users can earn points through various events and redeem those points for products from a catalog. The entire system runs in-memory without any database.
+This is a **Points-Based Redemption System** built in C# using **Clean Architecture** principles. It's a business application where users can earn points through various events and redeem those points for products from a catalog.
+
+### Architecture
+The system follows a **4-layer Clean Architecture** design:
+- **API Layer**: Entry point and dependency injection configuration
+- **Application Layer**: Business logic, services, and interfaces
+- **Domain Layer**: Core business entities (pure models with no dependencies)
+- **Infrastructure Layer**: Data access implementation (in-memory repositories)
+
+The entire system runs in-memory without any database, making it perfect for demonstrating clean code principles and enterprise architecture patterns.
 
 ---
 

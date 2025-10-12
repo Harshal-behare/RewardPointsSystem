@@ -3,6 +3,21 @@
 ## System Overview
 Event-based reward points system where employees earn points by winning internal events and redeem them for products.
 
+## Clean Architecture Structure
+This project follows **Clean Architecture** (also known as Onion Architecture) principles with 4 distinct layers:
+
+1. **API Layer** - Entry point, DI configuration, Program.cs
+2. **Application Layer** - Business logic, services, interfaces, DTOs
+3. **Domain Layer** - Core business models (entities), no dependencies
+4. **Infrastructure Layer** - Data access, repository implementations
+
+### Key Benefits:
+- **Separation of Concerns**: Each layer has a clear responsibility
+- **Dependency Inversion**: Dependencies point inward (toward Domain)
+- **Testability**: Business logic isolated from infrastructure
+- **Maintainability**: Changes in one layer don't cascade
+- **Framework Independence**: Core business logic has no external dependencies
+
 ## 1. DOMAIN MODELS (11 Classes - Each with Single Responsibility)
 
 ### Core Identity Models
@@ -479,65 +494,88 @@ services.AddScoped<IAdminDashboardService, AdminDashboardService>();
 return services;
 ```
 
-## 7. FOLDER STRUCTURE
+## 7. CLEAN ARCHITECTURE FOLDER STRUCTURE
 
 ```
 RewardPointsSystem/
 │
-├── Models/
-│   ├── Core/
-│   │   ├── User.cs
-│   │   ├── Role.cs
-│   │   └── UserRole.cs
-│   ├── Events/
-│   │   ├── Event.cs
-│   │   └── EventParticipant.cs
-│   ├── Accounts/
-│   │   ├── PointsAccount.cs
-│   │   └── PointsTransaction.cs
-│   ├── Products/
-│   │   ├── Product.cs
-│   │   ├── ProductPricing.cs
-│   │   └── InventoryItem.cs
-│   └── Operations/
-│       └── Redemption.cs
+├── RewardPointsSystem.Api/           # ➡️ API LAYER (Presentation/Entry Point)
+│   ├── Configuration/
+│   │   └── ServiceConfiguration.cs  # DI Composition Root
+│   └── Program.cs                   # Application Entry Point
 │
-├── Services/
-│   ├── Events/
-│   │   ├── EventService.cs
-│   │   ├── EventParticipationService.cs
-│   │   └── PointsAwardingService.cs
-│   ├── Users/
-│   │   ├── UserService.cs
-│   │   ├── RoleService.cs
-│   │   └── UserRoleService.cs
-│   ├── Accounts/
-│   │   ├── PointsAccountService.cs
-│   │   └── TransactionService.cs
-│   ├── Products/
-│   │   ├── ProductCatalogService.cs
-│   │   ├── PricingService.cs
-│   │   └── InventoryService.cs
-│   ├── Orchestrators/
-│   │   ├── EventRewardOrchestrator.cs
-│   │   └── RedemptionOrchestrator.cs
-│   └── Admin/
-│       └── AdminDashboardService.cs
+├── RewardPointsSystem.Application/  # ➡️ APPLICATION LAYER (Business Logic)
+│   ├── Services/                    # 14 Service Implementations
+│   │   ├── Events/
+│   │   │   ├── EventService.cs
+│   │   │   ├── EventParticipationService.cs
+│   │   │   └── PointsAwardingService.cs
+│   │   ├── Users/
+│   │   │   ├── UserService.cs
+│   │   │   ├── RoleService.cs
+│   │   │   └── UserRoleService.cs
+│   │   ├── Accounts/
+│   │   │   ├── PointsAccountService.cs
+│   │   │   └── TransactionService.cs
+│   │   ├── Products/
+│   │   │   ├── ProductCatalogService.cs
+│   │   │   ├── PricingService.cs
+│   │   │   └── InventoryService.cs
+│   │   ├── Orchestrators/
+│   │   │   ├── EventRewardOrchestrator.cs
+│   │   │   └── RedemptionOrchestrator.cs
+│   │   └── Admin/
+│   │       └── AdminDashboardService.cs
+│   ├── Interfaces/                  # Service Contracts
+│   │   ├── IRepository.cs           # Generic Repository Interface
+│   │   ├── IUnitOfWork.cs           # Unit of Work Pattern
+│   │   └── [14 Service Interfaces]  # IUserService, IEventService, etc.
+│   └── DTOs/                        # Data Transfer Objects
+│       ├── UserDTOs.cs
+│       ├── EventDTOs.cs
+│       └── ProductDTOs.cs
 │
-├── Interfaces/
-│   └── [One interface per service]
+├── RewardPointsSystem.Domain/       # ➡️ DOMAIN LAYER (Core Business Models)
+│   └── Entities/                    # 11 Domain Entities (Pure POCOs)
+│       ├── Core/
+│       │   ├── User.cs
+│       │   ├── Role.cs
+│       │   └── UserRole.cs
+│       ├── Events/
+│       │   ├── Event.cs
+│       │   └── EventParticipant.cs
+│       ├── Accounts/
+│       │   ├── PointsAccount.cs
+│       │   └── PointsTransaction.cs
+│       ├── Products/
+│       │   ├── Product.cs
+│       │   ├── ProductPricing.cs
+│       │   └── InventoryItem.cs
+│       └── Operations/
+│           └── Redemption.cs
 │
-├── Repositories/
-│   ├── IRepository.cs
-│   ├── IUnitOfWork.cs
-│   ├── InMemoryRepository.cs
-│   └── InMemoryUnitOfWork.cs
+├── RewardPointsSystem.Infrastructure/ # ➡️ INFRASTRUCTURE LAYER (Data Access)
+│   └── Repositories/                  # Repository Implementations
+│       ├── InMemoryRepository.cs      # Generic In-Memory Repository
+│       ├── InMemoryUnitOfWork.cs      # In-Memory Unit of Work
+│       └── InMemoryUserRoleRepository.cs # Specialized Repository
 │
-├── Configuration/
-│   └── ServiceConfiguration.cs
-│
-└── Program.cs
+└── RewardPointsSystem.Tests/        # ➡️ TEST PROJECT
+    ├── UnitTests/                   # 132 Unit Tests
+    └── Helpers/                     # Test Utilities
 ```
+
+### Layer Dependencies (Clean Architecture)
+```
+API → Application → Domain
+         ↑
+   Infrastructure
+```
+
+- **API Layer**: References Application, Infrastructure (for DI registration)
+- **Application Layer**: References Domain only, defines interfaces
+- **Domain Layer**: No dependencies (pure business models)
+- **Infrastructure Layer**: References Application (implements interfaces), Domain
 
 
 ## 8. DTOs (DATA TRANSFER OBJECTS)
