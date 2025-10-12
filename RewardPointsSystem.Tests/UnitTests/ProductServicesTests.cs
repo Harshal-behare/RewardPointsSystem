@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RewardPointsSystem.Repositories;
-using RewardPointsSystem.Services.Products;
+using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Services.Products;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests

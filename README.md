@@ -48,20 +48,32 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 
 ## 🏗️ Architecture
 
-### Clean Three-Layer Architecture
+### Clean Architecture (4-Layer Design)
 
 ```
 ┌─────────────────────────────────────────┐
-│         Service Layer (14 Services)      │
+│        API Layer (Entry Point)           │
+│    Program.cs + Configuration            │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│    Application Layer (14 Services)       │
 │  ┌────────────┐ ┌──────────────────┐   │
 │  │  Business  │ │   Orchestrators  │   │
 │  │  Services  │ │  (Coordination)  │   │
 │  └────────────┘ └──────────────────┘   │
+│      Interfaces + DTOs                   │
 └─────────────────────────────────────────┘
                     ↓
 ┌─────────────────────────────────────────┐
-│    Repository Layer (Unit of Work)      │
-│         In-Memory Data Storage           │
+│       Domain Layer (11 Entities)         │
+│    Pure business models - no logic       │
+└─────────────────────────────────────────┘
+                    ↓
+┌─────────────────────────────────────────┐
+│  Infrastructure Layer (Data Access)      │
+│   Repository Pattern + Unit of Work      │
+│        In-Memory Data Storage            │
 └─────────────────────────────────────────┘
 ```
 
@@ -114,7 +126,7 @@ RewardPointsSystem demonstrates clean architecture principles with strict adhere
 
 4. **Run the application**
    ```bash
-   dotnet run --project RewardPointsSystem/RewardPointsSystem.csproj
+   dotnet run --project RewardPointsSystem.Api/RewardPointsSystem.Api.csproj
    ```
 
 ### Running Tests
@@ -307,7 +319,8 @@ This registers all 14 services with **Scoped** lifetime.
 
 Comprehensive documentation is available in the repository:
 
-- **[agdata-srp-architecture.md](agdata-srp-architecture.md)** - Detailed SRP implementation guide
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete Clean Architecture guide with layer responsibilities
+- **[agdata-srp-architecture.md](agdata-srp-architecture.md)** - Detailed SRP implementation and service specifications
 - **[Project_Description.md](Project_Description.md)** - Business requirements and entity relationships
 
 ## 🛡️ Validation Rules
@@ -345,13 +358,12 @@ Comprehensive documentation is available in the repository:
 
 ```
 RewardPointsSystem/
-├── RewardPointsSystem/                # Main application
-│   ├── Models/                        # Domain models (11 classes)
-│   │   ├── Core/                      # User, Role, UserRole
-│   │   ├── Events/                    # Event, EventParticipant
-│   │   ├── Accounts/                  # PointsAccount, PointsTransaction
-│   │   ├── Products/                  # Product, ProductPricing, InventoryItem
-│   │   └── Operations/                # Redemption
+├── RewardPointsSystem.Api/            # API Layer (Presentation)
+│   ├── Configuration/                 # DI service registration
+│   │   └── ServiceConfiguration.cs    # Composition root
+│   └── Program.cs                     # Application entry point
+│
+├── RewardPointsSystem.Application/    # Application Layer (Business Logic)
 │   ├── Services/                      # Service implementations (14 services)
 │   │   ├── Users/                     # User management services
 │   │   ├── Events/                    # Event management services
@@ -360,14 +372,29 @@ RewardPointsSystem/
 │   │   ├── Orchestrators/             # Workflow orchestrators
 │   │   └── Admin/                     # Administrative services
 │   ├── Interfaces/                    # Service interfaces (14 interfaces)
-│   ├── Repositories/                  # Repository pattern implementation
-│   ├── DTOs/                          # Data Transfer Objects
-│   ├── Configuration/                 # Service registration
-│   └── Program.cs                     # Application entry point
+│   │   ├── IRepository.cs             # Generic repository interface
+│   │   └── IUnitOfWork.cs             # Unit of Work pattern
+│   └── DTOs/                          # Data Transfer Objects
+│
+├── RewardPointsSystem.Domain/         # Domain Layer (Core Business Models)
+│   └── Entities/                      # Domain models (11 classes)
+│       ├── Core/                      # User, Role, UserRole
+│       ├── Events/                    # Event, EventParticipant
+│       ├── Accounts/                  # PointsAccount, PointsTransaction
+│       ├── Products/                  # Product, ProductPricing, InventoryItem
+│       └── Operations/                # Redemption
+│
+├── RewardPointsSystem.Infrastructure/ # Infrastructure Layer (Data Access)
+│   └── Repositories/                  # Repository implementations
+│       ├── InMemoryRepository.cs      # Generic in-memory repository
+│       ├── InMemoryUnitOfWork.cs      # In-memory Unit of Work
+│       └── InMemoryUserRoleRepository.cs # Specialized repository
+│
 ├── RewardPointsSystem.Tests/          # Test project
 │   ├── UnitTests/                     # Unit tests (132 tests)
-│   ├── Integration/                   # Integration tests
 │   └── Helpers/                       # Test utilities
+│
+├── docs/                              # Documentation & diagrams
 ├── agdata-srp-architecture.md         # SRP architecture guide
 ├── Project_Description.md             # Business requirements
 └── README.md                          # This file

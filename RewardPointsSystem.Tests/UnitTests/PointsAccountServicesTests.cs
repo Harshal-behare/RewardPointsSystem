@@ -2,10 +2,10 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
-using RewardPointsSystem.Models.Accounts;
-using RewardPointsSystem.Repositories;
-using RewardPointsSystem.Services.Accounts;
-using RewardPointsSystem.Services.Users;
+using RewardPointsSystem.Domain.Entities.Accounts;
+using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Services.Accounts;
+using RewardPointsSystem.Application.Services.Users;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests

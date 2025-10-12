@@ -2,9 +2,9 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
-using RewardPointsSystem.Services.Users;
-using RewardPointsSystem.Repositories;
-using RewardPointsSystem.Interfaces;
+using RewardPointsSystem.Application.Services.Users;
+using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Interfaces;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
