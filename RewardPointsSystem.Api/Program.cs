@@ -8,6 +8,7 @@ using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Operations;
+using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Api
 {
@@ -57,9 +58,15 @@ namespace RewardPointsSystem.Api
                 // ========================================
                 await RunMilestone1DemoAsync(serviceProvider);
             }
+            catch (DomainException domainEx)
+            {
+                Console.WriteLine($"\n✗ Domain Error: {domainEx.Message}");
+                Console.WriteLine($"Exception Type: {domainEx.GetType().Name}");
+            }
             catch (Exception ex)
             {
-                Console.WriteLine($" Error: {ex.Message}");
+                Console.WriteLine($"\n✗ Unexpected Error: {ex.Message}");
+                Console.WriteLine($"\nStack Trace: {ex.StackTrace}");
             }
             finally
             {

@@ -320,6 +320,7 @@ This registers all 14 services with **Scoped** lifetime.
 Comprehensive documentation is available in the repository:
 
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Complete Clean Architecture guide with layer responsibilities
+- **[EXCEPTIONS.md](EXCEPTIONS.md)** - Domain exception handling and error management  
 - **[agdata-srp-architecture.md](agdata-srp-architecture.md)** - Detailed SRP implementation and service specifications
 - **[Project_Description.md](Project_Description.md)** - Business requirements and entity relationships
 

@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Accounts;
+using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Application.Services.Accounts
 {
@@ -17,12 +18,15 @@ namespace RewardPointsSystem.Application.Services.Accounts
         public async Task<PointsAccount> CreateAccountAsync(Guid userId)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
-            if (user == null || !user.IsActive)
-                throw new InvalidOperationException($"User with ID {userId} not found or inactive");
+            if (user == null)
+                throw new UserNotFoundException(userId);
+            
+            if (!user.IsActive)
+                throw new InactiveUserException(userId);
 
             var existingAccount = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
             if (existingAccount != null)
-                throw new InvalidOperationException($"Account already exists for user {userId}");
+                throw new InvalidPointsOperationException($"Account already exists for user {userId}");
 
             var account = new PointsAccount
             {
@@ -53,7 +57,7 @@ namespace RewardPointsSystem.Application.Services.Accounts
         public async Task AddPointsAsync(Guid userId, int points)
         {
             if (points <= 0)
-                throw new ArgumentException("Points must be greater than zero", nameof(points));
+                throw new InvalidPointsOperationException("Points must be greater than zero");
 
             var account = await GetAccountAsync(userId);
             if (account == null)
@@ -70,14 +74,14 @@ namespace RewardPointsSystem.Application.Services.Accounts
         public async Task DeductPointsAsync(Guid userId, int points)
         {
             if (points <= 0)
-                throw new ArgumentException("Points must be greater than zero", nameof(points));
+                throw new InvalidPointsOperationException("Points must be greater than zero");
 
             var account = await GetAccountAsync(userId);
             if (account == null)
-                throw new InvalidOperationException($"Account not found for user {userId}");
+                throw new PointsAccountNotFoundException(userId);
 
             if (account.CurrentBalance < points)
-                throw new InvalidOperationException($"Insufficient balance. Available: {account.CurrentBalance}, Required: {points}");
+                throw new InsufficientPointsBalanceException(userId, points, account.CurrentBalance);
 
             account.CurrentBalance -= points;
             account.TotalRedeemed += points;
