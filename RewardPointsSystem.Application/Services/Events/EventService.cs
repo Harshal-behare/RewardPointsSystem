@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Application.DTOs;
+using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Application.Services.Events
 {
@@ -25,16 +26,16 @@ namespace RewardPointsSystem.Application.Services.Events
         public async Task<Event> CreateEventAsync(string name, string description, DateTime date, int pointsPool)
         {
             if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Event name is required", nameof(name));
+                throw new InvalidEventDataException("Event name is required");
             
             if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("Event description is required", nameof(description));
+                throw new InvalidEventDataException("Event description is required");
             
             if (pointsPool <= 0)
-                throw new ArgumentException("Points pool must be positive", nameof(pointsPool));
+                throw new InvalidEventDataException("Points pool must be positive");
             
             if (date < DateTime.UtcNow.Date)
-                throw new ArgumentException("Cannot create events in the past");
+                throw new InvalidEventDataException("Cannot create events in the past");
 
             var eventEntity = new Event
             {
@@ -57,10 +58,10 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+                throw new EventNotFoundException(id);
 
             if (eventEntity.Status == EventStatus.Completed || eventEntity.Status == EventStatus.Cancelled)
-                throw new InvalidOperationException("Cannot modify completed or cancelled events");
+                throw new InvalidEventStateException(id, "Cannot modify completed or cancelled events");
 
             if (!string.IsNullOrWhiteSpace(updates.Name))
                 eventEntity.Name = updates.Name.Trim();
@@ -99,10 +100,10 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+                throw new EventNotFoundException(id);
 
             if (eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidOperationException($"Only upcoming events can be activated. Current status: {eventEntity.Status}");
+                throw new InvalidEventStateException(id, $"Only upcoming events can be activated. Current status: {eventEntity.Status}");
 
             eventEntity.Status = EventStatus.Active;
 
@@ -113,10 +114,10 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+                throw new EventNotFoundException(id);
 
             if (eventEntity.Status != EventStatus.Active)
-                throw new InvalidOperationException($"Only active events can be completed. Current status: {eventEntity.Status}");
+                throw new InvalidEventStateException(id, $"Only active events can be completed. Current status: {eventEntity.Status}");
 
             eventEntity.Status = EventStatus.Completed;
             eventEntity.CompletedAt = DateTime.UtcNow;
@@ -128,10 +129,10 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
-                throw new ArgumentException($"Event with ID {id} not found", nameof(id));
+                throw new EventNotFoundException(id);
 
             if (eventEntity.Status == EventStatus.Completed)
-                throw new InvalidOperationException("Cannot cancel completed events");
+                throw new InvalidEventStateException(id, "Cannot cancel completed events");
 
             eventEntity.Status = EventStatus.Cancelled;
 
