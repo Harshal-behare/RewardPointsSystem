@@ -1,5 +1,8 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Entities.Operations;
 
 namespace RewardPointsSystem.Domain.Entities.Products
 {
@@ -30,11 +33,19 @@ namespace RewardPointsSystem.Domain.Entities.Products
         [Required(ErrorMessage = "Created by user ID is required")]
         public Guid CreatedBy { get; set; }
 
+        // Navigation Properties
+        public virtual User Creator { get; set; }
+        public virtual ICollection<ProductPricing> PricingHistory { get; set; }
+        public virtual InventoryItem Inventory { get; set; }
+        public virtual ICollection<Redemption> Redemptions { get; set; }
+
         public Product()
         {
             Id = Guid.NewGuid();
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
+            PricingHistory = new HashSet<ProductPricing>();
+            Redemptions = new HashSet<Redemption>();
         }
     }
 }

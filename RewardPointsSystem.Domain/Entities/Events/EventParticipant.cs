@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Events
 {
@@ -25,6 +26,10 @@ namespace RewardPointsSystem.Domain.Entities.Events
         public DateTime RegisteredAt { get; set; }
         public DateTime? AwardedAt { get; set; }
         public Guid? AwardedBy { get; set; }
+
+        // Navigation Properties
+        public virtual Event Event { get; set; }
+        public virtual User User { get; set; }
 
         public EventParticipant()
         {

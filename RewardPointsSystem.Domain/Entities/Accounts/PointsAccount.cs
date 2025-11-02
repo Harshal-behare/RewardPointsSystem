@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Accounts
 {
@@ -24,6 +25,9 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
 
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
+
+        // Navigation Properties
+        public virtual User User { get; set; }
 
         public PointsAccount()
         {

@@ -1,5 +1,8 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Users;
 using RewardPointsSystem.Application.Services.Events;
@@ -12,9 +15,13 @@ namespace RewardPointsSystem.Api.Configuration
 {
     public static class ServiceConfiguration
     {
-        public static IServiceCollection RegisterRewardPointsServices(this IServiceCollection services)
+        public static IServiceCollection RegisterRewardPointsServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // Repository Layer
+            // Add DbContext with SQL Server
+            services.AddDbContext<RewardPointsDbContext>(options =>
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            
+            // Repository Layer - Using In-Memory for now (can be changed to EF repositories later)
             services.AddScoped<IUnitOfWork, InMemoryUnitOfWork>();
 
             // Core/User Services

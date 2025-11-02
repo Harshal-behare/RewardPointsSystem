@@ -1,5 +1,7 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Entities.Products;
 
 namespace RewardPointsSystem.Domain.Entities.Operations
 {
@@ -35,6 +37,10 @@ namespace RewardPointsSystem.Domain.Entities.Operations
 
         [StringLength(1000, ErrorMessage = "Delivery notes cannot exceed 1000 characters")]
         public string DeliveryNotes { get; set; }
+
+        // Navigation Properties
+        public virtual User User { get; set; }
+        public virtual Product Product { get; set; }
 
         public Redemption()
         {

@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 
 namespace RewardPointsSystem.Domain.Entities.Core
@@ -20,11 +21,15 @@ namespace RewardPointsSystem.Domain.Entities.Core
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
 
+        // Navigation Properties
+        public virtual ICollection<UserRole> UserRoles { get; set; }
+
         public Role()
         {
             Id = Guid.NewGuid();
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
+            UserRoles = new HashSet<UserRole>();
         }
     }
 }

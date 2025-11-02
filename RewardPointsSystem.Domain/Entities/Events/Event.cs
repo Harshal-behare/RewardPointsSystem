@@ -1,5 +1,7 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Events
 {
@@ -40,11 +42,16 @@ namespace RewardPointsSystem.Domain.Entities.Events
         public DateTime CreatedAt { get; set; }
         public DateTime? CompletedAt { get; set; }
 
+        // Navigation Properties
+        public virtual User Creator { get; set; }
+        public virtual ICollection<EventParticipant> Participants { get; set; }
+
         public Event()
         {
             Id = Guid.NewGuid();
             Status = EventStatus.Upcoming;
             CreatedAt = DateTime.UtcNow;
+            Participants = new HashSet<EventParticipant>();
         }
     }
 }

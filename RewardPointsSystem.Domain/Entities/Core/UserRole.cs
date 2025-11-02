@@ -20,6 +20,10 @@ namespace RewardPointsSystem.Domain.Entities.Core
         [Required(ErrorMessage = "Assigned by user ID is required")]
         public Guid AssignedBy { get; set; }
 
+        // Navigation Properties
+        public virtual User User { get; set; }
+        public virtual Role Role { get; set; }
+
         public UserRole()
         {
             AssignedAt = DateTime.UtcNow;

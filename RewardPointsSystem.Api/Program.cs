@@ -1,6 +1,8 @@
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RewardPointsSystem.Api.Configuration;
 using RewardPointsSystem.Application.Interfaces;
@@ -21,9 +23,16 @@ namespace RewardPointsSystem.Api
             Console.WriteLine("   Complete C# Masterclass Demo");
             Console.WriteLine("========================================\n");
 
+            // Build configuration
+            var configuration = new ConfigurationBuilder()
+                .SetBasePath(Directory.GetCurrentDirectory())
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .Build();
+
             // Build the service container
             var services = new ServiceCollection();
-            services.RegisterRewardPointsServices();
+            services.AddSingleton<IConfiguration>(configuration);
+            services.RegisterRewardPointsServices(configuration);
             
             var serviceProvider = services.BuildServiceProvider();
 

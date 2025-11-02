@@ -1,5 +1,9 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Accounts;
+using RewardPointsSystem.Domain.Entities.Events;
+using RewardPointsSystem.Domain.Entities.Operations;
 
 namespace RewardPointsSystem.Domain.Entities.Core
 {
@@ -27,11 +31,20 @@ namespace RewardPointsSystem.Domain.Entities.Core
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
 
+        // Navigation Properties
+        public virtual ICollection<UserRole> UserRoles { get; set; }
+        public virtual PointsAccount PointsAccount { get; set; }
+        public virtual ICollection<EventParticipant> EventParticipations { get; set; }
+        public virtual ICollection<Redemption> Redemptions { get; set; }
+
         public User()
         {
             Id = Guid.NewGuid();
             IsActive = true;
             CreatedAt = DateTime.UtcNow;
+            UserRoles = new HashSet<UserRole>();
+            EventParticipations = new HashSet<EventParticipant>();
+            Redemptions = new HashSet<Redemption>();
         }
     }
 }

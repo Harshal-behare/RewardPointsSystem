@@ -25,6 +25,9 @@ namespace RewardPointsSystem.Domain.Entities.Products
         public DateTime LastRestocked { get; set; }
         public DateTime LastUpdated { get; set; }
 
+        // Navigation Properties
+        public virtual Product Product { get; set; }
+
         public InventoryItem()
         {
             Id = Guid.NewGuid();

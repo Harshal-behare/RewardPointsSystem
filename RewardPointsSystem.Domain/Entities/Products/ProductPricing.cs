@@ -23,6 +23,9 @@ namespace RewardPointsSystem.Domain.Entities.Products
         public DateTime? EffectiveTo { get; set; }
         public bool IsActive { get; set; }
 
+        // Navigation Properties
+        public virtual Product Product { get; set; }
+
         public ProductPricing()
         {
             Id = Guid.NewGuid();

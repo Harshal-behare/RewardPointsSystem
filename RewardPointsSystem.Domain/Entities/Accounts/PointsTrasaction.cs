@@ -1,5 +1,6 @@
-﻿using System;
+using System;
 using System.ComponentModel.DataAnnotations;
+using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Accounts
 {
@@ -42,6 +43,9 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         public string Description { get; set; }
 
         public DateTime Timestamp { get; set; }
+
+        // Navigation Properties
+        public virtual User User { get; set; }
 
         public PointsTransaction()
         {
