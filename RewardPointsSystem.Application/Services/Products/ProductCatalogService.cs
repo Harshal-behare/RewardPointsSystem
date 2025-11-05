@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Operations;
 using RewardPointsSystem.Application.DTOs;
@@ -33,6 +34,9 @@ namespace RewardPointsSystem.Application.Services.Products
             if (string.IsNullOrWhiteSpace(category))
                 throw new ArgumentException("Product category is required", nameof(category));
 
+            // Get or create system user for product creation
+            var systemUser = await GetOrCreateSystemUserAsync();
+
             var product = new Product
             {
                 Name = name.Trim(),
@@ -41,13 +45,37 @@ namespace RewardPointsSystem.Application.Services.Products
                 ImageUrl = "", // Default empty
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
-                CreatedBy = Guid.Empty // TODO: Get from current user context
+                CreatedBy = systemUser.Id
             };
 
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.SaveChangesAsync();
             
             return product;
+        }
+
+        private async Task<User> GetOrCreateSystemUserAsync()
+        {
+            // Try to find system user
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            
+            if (systemUser == null)
+            {
+                // Create system user
+                systemUser = new User
+                {
+                    Email = "system@rewardpoints.com",
+                    FirstName = "System",
+                    LastName = "Administrator",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                
+                await _unitOfWork.Users.AddAsync(systemUser);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            
+            return systemUser;
         }
 
         public async Task<Product> UpdateProductAsync(Guid id, ProductUpdateDto updates)

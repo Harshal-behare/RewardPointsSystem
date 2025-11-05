@@ -21,8 +21,8 @@ namespace RewardPointsSystem.Api.Configuration
             services.AddDbContext<RewardPointsDbContext>(options =>
                 options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
             
-            // Repository Layer - Using In-Memory for now (can be changed to EF repositories later)
-            services.AddScoped<IUnitOfWork, InMemoryUnitOfWork>();
+            // Repository Layer - Using EF Core with SQL Server
+            services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
             // Core/User Services
             services.AddScoped<IUserService, UserService>();

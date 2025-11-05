@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Application.DTOs;
 using RewardPointsSystem.Domain.Exceptions;
@@ -37,6 +38,9 @@ namespace RewardPointsSystem.Application.Services.Events
             if (date < DateTime.UtcNow.Date)
                 throw new InvalidEventDataException("Cannot create events in the past");
 
+            // Get or create system user for event creation
+            var systemUser = await GetOrCreateSystemUserAsync();
+
             var eventEntity = new Event
             {
                 Name = name.Trim(),
@@ -44,7 +48,7 @@ namespace RewardPointsSystem.Application.Services.Events
                 EventDate = date,
                 TotalPointsPool = pointsPool,
                 Status = EventStatus.Upcoming,
-                CreatedBy = Guid.Empty, // TODO: Get from current user context
+                CreatedBy = systemUser.Id,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -52,6 +56,30 @@ namespace RewardPointsSystem.Application.Services.Events
             await _unitOfWork.SaveChangesAsync();
             
             return eventEntity;
+        }
+
+        private async Task<User> GetOrCreateSystemUserAsync()
+        {
+            // Try to find system user
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            
+            if (systemUser == null)
+            {
+                // Create system user
+                systemUser = new User
+                {
+                    Email = "system@rewardpoints.com",
+                    FirstName = "System",
+                    LastName = "Administrator",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow
+                };
+                
+                await _unitOfWork.Users.AddAsync(systemUser);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            
+            return systemUser;
         }
 
         public async Task<Event> UpdateEventAsync(Guid id, UpdateEventDto updates)
