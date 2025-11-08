@@ -120,6 +120,11 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).IsRequired();
                 entity.Property(e => e.LastUpdatedAt).IsRequired();
 
+                // Check constraints for data integrity
+                entity.HasCheckConstraint("CK_PointsAccount_CurrentBalance", "[CurrentBalance] >= 0");
+                entity.HasCheckConstraint("CK_PointsAccount_TotalEarned", "[TotalEarned] >= 0");
+                entity.HasCheckConstraint("CK_PointsAccount_TotalRedeemed", "[TotalRedeemed] >= 0");
+
                 // Unique constraint on UserId
                 entity.HasIndex(e => e.UserId).IsUnique();
             });
@@ -135,6 +140,7 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.SourceId).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Timestamp).IsRequired();
+                entity.Property(e => e.BalanceAfter).IsRequired();
 
                 // Relationship with User
                 entity.HasOne(e => e.User)
@@ -142,8 +148,12 @@ namespace RewardPointsSystem.Infrastructure.Data
                     .HasForeignKey(e => e.UserId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // Index for querying transactions by user
-                entity.HasIndex(e => e.UserId);
+                // Composite index for balance reconciliation and audit trail
+                // Includes BalanceAfter and Points for covering index performance
+                entity.HasIndex(e => new { e.UserId, e.Timestamp })
+                    .IsDescending(false, true)
+                    .IncludeProperties(e => new { e.BalanceAfter, e.Points });
+                
                 entity.HasIndex(e => e.Timestamp);
             });
 
@@ -156,8 +166,14 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.EventDate).IsRequired();
                 entity.Property(e => e.Status).IsRequired().HasConversion<string>();
                 entity.Property(e => e.TotalPointsPool).IsRequired();
+                entity.Property(e => e.Location).HasMaxLength(500);
+                entity.Property(e => e.VirtualLink).HasMaxLength(1000);
+                entity.Property(e => e.BannerImageUrl).HasMaxLength(1000);
                 entity.Property(e => e.CreatedBy).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
+
+                // Check constraint for data integrity
+                entity.HasCheckConstraint("CK_Event_TotalPointsPool", "[TotalPointsPool] > 0");
 
                 // Relationship with User (Creator)
                 entity.HasOne(e => e.Creator)
@@ -243,6 +259,9 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.EffectiveFrom).IsRequired();
                 entity.Property(e => e.IsActive).IsRequired();
 
+                // Check constraint for data integrity
+                entity.HasCheckConstraint("CK_ProductPricing_PointsCost", "[PointsCost] > 0");
+
                 // Index for querying active pricing
                 entity.HasIndex(e => new { e.ProductId, e.IsActive });
                 entity.HasIndex(e => e.EffectiveFrom);
@@ -259,6 +278,10 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.LastRestocked).IsRequired();
                 entity.Property(e => e.LastUpdated).IsRequired();
 
+                // Check constraints for data integrity
+                entity.HasCheckConstraint("CK_InventoryItem_QuantityAvailable", "[QuantityAvailable] >= 0");
+                entity.HasCheckConstraint("CK_InventoryItem_QuantityReserved", "[QuantityReserved] >= 0");
+
                 // Unique constraint on ProductId
                 entity.HasIndex(e => e.ProductId).IsUnique();
             });
@@ -270,15 +293,27 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.UserId).IsRequired();
                 entity.Property(e => e.ProductId).IsRequired();
                 entity.Property(e => e.PointsSpent).IsRequired();
+                entity.Property(e => e.Quantity).IsRequired().HasDefaultValue(1);
                 entity.Property(e => e.Status).IsRequired().HasConversion<string>();
                 entity.Property(e => e.RequestedAt).IsRequired();
                 entity.Property(e => e.DeliveryNotes).HasMaxLength(1000);
+                entity.Property(e => e.RejectionReason).HasMaxLength(500);
+
+                // Check constraint for data integrity
+                entity.HasCheckConstraint("CK_Redemption_Quantity", "[Quantity] > 0");
+
+                // Relationship with User (Approver)
+                entity.HasOne(e => e.Approver)
+                    .WithMany()
+                    .HasForeignKey(e => e.ApprovedBy)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // Indexes
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ProductId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.RequestedAt);
+                entity.HasIndex(e => e.ApprovedBy);
             });
         }
     }

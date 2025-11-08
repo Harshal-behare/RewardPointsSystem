@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RewardPointsSystem.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using RewardPointsSystem.Infrastructure.Data;
 namespace RewardPointsSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardPointsDbContext))]
-    partial class RewardPointsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251108173939_EnhanceRedemptionTracking")]
+    partial class EnhanceRedemptionTracking
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -51,14 +54,7 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.HasIndex("UserId")
                         .IsUnique();
 
-                    b.ToTable("PointsAccounts", t =>
-                        {
-                            t.HasCheckConstraint("CK_PointsAccount_CurrentBalance", "[CurrentBalance] >= 0");
-
-                            t.HasCheckConstraint("CK_PointsAccount_TotalEarned", "[TotalEarned] >= 0");
-
-                            t.HasCheckConstraint("CK_PointsAccount_TotalRedeemed", "[TotalRedeemed] >= 0");
-                        });
+                    b.ToTable("PointsAccounts");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Accounts.PointsTransaction", b =>
@@ -202,10 +198,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("BannerImageUrl")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
-
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
 
@@ -223,23 +215,10 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.Property<DateTime>("EventDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Location")
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<int?>("MaxParticipants")
-                        .HasColumnType("int");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<DateTime?>("RegistrationEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("RegistrationStartDate")
-                        .HasColumnType("datetime2");
 
                     b.Property<string>("Status")
                         .IsRequired()
@@ -247,10 +226,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
 
                     b.Property<int>("TotalPointsPool")
                         .HasColumnType("int");
-
-                    b.Property<string>("VirtualLink")
-                        .HasMaxLength(1000)
-                        .HasColumnType("nvarchar(1000)");
 
                     b.HasKey("Id");
 
@@ -260,10 +235,7 @@ namespace RewardPointsSystem.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
-                    b.ToTable("Events", t =>
-                        {
-                            t.HasCheckConstraint("CK_Event_TotalPointsPool", "[TotalPointsPool] > 0");
-                        });
+                    b.ToTable("Events");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Events.EventParticipant", b =>
@@ -368,10 +340,7 @@ namespace RewardPointsSystem.Infrastructure.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Redemptions", t =>
-                        {
-                            t.HasCheckConstraint("CK_Redemption_Quantity", "[Quantity] > 0");
-                        });
+                    b.ToTable("Redemptions");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Products.InventoryItem", b =>
@@ -403,12 +372,7 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.HasIndex("ProductId")
                         .IsUnique();
 
-                    b.ToTable("InventoryItems", t =>
-                        {
-                            t.HasCheckConstraint("CK_InventoryItem_QuantityAvailable", "[QuantityAvailable] >= 0");
-
-                            t.HasCheckConstraint("CK_InventoryItem_QuantityReserved", "[QuantityReserved] >= 0");
-                        });
+                    b.ToTable("InventoryItems");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Products.Product", b =>
@@ -486,10 +450,7 @@ namespace RewardPointsSystem.Infrastructure.Migrations
 
                     b.HasIndex("ProductId", "IsActive");
 
-                    b.ToTable("ProductPricings", t =>
-                        {
-                            t.HasCheckConstraint("CK_ProductPricing_PointsCost", "[PointsCost] > 0");
-                        });
+                    b.ToTable("ProductPricings");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Accounts.PointsAccount", b =>
