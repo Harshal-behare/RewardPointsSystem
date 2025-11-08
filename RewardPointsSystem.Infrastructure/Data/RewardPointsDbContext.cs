@@ -130,8 +130,8 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.UserId).IsRequired();
                 entity.Property(e => e.Points).IsRequired();
-                entity.Property(e => e.Type).IsRequired().HasConversion<string>();
-                entity.Property(e => e.Source).IsRequired().HasConversion<string>();
+                entity.Property(e => e.TransactionType).IsRequired().HasConversion<string>();
+                entity.Property(e => e.TransactionSource).IsRequired().HasConversion<string>();
                 entity.Property(e => e.SourceId).IsRequired();
                 entity.Property(e => e.Description).HasMaxLength(500);
                 entity.Property(e => e.Timestamp).IsRequired();
@@ -182,10 +182,14 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.EventId).IsRequired();
                 entity.Property(e => e.UserId).IsRequired();
+                entity.Property(e => e.AttendanceStatus).IsRequired().HasConversion<string>();
                 entity.Property(e => e.RegisteredAt).IsRequired();
 
                 // Unique constraint - a user can only participate once per event
                 entity.HasIndex(e => new { e.EventId, e.UserId }).IsUnique();
+                
+                // Index on attendance status for reporting
+                entity.HasIndex(e => e.AttendanceStatus);
             });
 
             // Configure Product Entity

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RewardPointsSystem.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using RewardPointsSystem.Infrastructure.Data;
 namespace RewardPointsSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardPointsDbContext))]
-    partial class RewardPointsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251108141605_RenamePositionToEventRankAndTransactionColumns")]
+    partial class RenamePositionToEventRankAndTransactionColumns
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -235,18 +238,11 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("AttendanceStatus")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
                     b.Property<DateTime?>("AwardedAt")
                         .HasColumnType("datetime2");
 
                     b.Property<Guid?>("AwardedBy")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateTime?>("CheckedInAt")
-                        .HasColumnType("datetime2");
 
                     b.Property<Guid>("EventId")
                         .HasColumnType("uniqueidentifier");
@@ -264,8 +260,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("AttendanceStatus");
 
                     b.HasIndex("UserId");
 
