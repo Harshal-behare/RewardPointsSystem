@@ -21,7 +21,9 @@ namespace RewardPointsSystem.Domain.Entities.Products
         public string Description { get; set; }
 
         [StringLength(100, ErrorMessage = "Category cannot exceed 100 characters")]
-        public string Category { get; set; } // "Electronics", "Gift Cards",  "Merchandise", "OfficeSupplies","Other"
+        public string Category { get; set; } // "Electronics", "Gift Cards",  "Merchandise", "OfficeSupplies","Other" - Deprecated, use CategoryId
+
+        public Guid? CategoryId { get; set; }
 
         [Url(ErrorMessage = "Invalid URL format")]
         [StringLength(500, ErrorMessage = "Image URL cannot exceed 500 characters")]
@@ -35,6 +37,7 @@ namespace RewardPointsSystem.Domain.Entities.Products
 
         // Navigation Properties
         public virtual User Creator { get; set; }
+        public virtual ProductCategory ProductCategory { get; set; }
         public virtual ICollection<ProductPricing> PricingHistory { get; set; }
         public virtual InventoryItem Inventory { get; set; }
         public virtual ICollection<Redemption> Redemptions { get; set; }

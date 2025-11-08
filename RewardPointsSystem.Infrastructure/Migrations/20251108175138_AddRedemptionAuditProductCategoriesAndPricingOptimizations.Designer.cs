@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RewardPointsSystem.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using RewardPointsSystem.Infrastructure.Data;
 namespace RewardPointsSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardPointsDbContext))]
-    partial class RewardPointsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251108175138_AddRedemptionAuditProductCategoriesAndPricingOptimizations")]
+    partial class AddRedemptionAuditProductCategoriesAndPricingOptimizations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -43,15 +46,10 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.Property<int>("TotalRedeemed")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UpdatedBy");
 
                     b.HasIndex("UserId")
                         .IsUnique();
@@ -172,15 +170,10 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("Users");
                 });
@@ -416,15 +409,10 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.Property<int>("ReorderLevel")
                         .HasColumnType("int");
 
-                    b.Property<Guid?>("UpdatedBy")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId")
                         .IsUnique();
-
-                    b.HasIndex("UpdatedBy");
 
                     b.ToTable("InventoryItems", t =>
                         {
@@ -556,11 +544,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Accounts.PointsAccount", b =>
                 {
-                    b.HasOne("RewardPointsSystem.Domain.Entities.Core.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("RewardPointsSystem.Domain.Entities.Core.User", "User")
                         .WithOne("PointsAccount")
                         .HasForeignKey("RewardPointsSystem.Domain.Entities.Accounts.PointsAccount", "UserId")
@@ -579,14 +562,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.User", b =>
-                {
-                    b.HasOne("RewardPointsSystem.Domain.Entities.Core.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.UserRole", b =>
@@ -678,11 +653,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .HasForeignKey("RewardPointsSystem.Domain.Entities.Products.InventoryItem", "ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.HasOne("RewardPointsSystem.Domain.Entities.Core.User", null)
-                        .WithMany()
-                        .HasForeignKey("UpdatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
 
                     b.Navigation("Product");
                 });

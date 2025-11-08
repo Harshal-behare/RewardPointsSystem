@@ -4,6 +4,15 @@ using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Events
 {
+    public enum AttendanceStatus
+    {
+        Registered,
+        CheckedIn,
+        Attended,
+        NoShow,
+        Cancelled
+    }
+
     /// <summary>
     /// Represents a user's participation in an event
     /// </summary>
@@ -20,10 +29,14 @@ namespace RewardPointsSystem.Domain.Entities.Events
         [Range(0, int.MaxValue, ErrorMessage = "Points awarded cannot be negative")]
         public int? PointsAwarded { get; set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "Position must be a positive number")]
-        public int? Position { get; set; }
+        [Range(1, int.MaxValue, ErrorMessage = "Event rank must be a positive number")]
+        public int? EventRank { get; set; }
+
+        [Required(ErrorMessage = "Attendance status is required")]
+        public AttendanceStatus AttendanceStatus { get; set; }
 
         public DateTime RegisteredAt { get; set; }
+        public DateTime? CheckedInAt { get; set; }
         public DateTime? AwardedAt { get; set; }
         public Guid? AwardedBy { get; set; }
 
@@ -35,6 +48,7 @@ namespace RewardPointsSystem.Domain.Entities.Events
         {
             Id = Guid.NewGuid();
             RegisteredAt = DateTime.UtcNow;
+            AttendanceStatus = AttendanceStatus.Registered;
         }
     }
 }

@@ -25,6 +25,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
 
         public DateTime CreatedAt { get; set; }
         public DateTime LastUpdatedAt { get; set; }
+        public Guid? UpdatedBy { get; set; }
 
         // Navigation Properties
         public virtual User User { get; set; }

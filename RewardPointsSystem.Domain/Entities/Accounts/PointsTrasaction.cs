@@ -4,13 +4,13 @@ using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Accounts
 {
-    public enum TransactionType
+    public enum TransactionCategory
     {
         Earned,
         Redeemed
     }
 
-    public enum SourceType
+    public enum TransactionOrigin
     {
         Event,
         Redemption
@@ -31,10 +31,10 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         public int Points { get; set; }
 
         [Required(ErrorMessage = "Transaction type is required")]
-        public TransactionType Type { get; set; }
+        public TransactionCategory TransactionType { get; set; }
 
-        [Required(ErrorMessage = "Source type is required")]
-        public SourceType Source { get; set; }
+        [Required(ErrorMessage = "Transaction source is required")]
+        public TransactionOrigin TransactionSource { get; set; }
 
         [Required(ErrorMessage = "Source ID is required")]
         public Guid SourceId { get; set; }
@@ -43,6 +43,10 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         public string Description { get; set; }
 
         public DateTime Timestamp { get; set; }
+
+        [Required(ErrorMessage = "Balance after transaction is required")]
+        [Range(0, int.MaxValue, ErrorMessage = "Balance after cannot be negative")]
+        public int BalanceAfter { get; set; }
 
         // Navigation Properties
         public virtual User User { get; set; }

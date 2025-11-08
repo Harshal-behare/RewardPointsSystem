@@ -7,10 +7,16 @@ namespace RewardPointsSystem.Domain.Entities.Events
 {
     public enum EventStatus
     {
-        Upcoming,
-        Active,
+        Draft,
+        Published,
+        RegistrationOpen,
+        RegistrationClosed,
+        InProgress,
         Completed,
-        Cancelled
+        Cancelled,
+        // Legacy statuses for backward compatibility
+        Upcoming = Published,
+        Active = InProgress
     }
 
     /// <summary>
@@ -36,6 +42,21 @@ namespace RewardPointsSystem.Domain.Entities.Events
         [Range(0, int.MaxValue, ErrorMessage = "Total points pool cannot be negative")]
         public int TotalPointsPool { get; set; }
 
+        [Range(1, int.MaxValue, ErrorMessage = "Max participants must be at least 1")]
+        public int? MaxParticipants { get; set; }
+
+        public DateTime? RegistrationStartDate { get; set; }
+        public DateTime? RegistrationEndDate { get; set; }
+
+        [StringLength(500, ErrorMessage = "Location cannot exceed 500 characters")]
+        public string? Location { get; set; }
+
+        [StringLength(1000, ErrorMessage = "Virtual link cannot exceed 1000 characters")]
+        public string? VirtualLink { get; set; }
+
+        [StringLength(1000, ErrorMessage = "Banner image URL cannot exceed 1000 characters")]
+        public string? BannerImageUrl { get; set; }
+
         [Required(ErrorMessage = "Created by user ID is required")]
         public Guid CreatedBy { get; set; }
 
@@ -49,7 +70,7 @@ namespace RewardPointsSystem.Domain.Entities.Events
         public Event()
         {
             Id = Guid.NewGuid();
-            Status = EventStatus.Upcoming;
+            Status = EventStatus.Draft;
             CreatedAt = DateTime.UtcNow;
             Participants = new HashSet<EventParticipant>();
         }

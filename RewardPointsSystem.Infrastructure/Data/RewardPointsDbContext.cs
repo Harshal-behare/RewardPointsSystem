@@ -32,6 +32,7 @@ namespace RewardPointsSystem.Infrastructure.Data
 
         // Product Entities
         public DbSet<Product> Products { get; set; }
+        public DbSet<ProductCategory> ProductCategories { get; set; }
         public DbSet<ProductPricing> ProductPricings { get; set; }
         public DbSet<InventoryItem> InventoryItems { get; set; }
 
@@ -51,6 +52,12 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.IsActive).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
+
+                // Self-referencing foreign key for UpdatedBy
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UpdatedBy)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // Unique constraint on Email
                 entity.HasIndex(e => e.Email).IsUnique();
@@ -124,6 +131,12 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasCheckConstraint("CK_PointsAccount_CurrentBalance", "[CurrentBalance] >= 0");
                 entity.HasCheckConstraint("CK_PointsAccount_TotalEarned", "[TotalEarned] >= 0");
                 entity.HasCheckConstraint("CK_PointsAccount_TotalRedeemed", "[TotalRedeemed] >= 0");
+
+                // Foreign key for UpdatedBy
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UpdatedBy)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // Unique constraint on UserId
                 entity.HasIndex(e => e.UserId).IsUnique();
@@ -208,6 +221,21 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasIndex(e => e.AttendanceStatus);
             });
 
+            // Configure ProductCategory Entity
+            modelBuilder.Entity<ProductCategory>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Description).HasMaxLength(500);
+                entity.Property(e => e.DisplayOrder).IsRequired();
+                entity.Property(e => e.IsActive).IsRequired();
+
+                // Unique constraint on Name
+                entity.HasIndex(e => e.Name).IsUnique();
+                entity.HasIndex(e => e.DisplayOrder);
+                entity.HasIndex(e => e.IsActive);
+            });
+
             // Configure Product Entity
             modelBuilder.Entity<Product>(entity =>
             {
@@ -225,6 +253,12 @@ namespace RewardPointsSystem.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.CreatedBy)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                // Relationship with ProductCategory
+                entity.HasOne(e => e.ProductCategory)
+                    .WithMany(pc => pc.Products)
+                    .HasForeignKey(e => e.CategoryId)
+                    .OnDelete(DeleteBehavior.SetNull);
 
                 // One-to-Many with ProductPricing
                 entity.HasMany(e => e.PricingHistory)
@@ -247,6 +281,7 @@ namespace RewardPointsSystem.Infrastructure.Data
                 // Indexes
                 entity.HasIndex(e => e.Name);
                 entity.HasIndex(e => e.Category);
+                entity.HasIndex(e => e.CategoryId);
                 entity.HasIndex(e => e.IsActive);
             });
 
@@ -262,8 +297,11 @@ namespace RewardPointsSystem.Infrastructure.Data
                 // Check constraint for data integrity
                 entity.HasCheckConstraint("CK_ProductPricing_PointsCost", "[PointsCost] > 0");
 
-                // Index for querying active pricing
-                entity.HasIndex(e => new { e.ProductId, e.IsActive });
+                // Composite index for optimal current price queries
+                // Optimizes: SELECT * FROM ProductPricings WHERE ProductId = @id AND IsActive = 1 ORDER BY EffectiveFrom DESC
+                entity.HasIndex(e => new { e.ProductId, e.IsActive, e.EffectiveFrom })
+                    .IsDescending(false, false, true);
+                
                 entity.HasIndex(e => e.EffectiveFrom);
             });
 
@@ -281,6 +319,12 @@ namespace RewardPointsSystem.Infrastructure.Data
                 // Check constraints for data integrity
                 entity.HasCheckConstraint("CK_InventoryItem_QuantityAvailable", "[QuantityAvailable] >= 0");
                 entity.HasCheckConstraint("CK_InventoryItem_QuantityReserved", "[QuantityReserved] >= 0");
+
+                // Foreign key for UpdatedBy
+                entity.HasOne<User>()
+                    .WithMany()
+                    .HasForeignKey(e => e.UpdatedBy)
+                    .OnDelete(DeleteBehavior.NoAction);
 
                 // Unique constraint on ProductId
                 entity.HasIndex(e => e.ProductId).IsUnique();
@@ -308,12 +352,19 @@ namespace RewardPointsSystem.Infrastructure.Data
                     .HasForeignKey(e => e.ApprovedBy)
                     .OnDelete(DeleteBehavior.NoAction);
 
+                // Relationship with User (Processor)
+                entity.HasOne(e => e.Processor)
+                    .WithMany()
+                    .HasForeignKey(e => e.ProcessedBy)
+                    .OnDelete(DeleteBehavior.NoAction);
+
                 // Indexes
                 entity.HasIndex(e => e.UserId);
                 entity.HasIndex(e => e.ProductId);
                 entity.HasIndex(e => e.Status);
                 entity.HasIndex(e => e.RequestedAt);
                 entity.HasIndex(e => e.ApprovedBy);
+                entity.HasIndex(e => e.ProcessedBy);
             });
         }
     }
