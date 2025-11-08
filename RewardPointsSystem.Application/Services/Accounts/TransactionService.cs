@@ -22,15 +22,23 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
+            // Get current balance to calculate balance after
+            var account = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            if (account == null)
+                throw new InvalidOperationException($"Points account not found for user {userId}");
+
+            var balanceAfter = account.CurrentBalance + points;
+
             var transaction = new PointsTransaction
             {
                 UserId = userId,
                 Points = points,
-                Type = TransactionType.Earned,
-                Source = SourceType.Event,
+                TransactionType = TransactionCategory.Earned,
+                TransactionSource = TransactionOrigin.Event,
                 SourceId = eventId,
                 Description = description,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                BalanceAfter = balanceAfter
             };
 
             await _unitOfWork.Transactions.AddAsync(transaction);
@@ -44,15 +52,23 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
+            // Get current balance to calculate balance after
+            var account = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            if (account == null)
+                throw new InvalidOperationException($"Points account not found for user {userId}");
+
+            var balanceAfter = account.CurrentBalance - points;
+
             var transaction = new PointsTransaction
             {
                 UserId = userId,
                 Points = -points, // Negative for redeemed points
-                Type = TransactionType.Redeemed,
-                Source = SourceType.Redemption,
+                TransactionType = TransactionCategory.Redeemed,
+                TransactionSource = TransactionOrigin.Redemption,
                 SourceId = redemptionId,
                 Description = description,
-                Timestamp = DateTime.UtcNow
+                Timestamp = DateTime.UtcNow,
+                BalanceAfter = balanceAfter
             };
 
             await _unitOfWork.Transactions.AddAsync(transaction);

@@ -34,7 +34,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             _transactionService = transactionService;
         }
 
-        public async Task<EventRewardResult> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int position, Guid awardedBy)
+        public async Task<EventRewardResult> ProcessEventRewardAsync(Guid eventId, Guid userId, int points, int eventRank, Guid awardedBy)
         {
             try
             {
@@ -62,7 +62,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                     throw new InvalidOperationException($"User {userId} has already been awarded points for event {eventId}");
 
                 // 4. Award points (PointsAwardingService)
-                await _pointsAwardingService.AwardPointsAsync(eventId, userId, points, position);
+                await _pointsAwardingService.AwardPointsAsync(eventId, userId, points, eventRank);
 
                 // 5. Update balance (PointsAccountService)
                 // Ensure account exists
@@ -74,7 +74,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
 
                 // 6. Record transaction (TransactionService)
                 await _transactionService.RecordEarnedPointsAsync(userId, points, eventId, 
-                    $"Event reward - Position {position} in {eventObj.Name}");
+                    $"Event reward - Rank {eventRank} in {eventObj.Name}");
 
                 // Get updated participation record
                 var participants = await _participationService.GetEventParticipantsAsync(eventId);
@@ -87,7 +87,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 return new EventRewardResult
                 {
                     Success = true,
-                    Message = $"Successfully awarded {points} points for position {position} in {eventObj.Name}",
+                    Message = $"Successfully awarded {points} points for rank {eventRank} in {eventObj.Name}",
                     EventName = eventObj.Name,
                     Participation = participation,
                     Transaction = transaction

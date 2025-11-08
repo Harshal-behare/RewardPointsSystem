@@ -627,7 +627,7 @@ namespace RewardPointsSystem.Api
                 
                 foreach (var tx in transactions.Take(10))
                 {
-                    Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd} | {tx.Type} | {tx.Points} pts | {tx.Description}");
+                    Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd} | {tx.TransactionType} | {tx.Points} pts | {tx.Description}");
                 }
             }
             catch
@@ -714,7 +714,7 @@ namespace RewardPointsSystem.Api
                     Console.WriteLine($"\n{user.FirstName} {user.LastName} ({user.Email}):");
                     foreach (var tx in transactions)
                     {
-                        Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd HH:mm} | {tx.Type} | {tx.Points} pts | {tx.Description}");
+                        Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd HH:mm} | {tx.TransactionType} | {tx.Points} pts | {tx.Description}");
                     }
                 }
             }

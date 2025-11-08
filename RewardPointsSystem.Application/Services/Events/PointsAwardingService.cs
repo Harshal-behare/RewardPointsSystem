@@ -17,7 +17,7 @@ namespace RewardPointsSystem.Application.Services.Events
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int position)
+        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int eventRank)
         {
             if (points <= 0)
                 throw new ArgumentException("Points must be greater than zero", nameof(points));
@@ -38,7 +38,7 @@ namespace RewardPointsSystem.Application.Services.Events
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
             participant.PointsAwarded = points;
-            participant.Position = position;
+            participant.EventRank = eventRank;
             participant.AwardedAt = DateTime.UtcNow;
 
             await _unitOfWork.EventParticipants.UpdateAsync(participant);
@@ -62,7 +62,7 @@ namespace RewardPointsSystem.Application.Services.Events
 
             foreach (var winner in winners)
             {
-                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.Position);
+                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.EventRank);
             }
         }
 

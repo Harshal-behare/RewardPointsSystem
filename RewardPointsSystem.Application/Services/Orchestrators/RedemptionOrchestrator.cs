@@ -57,8 +57,18 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 if (!isInStock)
                     throw new InvalidOperationException($"Product {productId} is out of stock");
 
-                // 5. Reserve stock (InventoryService)
-                await _inventoryService.ReserveStockAsync(productId, 1);
+                // 4.1 Validate requested quantity against available inventory
+                int quantity = 1; // Default quantity, could be parameterized
+                var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == productId);
+                if (inventory == null)
+                    throw new InvalidOperationException($"Inventory not found for product {productId}");
+                
+                int availableQuantity = inventory.QuantityAvailable - inventory.QuantityReserved;
+                if (quantity > availableQuantity)
+                    throw new InvalidOperationException($"Insufficient quantity available. Requested: {quantity}, Available: {availableQuantity}");
+
+                // 5. Reserve stock (InventoryService) - using quantity from redemption
+                await _inventoryService.ReserveStockAsync(productId, quantity);
 
                 // 6. Deduct points (PointsAccountService)
                 await _accountService.DeductPointsAsync(userId, pointsCost);
@@ -69,6 +79,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                     UserId = userId,
                     ProductId = productId,
                     PointsSpent = pointsCost,
+                    Quantity = quantity,
                     Status = RedemptionStatus.Pending,
                     RequestedAt = DateTime.UtcNow
                 };
@@ -142,8 +153,8 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status == RedemptionStatus.Cancelled)
                 throw new InvalidOperationException("Redemption is already cancelled");
 
-            // Release reserved stock
-            await _inventoryService.ReleaseReservationAsync(redemption.ProductId, 1);
+            // Release reserved stock using the actual quantity from redemption
+            await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
 
             // Refund points
             await _accountService.AddPointsAsync(redemption.UserId, redemption.PointsSpent);

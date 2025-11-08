@@ -220,7 +220,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             var transactions = await _transactionService.GetUserTransactionsAsync(user.Id);
             transactions.Should().HaveCount(1);
             transactions.First().Points.Should().Be(100);
-            transactions.First().Type.Should().Be(TransactionType.Earned);
+            transactions.First().TransactionType.Should().Be(TransactionCategory.Earned);
         }
 
 
@@ -240,8 +240,8 @@ namespace RewardPointsSystem.Tests.UnitTests
 
             // Assert
             transactions.Should().HaveCount(3);
-            transactions.Where(t => t.Type == TransactionType.Earned).Should().HaveCount(2);
-            transactions.Where(t => t.Type == TransactionType.Redeemed).Should().HaveCount(1);
+            transactions.Where(t => t.TransactionType == TransactionCategory.Earned).Should().HaveCount(2);
+            transactions.Where(t => t.TransactionType == TransactionCategory.Redeemed).Should().HaveCount(1);
         }
 
         [Fact]

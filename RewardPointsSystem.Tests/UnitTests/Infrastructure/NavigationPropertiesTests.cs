@@ -413,10 +413,11 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             {
                 UserId = user.Id,
                 Points = 100,
-                Type = TransactionType.Earned,
-                Source = SourceType.Event,
+                TransactionType = TransactionCategory.Earned,
+                TransactionSource = TransactionOrigin.Event,
                 SourceId = Guid.NewGuid(),
                 Description = "Test transaction",
+                BalanceAfter = 100,
                 User = user
             };
 
