@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 
-namespace RewardPointsSystem.Application.Services.Users
+namespace RewardPointsSystem.Application.Services.Core
 {
     public class RoleService : IRoleService
     {

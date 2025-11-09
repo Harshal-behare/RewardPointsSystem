@@ -5,7 +5,7 @@ using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 
-namespace RewardPointsSystem.Application.Services.Users
+namespace RewardPointsSystem.Application.Services.Core
 {
     public class UserService : IUserService
     {

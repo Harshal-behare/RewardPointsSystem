@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Infrastructure.Repositories;
-using RewardPointsSystem.Application.Services.Users;
+using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Products;
