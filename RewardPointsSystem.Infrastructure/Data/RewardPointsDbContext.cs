@@ -23,8 +23,8 @@ namespace RewardPointsSystem.Infrastructure.Data
         public DbSet<UserRole> UserRoles { get; set; }
 
         // Account Entities
-        public DbSet<PointsAccount> PointsAccounts { get; set; }
-        public DbSet<PointsTransaction> PointsTransactions { get; set; }
+        public DbSet<UserPointsAccount> UserPointsAccounts { get; set; }
+        public DbSet<UserPointsTransaction> UserPointsTransactions { get; set; }
 
         // Event Entities
         public DbSet<Event> Events { get; set; }
@@ -62,10 +62,10 @@ namespace RewardPointsSystem.Infrastructure.Data
                 // Unique constraint on Email
                 entity.HasIndex(e => e.Email).IsUnique();
 
-                // One-to-One relationship with PointsAccount
-                entity.HasOne(e => e.PointsAccount)
+                // One-to-One relationship with UserPointsAccount
+                entity.HasOne(e => e.UserPointsAccount)
                     .WithOne(p => p.User)
-                    .HasForeignKey<PointsAccount>(p => p.UserId)
+                    .HasForeignKey<UserPointsAccount>(p => p.UserId)
                     .OnDelete(DeleteBehavior.Cascade);
 
                 // One-to-Many with UserRoles
@@ -116,9 +116,10 @@ namespace RewardPointsSystem.Infrastructure.Data
                 // Relationships configured in User and Role entities
             });
 
-            // Configure PointsAccount Entity
-            modelBuilder.Entity<PointsAccount>(entity =>
+            // Configure UserPointsAccount Entity
+            modelBuilder.Entity<UserPointsAccount>(entity =>
             {
+                entity.ToTable("UserPointsAccounts");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.UserId).IsRequired();
                 entity.Property(e => e.CurrentBalance).IsRequired();
@@ -128,9 +129,9 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.LastUpdatedAt).IsRequired();
 
                 // Check constraints for data integrity
-                entity.HasCheckConstraint("CK_PointsAccount_CurrentBalance", "[CurrentBalance] >= 0");
-                entity.HasCheckConstraint("CK_PointsAccount_TotalEarned", "[TotalEarned] >= 0");
-                entity.HasCheckConstraint("CK_PointsAccount_TotalRedeemed", "[TotalRedeemed] >= 0");
+                entity.HasCheckConstraint("CK_UserPointsAccount_CurrentBalance", "[CurrentBalance] >= 0");
+                entity.HasCheckConstraint("CK_UserPointsAccount_TotalEarned", "[TotalEarned] >= 0");
+                entity.HasCheckConstraint("CK_UserPointsAccount_TotalRedeemed", "[TotalRedeemed] >= 0");
 
                 // Foreign key for UpdatedBy
                 entity.HasOne<User>()
@@ -142,12 +143,13 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasIndex(e => e.UserId).IsUnique();
             });
 
-            // Configure PointsTransaction Entity
-            modelBuilder.Entity<PointsTransaction>(entity =>
+            // Configure UserPointsTransaction Entity
+            modelBuilder.Entity<UserPointsTransaction>(entity =>
             {
+                entity.ToTable("UserPointsTransactions");
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.UserId).IsRequired();
-                entity.Property(e => e.Points).IsRequired();
+                entity.Property(e => e.UserPoints).HasColumnName("UserPoints").IsRequired();
                 entity.Property(e => e.TransactionType).IsRequired().HasConversion<string>();
                 entity.Property(e => e.TransactionSource).IsRequired().HasConversion<string>();
                 entity.Property(e => e.SourceId).IsRequired();
@@ -162,10 +164,10 @@ namespace RewardPointsSystem.Infrastructure.Data
                     .OnDelete(DeleteBehavior.Restrict);
 
                 // Composite index for balance reconciliation and audit trail
-                // Includes BalanceAfter and Points for covering index performance
+                // Includes BalanceAfter and UserPoints for covering index performance
                 entity.HasIndex(e => new { e.UserId, e.Timestamp })
                     .IsDescending(false, true)
-                    .IncludeProperties(e => new { e.BalanceAfter, e.Points });
+                    .IncludeProperties(e => new { e.BalanceAfter, e.UserPoints });
                 
                 entity.HasIndex(e => e.Timestamp);
             });

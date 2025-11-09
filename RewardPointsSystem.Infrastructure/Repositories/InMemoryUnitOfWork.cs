@@ -16,8 +16,8 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private readonly Lazy<IRepository<UserRole>> _userRoles;
         private readonly Lazy<IRepository<Event>> _events;
         private readonly Lazy<IRepository<EventParticipant>> _eventParticipants;
-        private readonly Lazy<IRepository<PointsAccount>> _pointsAccounts;
-        private readonly Lazy<IRepository<PointsTransaction>> _pointsTransactions;
+        private readonly Lazy<IRepository<UserPointsAccount>> _userPointsAccounts;
+        private readonly Lazy<IRepository<UserPointsTransaction>> _userPointsTransactions;
         private readonly Lazy<IRepository<Product>> _products;
         private readonly Lazy<IRepository<ProductPricing>> _productPricings;
         private readonly Lazy<IRepository<InventoryItem>> _inventoryItems;
@@ -33,8 +33,8 @@ namespace RewardPointsSystem.Infrastructure.Repositories
             _userRoles = new Lazy<IRepository<UserRole>>(() => new InMemoryUserRoleRepository());
             _events = new Lazy<IRepository<Event>>(() => new InMemoryRepository<Event>());
             _eventParticipants = new Lazy<IRepository<EventParticipant>>(() => new InMemoryRepository<EventParticipant>());
-            _pointsAccounts = new Lazy<IRepository<PointsAccount>>(() => new InMemoryRepository<PointsAccount>());
-            _pointsTransactions = new Lazy<IRepository<PointsTransaction>>(() => new InMemoryRepository<PointsTransaction>());
+            _userPointsAccounts = new Lazy<IRepository<UserPointsAccount>>(() => new InMemoryRepository<UserPointsAccount>());
+            _userPointsTransactions = new Lazy<IRepository<UserPointsTransaction>>(() => new InMemoryRepository<UserPointsTransaction>());
             _products = new Lazy<IRepository<Product>>(() => new InMemoryRepository<Product>());
             _productPricings = new Lazy<IRepository<ProductPricing>>(() => new InMemoryRepository<ProductPricing>());
             _inventoryItems = new Lazy<IRepository<InventoryItem>>(() => new InMemoryRepository<InventoryItem>());
@@ -51,8 +51,8 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         public IRepository<EventParticipant> EventParticipants => _eventParticipants.Value;
 
         // Account repositories
-        public IRepository<PointsAccount> PointsAccounts => _pointsAccounts.Value;
-        public IRepository<PointsTransaction> Transactions => _pointsTransactions.Value;
+        public IRepository<UserPointsAccount> UserPointsAccounts => _userPointsAccounts.Value;
+        public IRepository<UserPointsTransaction> UserPointsTransactions => _userPointsTransactions.Value;
 
         // Product repositories
         public IRepository<Product> Products => _products.Value;

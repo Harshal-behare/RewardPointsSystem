@@ -22,8 +22,8 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private IRepository<UserRole> _userRoles;
         private IRepository<Event> _events;
         private IRepository<EventParticipant> _eventParticipants;
-        private IRepository<PointsAccount> _pointsAccounts;
-        private IRepository<PointsTransaction> _pointsTransactions;
+        private IRepository<UserPointsAccount> _userPointsAccounts;
+        private IRepository<UserPointsTransaction> _userPointsTransactions;
         private IRepository<Product> _products;
         private IRepository<ProductPricing> _productPricings;
         private IRepository<InventoryItem> _inventoryItems;
@@ -44,8 +44,8 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         public IRepository<EventParticipant> EventParticipants => _eventParticipants ??= new EfRepository<EventParticipant>(_context);
 
         // Account repositories
-        public IRepository<PointsAccount> PointsAccounts => _pointsAccounts ??= new EfRepository<PointsAccount>(_context);
-        public IRepository<PointsTransaction> Transactions => _pointsTransactions ??= new EfRepository<PointsTransaction>(_context);
+        public IRepository<UserPointsAccount> UserPointsAccounts => _userPointsAccounts ??= new EfRepository<UserPointsAccount>(_context);
+        public IRepository<UserPointsTransaction> UserPointsTransactions => _userPointsTransactions ??= new EfRepository<UserPointsTransaction>(_context);
 
         // Product repositories
         public IRepository<Product> Products => _products ??= new EfRepository<Product>(_context);
