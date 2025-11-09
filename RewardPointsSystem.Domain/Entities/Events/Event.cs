@@ -254,7 +254,7 @@ namespace RewardPointsSystem.Domain.Entities.Events
         {
             var awardedPoints = _participants
                 .Where(p => p.PointsAwarded.HasValue)
-                .Sum(p => p.PointsAwarded.Value);
+                .Sum(p => p.PointsAwarded!.Value);
 
             return TotalPointsPool - awardedPoints;
         }

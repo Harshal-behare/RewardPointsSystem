@@ -30,13 +30,7 @@ namespace RewardPointsSystem.Application.Services.Users
             if (existingAssignment != null)
                 throw new InvalidOperationException($"User is already assigned to this role");
 
-            var userRole = new UserRole
-            {
-                UserId = userId,
-                RoleId = roleId,
-                AssignedAt = DateTime.UtcNow,
-                AssignedBy = assignedBy
-            };
+            var userRole = UserRole.Assign(userId, roleId, assignedBy);
 
             await _unitOfWork.UserRoles.AddAsync(userRole);
             await _unitOfWork.SaveChangesAsync();

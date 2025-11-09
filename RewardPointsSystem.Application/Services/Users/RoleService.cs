@@ -26,13 +26,7 @@ namespace RewardPointsSystem.Application.Services.Users
             if (existingRole != null)
                 throw new InvalidOperationException($"Role with name {name} already exists");
 
-            var role = new Role
-            {
-                Name = name,
-                Description = description,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow
-            };
+            var role = Role.Create(name, description);
 
             await _unitOfWork.Roles.AddAsync(role);
             await _unitOfWork.SaveChangesAsync();
@@ -61,7 +55,7 @@ namespace RewardPointsSystem.Application.Services.Users
             if (role == null)
                 throw new InvalidOperationException($"Role with ID {id} not found");
 
-            role.Description = description;
+            role.UpdateInfo(role.Name, description);
             await _unitOfWork.Roles.UpdateAsync(role);
             await _unitOfWork.SaveChangesAsync();
         }

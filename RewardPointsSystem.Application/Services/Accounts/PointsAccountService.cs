@@ -28,15 +28,7 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (existingAccount != null)
                 throw new InvalidUserPointsOperationException($"Account already exists for user {userId}");
 
-            var account = new UserPointsAccount
-            {
-                UserId = userId,
-                CurrentBalance = 0,
-                TotalEarned = 0,
-                TotalRedeemed = 0,
-                CreatedAt = DateTime.UtcNow,
-                LastUpdatedAt = DateTime.UtcNow
-            };
+            var account = UserPointsAccount.CreateForUser(userId);
 
             await _unitOfWork.UserPointsAccounts.AddAsync(account);
             await _unitOfWork.SaveChangesAsync();
@@ -63,9 +55,7 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (account == null)
                 account = await CreateAccountAsync(userId);
 
-            account.CurrentBalance += userPoints;
-            account.TotalEarned += userPoints;
-            account.LastUpdatedAt = DateTime.UtcNow;
+            account.CreditPoints(userPoints, userId);
 
             await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
@@ -80,12 +70,7 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (account == null)
                 throw new UserPointsAccountNotFoundException(userId);
 
-            if (account.CurrentBalance < userPoints)
-                throw new InsufficientUserPointsBalanceException(userId, userPoints, account.CurrentBalance);
-
-            account.CurrentBalance -= userPoints;
-            account.TotalRedeemed += userPoints;
-            account.LastUpdatedAt = DateTime.UtcNow;
+            account.DebitPoints(userPoints, userId);
 
             await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();

@@ -29,12 +29,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (existingParticipation != null)
                 throw new InvalidOperationException($"User is already registered for this event");
 
-            var participant = new EventParticipant
-            {
-                EventId = eventId,
-                UserId = userId,
-                RegisteredAt = DateTime.UtcNow
-            };
+            var participant = EventParticipant.Register(eventId, userId);
 
             await _unitOfWork.EventParticipants.AddAsync(participant);
             await _unitOfWork.SaveChangesAsync();

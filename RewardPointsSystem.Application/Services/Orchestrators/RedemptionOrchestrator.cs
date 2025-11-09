@@ -74,15 +74,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 await _accountService.DeductUserPointsAsync(userId, pointsCost);
 
                 // 7. Record transaction (UserPointsTransactionService)
-                var redemption = new Redemption
-                {
-                    UserId = userId,
-                    ProductId = productId,
-                    PointsSpent = pointsCost,
-                    Quantity = quantity,
-                    Status = RedemptionStatus.Pending,
-                    RequestedAt = DateTime.UtcNow
-                };
+                var redemption = Redemption.Create(userId, productId, pointsCost, quantity);
 
                 await _unitOfWork.Redemptions.AddAsync(redemption);
                 await _unitOfWork.SaveChangesAsync();
@@ -120,8 +112,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Pending)
                 throw new InvalidOperationException($"Only pending redemptions can be approved. Current status: {redemption.Status}");
 
-            redemption.Status = RedemptionStatus.Approved;
-            redemption.ApprovedAt = DateTime.UtcNow;
+            redemption.Approve(Guid.Empty);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -134,9 +125,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Approved)
                 throw new InvalidOperationException($"Only approved redemptions can be delivered. Current status: {redemption.Status}");
 
-            redemption.Status = RedemptionStatus.Delivered;
-            redemption.DeliveredAt = DateTime.UtcNow;
-            redemption.DeliveryNotes = notes ?? "";
+            redemption.MarkAsDelivered(Guid.Empty, notes);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -163,7 +152,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
                 redemption.Id, $"Redemption cancellation refund - Redemption ID: {redemption.Id}");
 
-            redemption.Status = RedemptionStatus.Cancelled;
+            redemption.Cancel("User cancelled redemption");
             await _unitOfWork.SaveChangesAsync();
         }
     }

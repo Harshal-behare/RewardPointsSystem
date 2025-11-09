@@ -29,17 +29,13 @@ namespace RewardPointsSystem.Application.Services.Accounts
 
             var balanceAfter = account.CurrentBalance + userPoints;
 
-            var transaction = new UserPointsTransaction
-            {
-                UserId = userId,
-                UserPoints = userPoints,
-                TransactionType = TransactionCategory.Earned,
-                TransactionSource = TransactionOrigin.Event,
-                SourceId = eventId,
-                Description = description,
-                Timestamp = DateTime.UtcNow,
-                BalanceAfter = balanceAfter
-            };
+            var transaction = UserPointsTransaction.CreateEarned(
+                userId,
+                userPoints,
+                TransactionOrigin.Event,
+                eventId,
+                balanceAfter,
+                description);
 
             await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
@@ -59,17 +55,12 @@ namespace RewardPointsSystem.Application.Services.Accounts
 
             var balanceAfter = account.CurrentBalance - userPoints;
 
-            var transaction = new UserPointsTransaction
-            {
-                UserId = userId,
-                UserPoints = -userPoints, // Negative for redeemed user points
-                TransactionType = TransactionCategory.Redeemed,
-                TransactionSource = TransactionOrigin.Redemption,
-                SourceId = redemptionId,
-                Description = description,
-                Timestamp = DateTime.UtcNow,
-                BalanceAfter = balanceAfter
-            };
+            var transaction = UserPointsTransaction.CreateRedeemed(
+                userId,
+                userPoints,
+                redemptionId,
+                balanceAfter,
+                description);
 
             await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();

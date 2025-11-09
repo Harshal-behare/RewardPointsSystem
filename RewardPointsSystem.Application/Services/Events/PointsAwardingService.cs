@@ -37,9 +37,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (totalAwarded + points > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
-            participant.PointsAwarded = points;
-            participant.EventRank = eventRank;
-            participant.AwardedAt = DateTime.UtcNow;
+            participant.AwardPoints(points, eventRank, eventEntity.CreatedBy);
 
             await _unitOfWork.EventParticipants.UpdateAsync(participant);
             await _unitOfWork.SaveChangesAsync();

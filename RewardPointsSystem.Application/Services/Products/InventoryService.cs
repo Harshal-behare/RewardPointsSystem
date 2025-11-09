@@ -41,15 +41,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (existingInventory != null)
                 throw new InvalidOperationException($"Inventory already exists for product {productId}");
 
-            var inventory = new InventoryItem
-            {
-                ProductId = productId,
-                QuantityAvailable = quantity,
-                QuantityReserved = 0,
-                ReorderLevel = reorderLevel,
-                LastRestocked = DateTime.UtcNow,
-                LastUpdated = DateTime.UtcNow
-            };
+            var inventory = InventoryItem.Create(productId, quantity, reorderLevel);
 
             await _unitOfWork.Inventory.AddAsync(inventory);
             await _unitOfWork.SaveChangesAsync();
@@ -68,9 +60,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (inventory == null)
                 throw new ArgumentException($"No inventory found for product {productId}", nameof(productId));
 
-            inventory.QuantityAvailable += quantity;
-            inventory.LastRestocked = DateTime.UtcNow;
-            inventory.LastUpdated = DateTime.UtcNow;
+            inventory.Restock(quantity, Guid.Empty);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -97,12 +87,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (inventory == null)
                 throw new ArgumentException($"No inventory found for product {productId}", nameof(productId));
 
-            if (inventory.QuantityAvailable < quantity)
-                throw new InvalidOperationException($"Insufficient stock. Available: {inventory.QuantityAvailable}, Requested: {quantity}");
-
-            inventory.QuantityAvailable -= quantity;
-            inventory.QuantityReserved += quantity;
-            inventory.LastUpdated = DateTime.UtcNow;
+            inventory.Reserve(quantity);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -118,12 +103,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (inventory == null)
                 throw new ArgumentException($"No inventory found for product {productId}", nameof(productId));
 
-            if (inventory.QuantityReserved < quantity)
-                throw new InvalidOperationException($"Cannot release more than reserved. Reserved: {inventory.QuantityReserved}, Requested: {quantity}");
-
-            inventory.QuantityAvailable += quantity;
-            inventory.QuantityReserved -= quantity;
-            inventory.LastUpdated = DateTime.UtcNow;
+            inventory.Release(quantity);
 
             await _unitOfWork.SaveChangesAsync();
         }

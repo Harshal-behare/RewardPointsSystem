@@ -18,26 +18,12 @@ namespace RewardPointsSystem.Application.Services.Users
 
         public async Task<User> CreateUserAsync(string email, string firstName, string lastName)
         {
-            if (string.IsNullOrWhiteSpace(email))
-                throw new InvalidUserDataException("Email is required");
-            if (string.IsNullOrWhiteSpace(firstName))
-                throw new InvalidUserDataException("First name is required");
-            if (string.IsNullOrWhiteSpace(lastName))
-                throw new InvalidUserDataException("Last name is required");
-
-            var existingUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == email);
+            var normalizedEmail = email?.Trim().ToLowerInvariant();
+            var existingUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == normalizedEmail);
             if (existingUser != null)
-                throw new DuplicateUserEmailException(email);
+                throw new DuplicateUserEmailException(email!);
 
-            var user = new User
-            {
-                Email = email,
-                FirstName = firstName,
-                LastName = lastName,
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
+            var user = User.Create(email, firstName, lastName);
 
             await _unitOfWork.Users.AddAsync(user);
             await _unitOfWork.SaveChangesAsync();
@@ -72,21 +58,19 @@ namespace RewardPointsSystem.Application.Services.Users
             if (user == null)
                 throw new UserNotFoundException(id);
 
-            if (!string.IsNullOrWhiteSpace(updates.Email) && updates.Email != user.Email)
+            var email = !string.IsNullOrWhiteSpace(updates.Email) ? updates.Email : user.Email;
+            var firstName = !string.IsNullOrWhiteSpace(updates.FirstName) ? updates.FirstName : user.FirstName;
+            var lastName = !string.IsNullOrWhiteSpace(updates.LastName) ? updates.LastName : user.LastName;
+
+            if (email != user.Email)
             {
-                var existingUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == updates.Email);
-                if (existingUser != null)
-                    throw new DuplicateUserEmailException(updates.Email);
-                user.Email = updates.Email;
+                var normalizedEmail = email.Trim().ToLowerInvariant();
+                var existingUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == normalizedEmail);
+                if (existingUser != null && existingUser.Id != id)
+                    throw new DuplicateUserEmailException(email);
             }
 
-            if (!string.IsNullOrWhiteSpace(updates.FirstName))
-                user.FirstName = updates.FirstName;
-
-            if (!string.IsNullOrWhiteSpace(updates.LastName))
-                user.LastName = updates.LastName;
-
-            user.UpdatedAt = DateTime.UtcNow;
+            user.UpdateInfo(email, firstName, lastName, id);
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
             
@@ -99,8 +83,7 @@ namespace RewardPointsSystem.Application.Services.Users
             if (user == null)
                 throw new UserNotFoundException(id);
 
-            user.IsActive = false;
-            user.UpdatedAt = DateTime.UtcNow;
+            user.Deactivate(id);
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
         }
