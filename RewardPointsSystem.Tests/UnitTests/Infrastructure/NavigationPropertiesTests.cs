@@ -25,7 +25,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         }
 
         [Fact]
-        public void User_PointsAccount_OneToOne_ShouldBeCorrectlyMapped()
+        public void User_UserPointsAccount_OneToOne_ShouldBeCorrectlyMapped()
         {
             // Arrange
             using var context = CreateContext();
@@ -37,13 +37,13 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
                 LastName = "Doe"
             };
 
-            var pointsAccount = new PointsAccount
+            var userPointsAccount = new UserPointsAccount
             {
                 UserId = user.Id,
                 User = user
             };
 
-            user.PointsAccount = pointsAccount;
+            user.UserPointsAccount = userPointsAccount;
 
             // Act
             context.Users.Add(user);
@@ -51,13 +51,13 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
 
             // Assert
             var savedUser = context.Users
-                .Include(u => u.PointsAccount)
+                .Include(u => u.UserPointsAccount)
                 .FirstOrDefault(u => u.Id == user.Id);
 
             savedUser.Should().NotBeNull();
-            savedUser!.PointsAccount.Should().NotBeNull();
-            savedUser.PointsAccount.UserId.Should().Be(user.Id);
-            savedUser.PointsAccount.User.Should().NotBeNull();
+            savedUser!.UserPointsAccount.Should().NotBeNull();
+            savedUser.UserPointsAccount.UserId.Should().Be(user.Id);
+            savedUser.UserPointsAccount.User.Should().NotBeNull();
         }
 
         [Fact]
@@ -397,7 +397,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         }
 
         [Fact]
-        public void PointsTransaction_User_ManyToOne_ShouldBeCorrectlyMapped()
+        public void UserPointsTransaction_User_ManyToOne_ShouldBeCorrectlyMapped()
         {
             // Arrange
             using var context = CreateContext();
@@ -409,10 +409,10 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
                 LastName = "User"
             };
 
-            var transaction = new PointsTransaction
+            var transaction = new UserPointsTransaction
             {
                 UserId = user.Id,
-                Points = 100,
+                UserPoints = 100,
                 TransactionType = TransactionCategory.Earned,
                 TransactionSource = TransactionOrigin.Event,
                 SourceId = Guid.NewGuid(),
@@ -423,11 +423,11 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
 
             // Act
             context.Users.Add(user);
-            context.PointsTransactions.Add(transaction);
+            context.UserPointsTransactions.Add(transaction);
             context.SaveChanges();
 
             // Assert
-            var savedTransaction = context.PointsTransactions
+            var savedTransaction = context.UserPointsTransactions
                 .Include(t => t.User)
                 .FirstOrDefault(t => t.Id == transaction.Id);
 

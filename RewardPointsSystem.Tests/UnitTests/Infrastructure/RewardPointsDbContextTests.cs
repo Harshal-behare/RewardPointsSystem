@@ -73,8 +73,8 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             context.Users.Should().NotBeNull();
             context.Roles.Should().NotBeNull();
             context.UserRoles.Should().NotBeNull();
-            context.PointsAccounts.Should().NotBeNull();
-            context.PointsTransactions.Should().NotBeNull();
+            context.UserPointsAccounts.Should().NotBeNull();
+            context.UserPointsTransactions.Should().NotBeNull();
             context.Events.Should().NotBeNull();
             context.EventParticipants.Should().NotBeNull();
             context.Products.Should().NotBeNull();

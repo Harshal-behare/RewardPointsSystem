@@ -6,15 +6,15 @@ using RewardPointsSystem.Domain.Entities.Accounts;
 namespace RewardPointsSystem.Application.Interfaces
 {
     /// <summary>
-    /// Interface: ITransactionService
-    /// Responsibility: Record transactions only
+    /// Interface: IUserPointsTransactionService
+    /// Responsibility: Record user points transactions only
     /// Architecture Compliant - SRP
     /// </summary>
-    public interface ITransactionService
+    public interface IUserPointsTransactionService
     {
-        Task RecordEarnedPointsAsync(Guid userId, int points, Guid eventId, string description);
-        Task RecordRedeemedPointsAsync(Guid userId, int points, Guid redemptionId, string description);
-        Task<IEnumerable<PointsTransaction>> GetUserTransactionsAsync(Guid userId);
-        Task<IEnumerable<PointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to);
+        Task RecordEarnedUserPointsAsync(Guid userId, int userPoints, Guid eventId, string description);
+        Task RecordRedeemedUserPointsAsync(Guid userId, int userPoints, Guid redemptionId, string description);
+        Task<IEnumerable<UserPointsTransaction>> GetUserTransactionsAsync(Guid userId);
+        Task<IEnumerable<UserPointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to);
     }
 }

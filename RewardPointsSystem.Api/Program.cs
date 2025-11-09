@@ -148,8 +148,8 @@ namespace RewardPointsSystem.Api
             var userRoleService = serviceProvider.GetRequiredService<IUserRoleService>();
             var eventService = serviceProvider.GetRequiredService<IEventService>();
             var pointsAwardingService = serviceProvider.GetRequiredService<IPointsAwardingService>();
-            var accountService = serviceProvider.GetRequiredService<IPointsAccountService>();
-            var transactionService = serviceProvider.GetRequiredService<ITransactionService>();
+            var accountService = serviceProvider.GetRequiredService<IUserPointsAccountService>();
+            var transactionService = serviceProvider.GetRequiredService<IUserPointsTransactionService>();
             var productService = serviceProvider.GetRequiredService<IProductCatalogService>();
             var pricingService = serviceProvider.GetRequiredService<IPricingService>();
             var inventoryService = serviceProvider.GetRequiredService<IInventoryService>();
@@ -168,10 +168,10 @@ namespace RewardPointsSystem.Api
                 Console.WriteLine("5. Delete Event");
                 Console.WriteLine("6. Add New Product");
                 Console.WriteLine("7. View All Products");
-                Console.WriteLine("8. Award Points to User");
-                Console.WriteLine("9. View User Balance");
-                Console.WriteLine("10. Process Redemption");
-                Console.WriteLine("11. View All Transactions");
+                //Console.WriteLine("8. Award Points to User");
+                //Console.WriteLine("9. View User Balance");
+                //Console.WriteLine("10. Process Redemption");
+                //Console.WriteLine("11. View All Transactions");
                 Console.WriteLine("0. Exit");
                 Console.WriteLine("========================================");
                 Console.Write("Select an option: ");
@@ -515,7 +515,7 @@ namespace RewardPointsSystem.Api
         }
 
         private static async Task AwardPointsToUserAsync(IUserService userService, IEventService eventService, 
-            IPointsAwardingService pointsAwardingService, ITransactionService transactionService, IPointsAccountService accountService)
+            IPointsAwardingService pointsAwardingService, IUserPointsTransactionService transactionService, IUserPointsAccountService accountService)
         {
             try
             {
@@ -581,14 +581,14 @@ namespace RewardPointsSystem.Api
                 if (eventId.HasValue)
                 {
                     await pointsAwardingService.AwardPointsAsync(eventId.Value, user.Id, points, 1);
-                    await transactionService.RecordEarnedPointsAsync(user.Id, points, eventId.Value, description);
+                    await transactionService.RecordEarnedUserPointsAsync(user.Id, points, eventId.Value, description);
                 }
                 else
                 {
-                    await transactionService.RecordEarnedPointsAsync(user.Id, points, Guid.NewGuid(), description);
+                    await transactionService.RecordEarnedUserPointsAsync(user.Id, points, Guid.NewGuid(), description);
                 }
                 
-                await accountService.AddPointsAsync(user.Id, points);
+                await accountService.AddUserPointsAsync(user.Id, points);
                 
                 Console.WriteLine($"\n✓ {points} points awarded to {user.FirstName} {user.LastName}!");
                 var balance = await accountService.GetBalanceAsync(user.Id);
@@ -600,7 +600,7 @@ namespace RewardPointsSystem.Api
             }
         }
 
-        private static async Task ViewUserBalanceAsync(IUserService userService, IPointsAccountService accountService, ITransactionService transactionService)
+        private static async Task ViewUserBalanceAsync(IUserService userService, IUserPointsAccountService accountService, IUserPointsTransactionService transactionService)
         {
             Console.Write("Enter User Email: ");
             var email = Console.ReadLine();
@@ -627,7 +627,7 @@ namespace RewardPointsSystem.Api
                 
                 foreach (var tx in transactions.Take(10))
                 {
-                    Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd} | {tx.TransactionType} | {tx.Points} pts | {tx.Description}");
+                    Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd} | {tx.TransactionType} | {tx.UserPoints} pts | {tx.Description}");
                 }
             }
             catch
@@ -698,7 +698,7 @@ namespace RewardPointsSystem.Api
             }
         }
 
-        private static async Task ViewAllTransactionsAsync(ITransactionService transactionService, IUserService userService)
+        private static async Task ViewAllTransactionsAsync(IUserPointsTransactionService transactionService, IUserService userService)
         {
             var allUsers = await userService.GetActiveUsersAsync();
             
@@ -714,7 +714,7 @@ namespace RewardPointsSystem.Api
                     Console.WriteLine($"\n{user.FirstName} {user.LastName} ({user.Email}):");
                     foreach (var tx in transactions)
                     {
-                        Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd HH:mm} | {tx.TransactionType} | {tx.Points} pts | {tx.Description}");
+                        Console.WriteLine($"  {tx.Timestamp:yyyy-MM-dd HH:mm} | {tx.TransactionType} | {tx.UserPoints} pts | {tx.Description}");
                     }
                 }
             }

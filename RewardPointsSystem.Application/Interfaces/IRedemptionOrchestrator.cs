@@ -26,6 +26,6 @@ namespace RewardPointsSystem.Application.Interfaces
         public bool Success { get; set; }
         public string Message { get; set; }
         public Redemption Redemption { get; set; }
-        public PointsTransaction Transaction { get; set; }
+        public UserPointsTransaction Transaction { get; set; }
     }
 }

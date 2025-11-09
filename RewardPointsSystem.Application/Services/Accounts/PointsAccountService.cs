@@ -6,16 +6,16 @@ using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Application.Services.Accounts
 {
-    public class PointsAccountService : IPointsAccountService
+    public class UserPointsAccountService : IUserPointsAccountService
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public PointsAccountService(IUnitOfWork unitOfWork)
+        public UserPointsAccountService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<PointsAccount> CreateAccountAsync(Guid userId)
+        public async Task<UserPointsAccount> CreateAccountAsync(Guid userId)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
             if (user == null)
@@ -24,11 +24,11 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (!user.IsActive)
                 throw new InactiveUserException(userId);
 
-            var existingAccount = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
+            var existingAccount = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
             if (existingAccount != null)
-                throw new InvalidPointsOperationException($"Account already exists for user {userId}");
+                throw new InvalidUserPointsOperationException($"Account already exists for user {userId}");
 
-            var account = new PointsAccount
+            var account = new UserPointsAccount
             {
                 UserId = userId,
                 CurrentBalance = 0,
@@ -38,14 +38,14 @@ namespace RewardPointsSystem.Application.Services.Accounts
                 LastUpdatedAt = DateTime.UtcNow
             };
 
-            await _unitOfWork.PointsAccounts.AddAsync(account);
+            await _unitOfWork.UserPointsAccounts.AddAsync(account);
             await _unitOfWork.SaveChangesAsync();
             return account;
         }
 
-        public async Task<PointsAccount> GetAccountAsync(Guid userId)
+        public async Task<UserPointsAccount> GetAccountAsync(Guid userId)
         {
-            return await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
+            return await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(ra => ra.UserId == userId);
         }
 
         public async Task<int> GetBalanceAsync(Guid userId)
@@ -54,50 +54,50 @@ namespace RewardPointsSystem.Application.Services.Accounts
             return account?.CurrentBalance ?? 0;
         }
 
-        public async Task AddPointsAsync(Guid userId, int points)
+        public async Task AddUserPointsAsync(Guid userId, int userPoints)
         {
-            if (points <= 0)
-                throw new InvalidPointsOperationException("Points must be greater than zero");
+            if (userPoints <= 0)
+                throw new InvalidUserPointsOperationException("User points must be greater than zero");
 
             var account = await GetAccountAsync(userId);
             if (account == null)
                 account = await CreateAccountAsync(userId);
 
-            account.CurrentBalance += points;
-            account.TotalEarned += points;
+            account.CurrentBalance += userPoints;
+            account.TotalEarned += userPoints;
             account.LastUpdatedAt = DateTime.UtcNow;
 
-            await _unitOfWork.PointsAccounts.UpdateAsync(account);
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task DeductPointsAsync(Guid userId, int points)
+        public async Task DeductUserPointsAsync(Guid userId, int userPoints)
         {
-            if (points <= 0)
-                throw new InvalidPointsOperationException("Points must be greater than zero");
+            if (userPoints <= 0)
+                throw new InvalidUserPointsOperationException("User points must be greater than zero");
 
             var account = await GetAccountAsync(userId);
             if (account == null)
-                throw new PointsAccountNotFoundException(userId);
+                throw new UserPointsAccountNotFoundException(userId);
 
-            if (account.CurrentBalance < points)
-                throw new InsufficientPointsBalanceException(userId, points, account.CurrentBalance);
+            if (account.CurrentBalance < userPoints)
+                throw new InsufficientUserPointsBalanceException(userId, userPoints, account.CurrentBalance);
 
-            account.CurrentBalance -= points;
-            account.TotalRedeemed += points;
+            account.CurrentBalance -= userPoints;
+            account.TotalRedeemed += userPoints;
             account.LastUpdatedAt = DateTime.UtcNow;
 
-            await _unitOfWork.PointsAccounts.UpdateAsync(account);
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<bool> HasSufficientBalanceAsync(Guid userId, int requiredPoints)
+        public async Task<bool> HasSufficientBalanceAsync(Guid userId, int requiredUserPoints)
         {
-            if (requiredPoints <= 0)
+            if (requiredUserPoints <= 0)
                 return true;
 
             var balance = await GetBalanceAsync(userId);
-            return balance >= requiredPoints;
+            return balance >= requiredUserPoints;
         }
     }
 }

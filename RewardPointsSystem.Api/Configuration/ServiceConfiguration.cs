@@ -35,8 +35,8 @@ namespace RewardPointsSystem.Api.Configuration
             services.AddScoped<IPointsAwardingService, PointsAwardingService>();
 
             // Account Services
-            services.AddScoped<IPointsAccountService, PointsAccountService>();
-            services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<IUserPointsAccountService, UserPointsAccountService>();
+            services.AddScoped<IUserPointsTransactionService, UserPointsTransactionService>();
 
             // Product Services
             services.AddScoped<IProductCatalogService, ProductCatalogService>();

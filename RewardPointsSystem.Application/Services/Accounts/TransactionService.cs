@@ -6,33 +6,33 @@ using RewardPointsSystem.Domain.Entities.Accounts;
 
 namespace RewardPointsSystem.Application.Services.Accounts
 {
-    public class TransactionService : ITransactionService
+    public class UserPointsTransactionService : IUserPointsTransactionService
     {
         private readonly IUnitOfWork _unitOfWork;
 
-        public TransactionService(IUnitOfWork unitOfWork)
+        public UserPointsTransactionService(IUnitOfWork unitOfWork)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task RecordEarnedPointsAsync(Guid userId, int points, Guid eventId, string description)
+        public async Task RecordEarnedUserPointsAsync(Guid userId, int userPoints, Guid eventId, string description)
         {
-            if (points <= 0)
-                throw new ArgumentException("Points must be greater than zero", nameof(points));
+            if (userPoints <= 0)
+                throw new ArgumentException("User points must be greater than zero", nameof(userPoints));
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
             // Get current balance to calculate balance after
-            var account = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
             if (account == null)
-                throw new InvalidOperationException($"Points account not found for user {userId}");
+                throw new InvalidOperationException($"User points account not found for user {userId}");
 
-            var balanceAfter = account.CurrentBalance + points;
+            var balanceAfter = account.CurrentBalance + userPoints;
 
-            var transaction = new PointsTransaction
+            var transaction = new UserPointsTransaction
             {
                 UserId = userId,
-                Points = points,
+                UserPoints = userPoints,
                 TransactionType = TransactionCategory.Earned,
                 TransactionSource = TransactionOrigin.Event,
                 SourceId = eventId,
@@ -41,28 +41,28 @@ namespace RewardPointsSystem.Application.Services.Accounts
                 BalanceAfter = balanceAfter
             };
 
-            await _unitOfWork.Transactions.AddAsync(transaction);
+            await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task RecordRedeemedPointsAsync(Guid userId, int points, Guid redemptionId, string description)
+        public async Task RecordRedeemedUserPointsAsync(Guid userId, int userPoints, Guid redemptionId, string description)
         {
-            if (points <= 0)
-                throw new ArgumentException("Points must be greater than zero", nameof(points));
+            if (userPoints <= 0)
+                throw new ArgumentException("User points must be greater than zero", nameof(userPoints));
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
             // Get current balance to calculate balance after
-            var account = await _unitOfWork.PointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
             if (account == null)
-                throw new InvalidOperationException($"Points account not found for user {userId}");
+                throw new InvalidOperationException($"User points account not found for user {userId}");
 
-            var balanceAfter = account.CurrentBalance - points;
+            var balanceAfter = account.CurrentBalance - userPoints;
 
-            var transaction = new PointsTransaction
+            var transaction = new UserPointsTransaction
             {
                 UserId = userId,
-                Points = -points, // Negative for redeemed points
+                UserPoints = -userPoints, // Negative for redeemed user points
                 TransactionType = TransactionCategory.Redeemed,
                 TransactionSource = TransactionOrigin.Redemption,
                 SourceId = redemptionId,
@@ -71,21 +71,21 @@ namespace RewardPointsSystem.Application.Services.Accounts
                 BalanceAfter = balanceAfter
             };
 
-            await _unitOfWork.Transactions.AddAsync(transaction);
+            await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task<IEnumerable<PointsTransaction>> GetUserTransactionsAsync(Guid userId)
+        public async Task<IEnumerable<UserPointsTransaction>> GetUserTransactionsAsync(Guid userId)
         {
-            return await _unitOfWork.Transactions.FindAsync(t => t.UserId == userId);
+            return await _unitOfWork.UserPointsTransactions.FindAsync(t => t.UserId == userId);
         }
 
-        public async Task<IEnumerable<PointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to)
+        public async Task<IEnumerable<UserPointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to)
         {
             if (from > to)
                 throw new ArgumentException("From date must be before to date");
 
-            return await _unitOfWork.Transactions.FindAsync(t => t.Timestamp >= from && t.Timestamp <= to);
+            return await _unitOfWork.UserPointsTransactions.FindAsync(t => t.Timestamp >= from && t.Timestamp <= to);
         }
     }
 }

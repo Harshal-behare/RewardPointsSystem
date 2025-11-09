@@ -12,17 +12,17 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
     /// </summary>
     public class RedemptionOrchestrator : IRedemptionOrchestrator
     {
-        private readonly IPointsAccountService _accountService;
+        private readonly IUserPointsAccountService _accountService;
         private readonly IPricingService _pricingService;
         private readonly IInventoryService _inventoryService;
-        private readonly ITransactionService _transactionService;
+        private readonly IUserPointsTransactionService _transactionService;
         private readonly IUnitOfWork _unitOfWork;
 
         public RedemptionOrchestrator(
-            IPointsAccountService accountService,
+            IUserPointsAccountService accountService,
             IPricingService pricingService,
             IInventoryService inventoryService,
-            ITransactionService transactionService,
+            IUserPointsTransactionService transactionService,
             IUnitOfWork unitOfWork)
         {
             _accountService = accountService;
@@ -70,10 +70,10 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 // 5. Reserve stock (InventoryService) - using quantity from redemption
                 await _inventoryService.ReserveStockAsync(productId, quantity);
 
-                // 6. Deduct points (PointsAccountService)
-                await _accountService.DeductPointsAsync(userId, pointsCost);
+                // 6. Deduct user points (UserPointsAccountService)
+                await _accountService.DeductUserPointsAsync(userId, pointsCost);
 
-                // 7. Record transaction (TransactionService)
+                // 7. Record transaction (UserPointsTransactionService)
                 var redemption = new Redemption
                 {
                     UserId = userId,
@@ -87,7 +87,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 await _unitOfWork.Redemptions.AddAsync(redemption);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _transactionService.RecordRedeemedPointsAsync(userId, pointsCost, redemption.Id, 
+                await _transactionService.RecordRedeemedUserPointsAsync(userId, pointsCost, redemption.Id,
                     $"Product redemption - Redemption ID: {redemption.Id}");
 
                 return new RedemptionResult
@@ -156,11 +156,11 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             // Release reserved stock using the actual quantity from redemption
             await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
 
-            // Refund points
-            await _accountService.AddPointsAsync(redemption.UserId, redemption.PointsSpent);
+            // Refund user points
+            await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
 
             // Record refund transaction
-            await _transactionService.RecordEarnedPointsAsync(redemption.UserId, redemption.PointsSpent, 
+            await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
                 redemption.Id, $"Redemption cancellation refund - Redemption ID: {redemption.Id}");
 
             redemption.Status = RedemptionStatus.Cancelled;

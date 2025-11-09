@@ -17,15 +17,15 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
         private readonly IEventService _eventService;
         private readonly IEventParticipationService _participationService;
         private readonly IPointsAwardingService _pointsAwardingService;
-        private readonly IPointsAccountService _accountService;
-        private readonly ITransactionService _transactionService;
+        private readonly IUserPointsAccountService _accountService;
+        private readonly IUserPointsTransactionService _transactionService;
 
         public EventRewardOrchestrator(
             IEventService eventService,
             IEventParticipationService participationService,
             IPointsAwardingService pointsAwardingService,
-            IPointsAccountService accountService,
-            ITransactionService transactionService)
+            IUserPointsAccountService accountService,
+            IUserPointsTransactionService transactionService)
         {
             _eventService = eventService;
             _participationService = participationService;
@@ -70,10 +70,10 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 if (account == null)
                     await _accountService.CreateAccountAsync(userId);
 
-                await _accountService.AddPointsAsync(userId, points);
+                await _accountService.AddUserPointsAsync(userId, points);
 
                 // 6. Record transaction (TransactionService)
-                await _transactionService.RecordEarnedPointsAsync(userId, points, eventId, 
+                await _transactionService.RecordEarnedUserPointsAsync(userId, points, eventId,
                     $"Event reward - Rank {eventRank} in {eventObj.Name}");
 
                 // Get updated participation record

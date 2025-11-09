@@ -402,7 +402,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         #region Complex CRUD Operations
 
         [Fact]
-        public void ComplexOperation_ShouldCreateUserWithPointsAccount()
+        public void ComplexOperation_ShouldCreateUserWithUserPointsAccount()
         {
             // Arrange
             using var context = CreateContext();
@@ -413,7 +413,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
                 LastName = "Account"
             };
 
-            var pointsAccount = new PointsAccount
+            var userPointsAccount = new UserPointsAccount
             {
                 UserId = user.Id,
                 CurrentBalance = 100,
@@ -422,7 +422,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
                 User = user
             };
 
-            user.PointsAccount = pointsAccount;
+            user.UserPointsAccount = userPointsAccount;
 
             // Act
             context.Users.Add(user);
@@ -431,16 +431,16 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             // Assert
             result.Should().BeGreaterThan(0);
             var savedUser = context.Users
-                .Include(u => u.PointsAccount)
+                .Include(u => u.UserPointsAccount)
                 .FirstOrDefault(u => u.Id == user.Id);
 
             savedUser.Should().NotBeNull();
-            savedUser!.PointsAccount.Should().NotBeNull();
-            savedUser.PointsAccount.CurrentBalance.Should().Be(100);
+            savedUser!.UserPointsAccount.Should().NotBeNull();
+            savedUser.UserPointsAccount.CurrentBalance.Should().Be(100);
         }
 
         [Fact]
-        public void ComplexOperation_ShouldDeleteUserAndCascadePointsAccount()
+        public void ComplexOperation_ShouldDeleteUserAndCascadeUserPointsAccount()
         {
             // Arrange
             using var context = CreateContext();
@@ -451,19 +451,19 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
                 LastName = "Delete"
             };
 
-            var pointsAccount = new PointsAccount
+            var userPointsAccount = new UserPointsAccount
             {
                 UserId = user.Id,
                 User = user
             };
 
-            user.PointsAccount = pointsAccount;
+            user.UserPointsAccount = userPointsAccount;
 
             context.Users.Add(user);
             context.SaveChanges();
 
             var userId = user.Id;
-            var accountId = pointsAccount.Id;
+            var accountId = userPointsAccount.Id;
 
             // Act
             context.Users.Remove(user);
@@ -471,7 +471,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
 
             // Assert
             context.Users.Find(userId).Should().BeNull();
-            context.PointsAccounts.Find(accountId).Should().BeNull();
+            context.UserPointsAccounts.Find(accountId).Should().BeNull();
         }
 
         [Fact]

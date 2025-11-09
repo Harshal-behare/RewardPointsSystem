@@ -5,17 +5,17 @@ using RewardPointsSystem.Domain.Entities.Accounts;
 namespace RewardPointsSystem.Application.Interfaces
 {
     /// <summary>
-    /// Interface: IPointsAccountService
-    /// Responsibility: Manage point balances only
+    /// Interface: IUserPointsAccountService
+    /// Responsibility: Manage user point balances only
     /// Architecture Compliant - SRP
     /// </summary>
-    public interface IPointsAccountService
+    public interface IUserPointsAccountService
     {
-        Task<PointsAccount> CreateAccountAsync(Guid userId);
-        Task<PointsAccount> GetAccountAsync(Guid userId);
+        Task<UserPointsAccount> CreateAccountAsync(Guid userId);
+        Task<UserPointsAccount> GetAccountAsync(Guid userId);
         Task<int> GetBalanceAsync(Guid userId);
-        Task AddPointsAsync(Guid userId, int points);
-        Task DeductPointsAsync(Guid userId, int points);
-        Task<bool> HasSufficientBalanceAsync(Guid userId, int requiredPoints);
+        Task AddUserPointsAsync(Guid userId, int userPoints);
+        Task DeductUserPointsAsync(Guid userId, int userPoints);
+        Task<bool> HasSufficientBalanceAsync(Guid userId, int requiredUserPoints);
     }
 }
