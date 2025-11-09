@@ -7,7 +7,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
     /// <summary>
     /// Represents a user's points account with points balance
     /// </summary>
-    public class PointsAccount
+    public class UserPointsAccount
     {
         public Guid Id { get; set; }
 
@@ -30,7 +30,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         // Navigation Properties
         public virtual User User { get; set; }
 
-        public PointsAccount()
+        public UserPointsAccount()
         {
             Id = Guid.NewGuid();
             CurrentBalance = 0;

@@ -19,7 +19,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
     /// <summary>
     /// Represents a points transaction (earned or redeemed)
     /// </summary>
-    public class PointsTransaction
+    public class UserPointsTransaction
     {
         public Guid Id { get; set; }
 
@@ -28,7 +28,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
 
         [Required(ErrorMessage = "Points value is required")]
         [Range(1, int.MaxValue, ErrorMessage = "Points must be a positive value")]
-        public int Points { get; set; }
+        public int UserPoints { get; set; }
 
         [Required(ErrorMessage = "Transaction type is required")]
         public TransactionCategory TransactionType { get; set; }
@@ -51,7 +51,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         // Navigation Properties
         public virtual User User { get; set; }
 
-        public PointsTransaction()
+        public UserPointsTransaction()
         {
             Id = Guid.NewGuid();
             Timestamp = DateTime.UtcNow;

@@ -34,7 +34,7 @@ namespace RewardPointsSystem.Domain.Entities.Core
 
         // Navigation Properties
         public virtual ICollection<UserRole> UserRoles { get; set; }
-        public virtual PointsAccount PointsAccount { get; set; }
+        public virtual UserPointsAccount UserPointsAccount { get; set; }
         public virtual ICollection<EventParticipant> EventParticipations { get; set; }
         public virtual ICollection<Redemption> Redemptions { get; set; }
 
