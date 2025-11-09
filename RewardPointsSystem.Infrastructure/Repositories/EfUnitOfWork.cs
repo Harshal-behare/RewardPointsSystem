@@ -37,7 +37,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         // Core repositories
         public IRepository<User> Users => _users ??= new EfRepository<User>(_context);
         public IRepository<Role> Roles => _roles ??= new EfRepository<Role>(_context);
-        public IRepository<UserRole> UserRoles => _userRoles ??= new EfUserRoleRepository(_context);
+        public IRepository<UserRole> UserRoles => _userRoles ??= new EfRepository<UserRole>(_context);
 
         // Event repositories
         public IRepository<Event> Events => _events ??= new EfRepository<Event>(_context);
