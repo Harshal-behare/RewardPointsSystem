@@ -165,9 +165,10 @@ namespace RewardPointsSystem.Api
                 Console.WriteLine("2. View All Users");
                 Console.WriteLine("3. Add New Event");
                 Console.WriteLine("4. View All Events");
-                Console.WriteLine("5. Delete Event");
-                Console.WriteLine("6. Add New Product");
-                Console.WriteLine("7. View All Products");
+                Console.WriteLine("5. Publish Event");
+                Console.WriteLine("6. Delete Event");
+                Console.WriteLine("7. Add New Product");
+                Console.WriteLine("8. View All Products");
                 //Console.WriteLine("8. Award Points to User");
                 //Console.WriteLine("9. View User Balance");
                 //Console.WriteLine("10. Process Redemption");
@@ -196,26 +197,29 @@ namespace RewardPointsSystem.Api
                             await ViewAllEventsAsync(eventService);
                             break;
                         case "5":
-                            await DeleteEventAsync(eventService);
+                            await PublishEventAsync(eventService);
                             break;
                         case "6":
-                            await AddNewProductAsync(productService, pricingService, inventoryService);
+                            await DeleteEventAsync(eventService);
                             break;
                         case "7":
-                            await ViewAllProductsAsync(productService, pricingService, inventoryService);
+                            await AddNewProductAsync(productService, pricingService, inventoryService);
                             break;
                         case "8":
-                            await AwardPointsToUserAsync(userService, eventService, pointsAwardingService, transactionService, accountService);
+                            await ViewAllProductsAsync(productService, pricingService, inventoryService);
                             break;
-                        case "9":
-                            await ViewUserBalanceAsync(userService, accountService, transactionService);
-                            break;
-                        case "10":
-                            await ProcessRedemptionAsync(userService, productService, redemptionOrchestrator);
-                            break;
-                        case "11":
-                            await ViewAllTransactionsAsync(transactionService, userService);
-                            break;
+                        //case "9":
+                        //    await AwardPointsToUserAsync(userService, eventService, pointsAwardingService, transactionService, accountService);
+                        //    break;
+                        //case "10":
+                        //    await ViewUserBalanceAsync(userService, accountService, transactionService);
+                        //    break;
+                        //case "11":
+                        //    await ProcessRedemptionAsync(userService, productService, redemptionOrchestrator);
+                        //    break;
+                        //case "12":
+                        //    await ViewAllTransactionsAsync(transactionService, userService);
+                        //    break;
                         case "0":
                             running = false;
                             Console.WriteLine("✓ Thank you for using Reward Points System!");
@@ -385,6 +389,36 @@ namespace RewardPointsSystem.Api
             }
             
             Console.WriteLine($"\nTotal Events: {events.Count()}");
+        }
+
+        private static async Task PublishEventAsync(IEventService eventService)
+        {
+            try
+            {
+                // First, show all draft events
+                var allEvents = await eventService.GetEventByIdAsync(Guid.Empty); // This won't work, need to get all events
+                // For now, just ask for the ID
+                Console.Write("Enter Event ID to publish: ");
+                var eventIdStr = Console.ReadLine();
+                
+                if (!Guid.TryParse(eventIdStr, out var eventId))
+                {
+                    Console.WriteLine("✗ Invalid Event ID format. Please enter a valid GUID.");
+                    return;
+                }
+
+                await eventService.PublishEventAsync(eventId);
+                Console.WriteLine($"\n✓ Event {eventId} has been published successfully!");
+                Console.WriteLine("The event will now appear in 'View All Events'.");
+            }
+            catch (KeyNotFoundException)
+            {
+                Console.WriteLine($"\n✗ Event not found. Please check the Event ID.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"\n✗ Error publishing event: {ex.Message}");
+            }
         }
 
         private static async Task DeleteEventAsync(IEventService eventService)

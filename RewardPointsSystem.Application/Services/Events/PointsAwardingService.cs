@@ -30,6 +30,11 @@ namespace RewardPointsSystem.Application.Services.Events
             if (participant == null)
                 throw new InvalidOperationException($"User did not participate in this event");
 
+            if (participant.AttendanceStatus == AttendanceStatus.Registered)
+            {
+                participant.CheckIn();
+            }
+
             if (participant.PointsAwarded.HasValue)
                 throw new InvalidOperationException($"Points already awarded to this user for this event");
 

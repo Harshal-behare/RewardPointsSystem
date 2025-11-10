@@ -111,6 +111,20 @@ namespace RewardPointsSystem.Application.Services.Events
             return await _unitOfWork.Events.GetByIdAsync(id);
         }
 
+        public async Task PublishEventAsync(Guid id)
+        {
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
+            if (eventEntity == null)
+                throw new EventNotFoundException(id);
+
+            if (eventEntity.Status != EventStatus.Draft)
+                throw new InvalidEventStateException(id, $"Only draft events can be published. Current status: {eventEntity.Status}");
+
+            eventEntity.Publish();
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task ActivateEventAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
