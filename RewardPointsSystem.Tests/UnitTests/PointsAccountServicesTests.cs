@@ -10,17 +10,17 @@ using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
-    public class PointsAccountServiceTests : IDisposable
+    public class UserPointsAccountServiceTests : IDisposable
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly PointsAccountService _accountService;
+        private readonly UserPointsAccountService _accountService;
 
-        public PointsAccountServiceTests()
+        public UserPointsAccountServiceTests()
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new PointsAccountService(_unitOfWork);
+            _accountService = new UserPointsAccountService(_unitOfWork);
         }
 
         public void Dispose()
@@ -75,7 +75,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.CreateAccountAsync(user.Id);
 
             // Act
-            await _accountService.AddPointsAsync(user.Id, 500);
+            await _accountService.AddUserPointsAsync(user.Id, 500);
 
             // Assert
             var balance = await _accountService.GetBalanceAsync(user.Id);
@@ -93,7 +93,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _accountService.AddPointsAsync(user.Id, amount));
+                await _accountService.AddUserPointsAsync(user.Id, amount));
         }
 
         [Fact]
@@ -102,10 +102,10 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 500);
+            await _accountService.AddUserPointsAsync(user.Id, 500);
 
             // Act
-            await _accountService.DeductPointsAsync(user.Id, 200);
+            await _accountService.DeductUserPointsAsync(user.Id, 200);
 
             // Assert
             var balance = await _accountService.GetBalanceAsync(user.Id);
@@ -118,11 +118,11 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 100);
+            await _accountService.AddUserPointsAsync(user.Id, 100);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _accountService.DeductPointsAsync(user.Id, 200));
+                await _accountService.DeductUserPointsAsync(user.Id, 200));
         }
 
         [Theory]
@@ -136,7 +136,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _accountService.DeductPointsAsync(user.Id, amount));
+                await _accountService.DeductUserPointsAsync(user.Id, amount));
         }
 
         [Fact]
@@ -145,7 +145,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 750);
+            await _accountService.AddUserPointsAsync(user.Id, 750);
 
             // Act
             var balance = await _accountService.GetBalanceAsync(user.Id);
@@ -160,7 +160,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 500);
+            await _accountService.AddUserPointsAsync(user.Id, 500);
 
             // Act
             var result = await _accountService.HasSufficientBalanceAsync(user.Id, 300);
@@ -175,7 +175,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 100);
+            await _accountService.AddUserPointsAsync(user.Id, 100);
 
             // Act
             var result = await _accountService.HasSufficientBalanceAsync(user.Id, 300);
@@ -185,19 +185,19 @@ namespace RewardPointsSystem.Tests.UnitTests
         }
     }
 
-    public class TransactionServiceTests : IDisposable
+    public class UserPointsTransactionServiceTests : IDisposable
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly PointsAccountService _accountService;
-        private readonly TransactionService _transactionService;
+        private readonly UserPointsAccountService _accountService;
+        private readonly UserPointsTransactionService _transactionService;
 
-        public TransactionServiceTests()
+        public UserPointsTransactionServiceTests()
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new PointsAccountService(_unitOfWork);
-            _transactionService = new TransactionService(_unitOfWork);
+            _accountService = new UserPointsAccountService(_unitOfWork);
+            _transactionService = new UserPointsTransactionService(_unitOfWork);
         }
 
         public void Dispose()
@@ -214,13 +214,13 @@ namespace RewardPointsSystem.Tests.UnitTests
             var eventId = Guid.NewGuid();
 
             // Act
-            await _transactionService.RecordEarnedPointsAsync(user.Id, 100, eventId, "Test earned");
+            await _transactionService.RecordEarnedUserPointsAsync(user.Id, 100, eventId, "Test earned");
 
             // Assert
             var transactions = await _transactionService.GetUserTransactionsAsync(user.Id);
             transactions.Should().HaveCount(1);
-            transactions.First().Points.Should().Be(100);
-            transactions.First().Type.Should().Be(TransactionType.Earned);
+            transactions.First().UserPoints.Should().Be(100);
+            transactions.First().TransactionType.Should().Be(TransactionCategory.Earned);
         }
 
 
@@ -231,17 +231,17 @@ namespace RewardPointsSystem.Tests.UnitTests
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
 
-            await _transactionService.RecordEarnedPointsAsync(user.Id, 100, Guid.NewGuid(), "Earned 1");
-            await _transactionService.RecordEarnedPointsAsync(user.Id, 200, Guid.NewGuid(), "Earned 2");
-            await _transactionService.RecordRedeemedPointsAsync(user.Id, 50, Guid.NewGuid(), "Redeemed 1");
+            await _transactionService.RecordEarnedUserPointsAsync(user.Id, 100, Guid.NewGuid(), "Earned 1");
+            await _transactionService.RecordEarnedUserPointsAsync(user.Id, 200, Guid.NewGuid(), "Earned 2");
+            await _transactionService.RecordRedeemedUserPointsAsync(user.Id, 50, Guid.NewGuid(), "Redeemed 1");
 
             // Act
             var transactions = await _transactionService.GetUserTransactionsAsync(user.Id);
 
             // Assert
             transactions.Should().HaveCount(3);
-            transactions.Where(t => t.Type == TransactionType.Earned).Should().HaveCount(2);
-            transactions.Where(t => t.Type == TransactionType.Redeemed).Should().HaveCount(1);
+            transactions.Where(t => t.TransactionType == TransactionCategory.Earned).Should().HaveCount(2);
+            transactions.Where(t => t.TransactionType == TransactionCategory.Redeemed).Should().HaveCount(1);
         }
 
         [Fact]
@@ -267,7 +267,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.CreateAccountAsync(user.Id);
 
             // Act
-            await _transactionService.RecordEarnedPointsAsync(user.Id, 100, Guid.NewGuid(), "Test");
+            await _transactionService.RecordEarnedUserPointsAsync(user.Id, 100, Guid.NewGuid(), "Test");
 
             // Assert
             var transactions = await _transactionService.GetUserTransactionsAsync(user.Id);

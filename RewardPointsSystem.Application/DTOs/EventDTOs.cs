@@ -32,7 +32,7 @@ namespace RewardPointsSystem.Application.DTOs
     {
         public Guid UserId { get; set; }
         public int Points { get; set; }
-        public int Position { get; set; }
+        public int EventRank { get; set; }
     }
 
     /// <summary>

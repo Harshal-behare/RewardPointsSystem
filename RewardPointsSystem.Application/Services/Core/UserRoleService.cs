@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 
-namespace RewardPointsSystem.Application.Services.Users
+namespace RewardPointsSystem.Application.Services.Core
 {
     public class UserRoleService : IUserRoleService
     {
@@ -30,13 +30,7 @@ namespace RewardPointsSystem.Application.Services.Users
             if (existingAssignment != null)
                 throw new InvalidOperationException($"User is already assigned to this role");
 
-            var userRole = new UserRole
-            {
-                UserId = userId,
-                RoleId = roleId,
-                AssignedAt = DateTime.UtcNow,
-                AssignedBy = assignedBy
-            };
+            var userRole = UserRole.Assign(userId, roleId, assignedBy);
 
             await _unitOfWork.UserRoles.AddAsync(userRole);
             await _unitOfWork.SaveChangesAsync();

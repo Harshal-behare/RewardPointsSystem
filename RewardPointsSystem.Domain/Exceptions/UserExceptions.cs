@@ -58,4 +58,14 @@ namespace RewardPointsSystem.Domain.Exceptions
             UserId = userId;
         }
     }
+
+    /// <summary>
+    /// Exception thrown when attempting an invalid user operation.
+    /// </summary>
+    public class InvalidUserOperationException : DomainException
+    {
+        public InvalidUserOperationException(string message) : base(message)
+        {
+        }
+    }
 }

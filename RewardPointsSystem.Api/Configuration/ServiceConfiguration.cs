@@ -1,7 +1,10 @@
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Infrastructure.Repositories;
-using RewardPointsSystem.Application.Services.Users;
+using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Products;
@@ -12,10 +15,14 @@ namespace RewardPointsSystem.Api.Configuration
 {
     public static class ServiceConfiguration
     {
-        public static IServiceCollection RegisterRewardPointsServices(this IServiceCollection services)
+        public static IServiceCollection RegisterRewardPointsServices(this IServiceCollection services, IConfiguration configuration)
         {
-            // Repository Layer
-            services.AddScoped<IUnitOfWork, InMemoryUnitOfWork>();
+            // Add DbContext with SQL Server
+            services.AddDbContext<RewardPointsDbContext>(options =>
+                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            
+            // Repository Layer - Using EF Core with SQL Server
+            services.AddScoped<IUnitOfWork, EfUnitOfWork>();
 
             // Core/User Services
             services.AddScoped<IUserService, UserService>();
@@ -28,8 +35,8 @@ namespace RewardPointsSystem.Api.Configuration
             services.AddScoped<IPointsAwardingService, PointsAwardingService>();
 
             // Account Services
-            services.AddScoped<IPointsAccountService, PointsAccountService>();
-            services.AddScoped<ITransactionService, TransactionService>();
+            services.AddScoped<IUserPointsAccountService, UserPointsAccountService>();
+            services.AddScoped<IUserPointsTransactionService, UserPointsTransactionService>();
 
             // Product Services
             services.AddScoped<IProductCatalogService, ProductCatalogService>();

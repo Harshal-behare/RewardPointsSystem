@@ -36,18 +36,11 @@ namespace RewardPointsSystem.Application.Services.Products
             
             foreach (var pricing in currentPricing)
             {
-                pricing.IsActive = false;
-                pricing.EffectiveTo = effectiveFrom.AddTicks(-1); // End just before new pricing starts
+                pricing.Deactivate(effectiveFrom.AddTicks(-1));
             }
 
             // Create new pricing
-            var newPricing = new ProductPricing
-            {
-                ProductId = productId,
-                PointsCost = points,
-                EffectiveFrom = effectiveFrom,
-                IsActive = true
-            };
+            var newPricing = ProductPricing.Create(productId, points, effectiveFrom);
 
             await _unitOfWork.Pricing.AddAsync(newPricing);
             await _unitOfWork.SaveChangesAsync();

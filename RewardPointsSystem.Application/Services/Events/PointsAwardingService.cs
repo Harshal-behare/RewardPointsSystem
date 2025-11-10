@@ -17,7 +17,7 @@ namespace RewardPointsSystem.Application.Services.Events
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int position)
+        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int eventRank)
         {
             if (points <= 0)
                 throw new ArgumentException("Points must be greater than zero", nameof(points));
@@ -30,6 +30,11 @@ namespace RewardPointsSystem.Application.Services.Events
             if (participant == null)
                 throw new InvalidOperationException($"User did not participate in this event");
 
+            if (participant.AttendanceStatus == AttendanceStatus.Registered)
+            {
+                participant.CheckIn();
+            }
+
             if (participant.PointsAwarded.HasValue)
                 throw new InvalidOperationException($"Points already awarded to this user for this event");
 
@@ -37,9 +42,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (totalAwarded + points > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
-            participant.PointsAwarded = points;
-            participant.Position = position;
-            participant.AwardedAt = DateTime.UtcNow;
+            participant.AwardPoints(points, eventRank, eventEntity.CreatedBy);
 
             await _unitOfWork.EventParticipants.UpdateAsync(participant);
             await _unitOfWork.SaveChangesAsync();
@@ -62,7 +65,7 @@ namespace RewardPointsSystem.Application.Services.Events
 
             foreach (var winner in winners)
             {
-                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.Position);
+                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.EventRank);
             }
         }
 

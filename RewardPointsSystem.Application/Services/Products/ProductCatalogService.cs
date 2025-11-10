@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Operations;
 using RewardPointsSystem.Application.DTOs;
@@ -33,21 +34,40 @@ namespace RewardPointsSystem.Application.Services.Products
             if (string.IsNullOrWhiteSpace(category))
                 throw new ArgumentException("Product category is required", nameof(category));
 
-            var product = new Product
-            {
-                Name = name.Trim(),
-                Description = description.Trim(),
-                Category = category.Trim(),
-                ImageUrl = "", // Default empty
-                IsActive = true,
-                CreatedAt = DateTime.UtcNow,
-                CreatedBy = Guid.Empty // TODO: Get from current user context
-            };
+            // Get or create system user for product creation
+            var systemUser = await GetOrCreateSystemUserAsync();
+
+            var product = Product.Create(
+                name.Trim(),
+                systemUser.Id,
+                description.Trim(),
+                null,
+                "");
 
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.SaveChangesAsync();
             
             return product;
+        }
+
+        private async Task<User> GetOrCreateSystemUserAsync()
+        {
+            // Try to find system user
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            
+            if (systemUser == null)
+            {
+                // Create system user
+                systemUser = User.Create(
+                    "system@rewardpoints.com",
+                    "System",
+                    "Administrator");
+                
+                await _unitOfWork.Users.AddAsync(systemUser);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            
+            return systemUser;
         }
 
         public async Task<Product> UpdateProductAsync(Guid id, ProductUpdateDto updates)
@@ -56,17 +76,11 @@ namespace RewardPointsSystem.Application.Services.Products
             if (product == null)
                 throw new ArgumentException($"Product with ID {id} not found", nameof(id));
 
-            if (!string.IsNullOrWhiteSpace(updates.Name))
-                product.Name = updates.Name.Trim();
-            
-            if (!string.IsNullOrWhiteSpace(updates.Description))
-                product.Description = updates.Description.Trim();
-            
-            if (!string.IsNullOrWhiteSpace(updates.Category))
-                product.Category = updates.Category.Trim();
-            
-            if (!string.IsNullOrWhiteSpace(updates.ImageUrl))
-                product.ImageUrl = updates.ImageUrl.Trim();
+            var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : product.Name;
+            var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : product.Description;
+            var imageUrl = !string.IsNullOrWhiteSpace(updates.ImageUrl) ? updates.ImageUrl.Trim() : product.ImageUrl;
+
+            product.UpdateDetails(name, description, product.CategoryId, imageUrl);
 
             await _unitOfWork.SaveChangesAsync();
             return product;
@@ -102,7 +116,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (hasPendingRedemptions)
                 throw new InvalidOperationException("Cannot deactivate product with pending redemptions");
 
-            product.IsActive = false;
+            product.Deactivate();
             await _unitOfWork.SaveChangesAsync();
         }
     }

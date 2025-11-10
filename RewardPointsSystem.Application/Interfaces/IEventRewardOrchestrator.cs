@@ -24,6 +24,6 @@ namespace RewardPointsSystem.Application.Interfaces
         public string Message { get; set; }
         public string EventName { get; set; }
         public EventParticipant Participation { get; set; }
-        public PointsTransaction Transaction { get; set; }
+        public UserPointsTransaction Transaction { get; set; }
     }
 }

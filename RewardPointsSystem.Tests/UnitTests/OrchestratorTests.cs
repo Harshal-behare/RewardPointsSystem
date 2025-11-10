@@ -18,8 +18,8 @@ namespace RewardPointsSystem.Tests.UnitTests
         private readonly UserService _userService;
         private readonly EventService _eventService;
         private readonly EventParticipationService _participationService;
-        private readonly PointsAccountService _accountService;
-        private readonly TransactionService _transactionService;
+        private readonly UserPointsAccountService _accountService;
+        private readonly UserPointsTransactionService _transactionService;
         private readonly PointsAwardingService _pointsAwardingService;
         private readonly EventRewardOrchestrator _orchestrator;
 
@@ -29,8 +29,8 @@ namespace RewardPointsSystem.Tests.UnitTests
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);
-            _accountService = new PointsAccountService(_unitOfWork);
-            _transactionService = new TransactionService(_unitOfWork);
+            _accountService = new UserPointsAccountService(_unitOfWork);
+            _transactionService = new UserPointsTransactionService(_unitOfWork);
             _pointsAwardingService = new PointsAwardingService(_unitOfWork);
             _orchestrator = new EventRewardOrchestrator(
                 _eventService,
@@ -139,8 +139,8 @@ namespace RewardPointsSystem.Tests.UnitTests
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
         private readonly UserService _userService;
-        private readonly PointsAccountService _accountService;
-        private readonly TransactionService _transactionService;
+        private readonly UserPointsAccountService _accountService;
+        private readonly UserPointsTransactionService _transactionService;
         private readonly ProductCatalogService _productService;
         private readonly PricingService _pricingService;
         private readonly InventoryService _inventoryService;
@@ -150,8 +150,8 @@ namespace RewardPointsSystem.Tests.UnitTests
         {
             _unitOfWork = new InMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
-            _accountService = new PointsAccountService(_unitOfWork);
-            _transactionService = new TransactionService(_unitOfWork);
+            _accountService = new UserPointsAccountService(_unitOfWork);
+            _transactionService = new UserPointsTransactionService(_unitOfWork);
             _productService = new ProductCatalogService(_unitOfWork);
             _pricingService = new PricingService(_unitOfWork);
             _inventoryService = new InventoryService(_unitOfWork);
@@ -174,7 +174,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);
@@ -196,7 +196,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 100);
+            await _accountService.AddUserPointsAsync(user.Id, 100);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);
@@ -217,7 +217,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);
@@ -254,7 +254,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             // Act
             var result = await _orchestrator.ProcessRedemptionAsync(user.Id, Guid.NewGuid());
@@ -270,7 +270,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);
@@ -301,7 +301,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);
@@ -331,7 +331,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
-            await _accountService.AddPointsAsync(user.Id, 1000);
+            await _accountService.AddUserPointsAsync(user.Id, 1000);
 
             var product = await _productService.CreateProductAsync("Product", "Description", "Category");
             await _pricingService.SetProductPointsCostAsync(product.Id, 500, DateTime.UtcNow);

@@ -7,8 +7,8 @@ namespace RewardPointsSystem.Domain.Exceptions
     /// </summary>
     public class RoleNotFoundException : DomainException
     {
-        public Guid RoleId { get; }
-        public string RoleName { get; }
+        public Guid? RoleId { get; }
+        public string? RoleName { get; }
 
         public RoleNotFoundException(Guid roleId) 
             : base($"Role with ID '{roleId}' was not found.")
@@ -43,6 +43,16 @@ namespace RewardPointsSystem.Domain.Exceptions
     public class InvalidRoleAssignmentException : DomainException
     {
         public InvalidRoleAssignmentException(string message) : base(message)
+        {
+        }
+    }
+
+    /// <summary>
+    /// Exception thrown when role validation fails.
+    /// </summary>
+    public class RoleValidationException : DomainException
+    {
+        public RoleValidationException(string message) : base(message)
         {
         }
     }

@@ -12,17 +12,17 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
     /// </summary>
     public class RedemptionOrchestrator : IRedemptionOrchestrator
     {
-        private readonly IPointsAccountService _accountService;
+        private readonly IUserPointsAccountService _accountService;
         private readonly IPricingService _pricingService;
         private readonly IInventoryService _inventoryService;
-        private readonly ITransactionService _transactionService;
+        private readonly IUserPointsTransactionService _transactionService;
         private readonly IUnitOfWork _unitOfWork;
 
         public RedemptionOrchestrator(
-            IPointsAccountService accountService,
+            IUserPointsAccountService accountService,
             IPricingService pricingService,
             IInventoryService inventoryService,
-            ITransactionService transactionService,
+            IUserPointsTransactionService transactionService,
             IUnitOfWork unitOfWork)
         {
             _accountService = accountService;
@@ -57,26 +57,29 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 if (!isInStock)
                     throw new InvalidOperationException($"Product {productId} is out of stock");
 
-                // 5. Reserve stock (InventoryService)
-                await _inventoryService.ReserveStockAsync(productId, 1);
+                // 4.1 Validate requested quantity against available inventory
+                int quantity = 1; // Default quantity, could be parameterized
+                var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == productId);
+                if (inventory == null)
+                    throw new InvalidOperationException($"Inventory not found for product {productId}");
+                
+                int availableQuantity = inventory.QuantityAvailable - inventory.QuantityReserved;
+                if (quantity > availableQuantity)
+                    throw new InvalidOperationException($"Insufficient quantity available. Requested: {quantity}, Available: {availableQuantity}");
 
-                // 6. Deduct points (PointsAccountService)
-                await _accountService.DeductPointsAsync(userId, pointsCost);
+                // 5. Reserve stock (InventoryService) - using quantity from redemption
+                await _inventoryService.ReserveStockAsync(productId, quantity);
 
-                // 7. Record transaction (TransactionService)
-                var redemption = new Redemption
-                {
-                    UserId = userId,
-                    ProductId = productId,
-                    PointsSpent = pointsCost,
-                    Status = RedemptionStatus.Pending,
-                    RequestedAt = DateTime.UtcNow
-                };
+                // 6. Deduct user points (UserPointsAccountService)
+                await _accountService.DeductUserPointsAsync(userId, pointsCost);
+
+                // 7. Record transaction (UserPointsTransactionService)
+                var redemption = Redemption.Create(userId, productId, pointsCost, quantity);
 
                 await _unitOfWork.Redemptions.AddAsync(redemption);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _transactionService.RecordRedeemedPointsAsync(userId, pointsCost, redemption.Id, 
+                await _transactionService.RecordRedeemedUserPointsAsync(userId, pointsCost, redemption.Id,
                     $"Product redemption - Redemption ID: {redemption.Id}");
 
                 return new RedemptionResult
@@ -109,8 +112,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Pending)
                 throw new InvalidOperationException($"Only pending redemptions can be approved. Current status: {redemption.Status}");
 
-            redemption.Status = RedemptionStatus.Approved;
-            redemption.ApprovedAt = DateTime.UtcNow;
+            redemption.Approve(Guid.Empty);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -123,9 +125,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Approved)
                 throw new InvalidOperationException($"Only approved redemptions can be delivered. Current status: {redemption.Status}");
 
-            redemption.Status = RedemptionStatus.Delivered;
-            redemption.DeliveredAt = DateTime.UtcNow;
-            redemption.DeliveryNotes = notes ?? "";
+            redemption.MarkAsDelivered(Guid.Empty, notes);
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -142,17 +142,17 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status == RedemptionStatus.Cancelled)
                 throw new InvalidOperationException("Redemption is already cancelled");
 
-            // Release reserved stock
-            await _inventoryService.ReleaseReservationAsync(redemption.ProductId, 1);
+            // Release reserved stock using the actual quantity from redemption
+            await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
 
-            // Refund points
-            await _accountService.AddPointsAsync(redemption.UserId, redemption.PointsSpent);
+            // Refund user points
+            await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
 
             // Record refund transaction
-            await _transactionService.RecordEarnedPointsAsync(redemption.UserId, redemption.PointsSpent, 
+            await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
                 redemption.Id, $"Redemption cancellation refund - Redemption ID: {redemption.Id}");
 
-            redemption.Status = RedemptionStatus.Cancelled;
+            redemption.Cancel("User cancelled redemption");
             await _unitOfWork.SaveChangesAsync();
         }
     }

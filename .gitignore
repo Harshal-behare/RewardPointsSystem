@@ -10,10 +10,13 @@
 *.userosscache
 *.sln.docstates
 *.md
+gitignore.sql
 !README.md
 !agdata-srp-architecture.md
 !Project_Description.md 
+!SYSTEM_DOCUMENTATION.md
 *.txt
+Database/
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

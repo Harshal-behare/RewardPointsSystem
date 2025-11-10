@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Application.DTOs;
 using RewardPointsSystem.Domain.Exceptions;
@@ -37,21 +38,40 @@ namespace RewardPointsSystem.Application.Services.Events
             if (date < DateTime.UtcNow.Date)
                 throw new InvalidEventDataException("Cannot create events in the past");
 
-            var eventEntity = new Event
-            {
-                Name = name.Trim(),
-                Description = description.Trim(),
-                EventDate = date,
-                TotalPointsPool = pointsPool,
-                Status = EventStatus.Upcoming,
-                CreatedBy = Guid.Empty, // TODO: Get from current user context
-                CreatedAt = DateTime.UtcNow
-            };
+            // Get or create system user for event creation
+            var systemUser = await GetOrCreateSystemUserAsync();
+
+            var eventEntity = Event.Create(
+                name.Trim(),
+                date,
+                pointsPool,
+                systemUser.Id,
+                description.Trim());
 
             await _unitOfWork.Events.AddAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
             
             return eventEntity;
+        }
+
+        private async Task<User> GetOrCreateSystemUserAsync()
+        {
+            // Try to find system user
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            
+            if (systemUser == null)
+            {
+                // Create system user
+                systemUser = User.Create(
+                    "system@rewardpoints.com",
+                    "System",
+                    "Administrator");
+                
+                await _unitOfWork.Users.AddAsync(systemUser);
+                await _unitOfWork.SaveChangesAsync();
+            }
+            
+            return systemUser;
         }
 
         public async Task<Event> UpdateEventAsync(Guid id, UpdateEventDto updates)
@@ -63,17 +83,12 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity.Status == EventStatus.Completed || eventEntity.Status == EventStatus.Cancelled)
                 throw new InvalidEventStateException(id, "Cannot modify completed or cancelled events");
 
-            if (!string.IsNullOrWhiteSpace(updates.Name))
-                eventEntity.Name = updates.Name.Trim();
-            
-            if (!string.IsNullOrWhiteSpace(updates.Description))
-                eventEntity.Description = updates.Description.Trim();
-            
-            if (updates.EventDate != default)
-                eventEntity.EventDate = updates.EventDate;
-            
-            if (updates.TotalPointsPool > 0)
-                eventEntity.TotalPointsPool = updates.TotalPointsPool;
+            var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
+            var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
+            var eventDate = updates.EventDate != default ? updates.EventDate : eventEntity.EventDate;
+            var pointsPool = updates.TotalPointsPool > 0 ? updates.TotalPointsPool : eventEntity.TotalPointsPool;
+
+            eventEntity.UpdateDetails(name, eventDate, pointsPool, description);
 
             await _unitOfWork.SaveChangesAsync();
             return eventEntity;
@@ -96,6 +111,20 @@ namespace RewardPointsSystem.Application.Services.Events
             return await _unitOfWork.Events.GetByIdAsync(id);
         }
 
+        public async Task PublishEventAsync(Guid id)
+        {
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
+            if (eventEntity == null)
+                throw new EventNotFoundException(id);
+
+            if (eventEntity.Status != EventStatus.Draft)
+                throw new InvalidEventStateException(id, $"Only draft events can be published. Current status: {eventEntity.Status}");
+
+            eventEntity.Publish();
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task ActivateEventAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
@@ -105,7 +134,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity.Status != EventStatus.Upcoming)
                 throw new InvalidEventStateException(id, $"Only upcoming events can be activated. Current status: {eventEntity.Status}");
 
-            eventEntity.Status = EventStatus.Active;
+            eventEntity.Start();
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -119,8 +148,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity.Status != EventStatus.Active)
                 throw new InvalidEventStateException(id, $"Only active events can be completed. Current status: {eventEntity.Status}");
 
-            eventEntity.Status = EventStatus.Completed;
-            eventEntity.CompletedAt = DateTime.UtcNow;
+            eventEntity.Complete();
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -134,7 +162,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity.Status == EventStatus.Completed)
                 throw new InvalidEventStateException(id, "Cannot cancel completed events");
 
-            eventEntity.Status = EventStatus.Cancelled;
+            eventEntity.Cancel();
 
             await _unitOfWork.SaveChangesAsync();
         }
