@@ -4,6 +4,8 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Reflection;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using RewardPointsSystem.Api.Configuration;
 using RewardPointsSystem.Infrastructure.Data;
 
@@ -32,13 +34,20 @@ namespace RewardPointsSystem.Api
             builder.Services.RegisterRewardPointsServices(configuration);
 
             // =====================================================
-            // 4. CONTROLLERS & API EXPLORER
+            // 4. FLUENTVALIDATION CONFIGURATION (Phase 5)
+            // =====================================================
+            builder.Services.AddFluentValidationAutoValidation();
+            builder.Services.AddFluentValidationClientsideAdapters();
+            builder.Services.AddValidatorsFromAssemblyContaining<RewardPointsSystem.Application.Validators.Auth.LoginRequestDtoValidator>();
+
+            // =====================================================
+            // 5. CONTROLLERS & API EXPLORER
             // =====================================================
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
             // =====================================================
-            // 5. SWAGGER/OPENAPI CONFIGURATION
+            // 6. SWAGGER/OPENAPI CONFIGURATION
             // =====================================================
             builder.Services.AddSwaggerGen(options =>
             {
@@ -55,7 +64,7 @@ namespace RewardPointsSystem.Api
                     License = new OpenApiLicense
                     {
                         Name = "MIT License",
-                        Url = new Uri("https://opensource.org/licenses/MIT")
+                        Url = new Uri("https://opensource.org/licenses/MITz")
                     }
                 });
 
@@ -96,7 +105,7 @@ namespace RewardPointsSystem.Api
             });
 
             // =====================================================
-            // 6. JWT AUTHENTICATION (Future Phase 7)
+            // 7. JWT AUTHENTICATION (Future Phase 7)
             // =====================================================
             var jwtSettings = configuration.GetSection("JwtSettings");
             var secretKey = jwtSettings["SecretKey"];
@@ -124,7 +133,7 @@ namespace RewardPointsSystem.Api
             builder.Services.AddAuthorization();
 
             // =====================================================
-            // 7. CORS CONFIGURATION
+            // 8. CORS CONFIGURATION
             // =====================================================
             var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
             builder.Services.AddCors(options =>
@@ -139,12 +148,12 @@ namespace RewardPointsSystem.Api
             });
 
             // =====================================================
-            // 8. BUILD THE APPLICATION
+            // 9. BUILD THE APPLICATION
             // =====================================================
             var app = builder.Build();
 
             // =====================================================
-            // 9. MIDDLEWARE PIPELINE
+            // 10. MIDDLEWARE PIPELINE
             // =====================================================
             
             // Swagger (Development and Production for testing)
@@ -170,7 +179,7 @@ namespace RewardPointsSystem.Api
             app.MapControllers();
 
             // =====================================================
-            // 10. RUN THE APPLICATION
+            // 11. RUN THE APPLICATION
             // =====================================================
             Console.WriteLine("========================================");
             Console.WriteLine("  Reward Points System API");
