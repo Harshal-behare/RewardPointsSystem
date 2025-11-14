@@ -71,6 +71,16 @@ namespace RewardPointsSystem.Application.Services.Accounts
             return await _unitOfWork.UserPointsTransactions.FindAsync(t => t.UserId == userId);
         }
 
+        public async Task<IEnumerable<UserPointsTransaction>> GetAllTransactionsAsync()
+        {
+            return await _unitOfWork.UserPointsTransactions.GetAllAsync();
+        }
+
+        public async Task<UserPointsTransaction> GetTransactionByIdAsync(Guid transactionId)
+        {
+            return await _unitOfWork.UserPointsTransactions.GetByIdAsync(transactionId);
+        }
+
         public async Task<IEnumerable<UserPointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to)
         {
             if (from > to)

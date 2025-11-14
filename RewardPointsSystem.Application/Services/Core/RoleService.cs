@@ -46,8 +46,15 @@ namespace RewardPointsSystem.Application.Services.Core
             return await _unitOfWork.Roles.GetAllAsync();
         }
 
-        public async Task UpdateRoleAsync(Guid id, string description)
+        public async Task<Role> GetRoleByIdAsync(Guid id)
         {
+            return await _unitOfWork.Roles.GetByIdAsync(id);
+        }
+
+        public async Task<Role> UpdateRoleAsync(Guid id, string name, string description)
+        {
+            if (string.IsNullOrWhiteSpace(name))
+                throw new ArgumentException("Name is required", nameof(name));
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
@@ -55,8 +62,19 @@ namespace RewardPointsSystem.Application.Services.Core
             if (role == null)
                 throw new InvalidOperationException($"Role with ID {id} not found");
 
-            role.UpdateInfo(role.Name, description);
+            role.UpdateInfo(name, description);
             await _unitOfWork.Roles.UpdateAsync(role);
+            await _unitOfWork.SaveChangesAsync();
+            return role;
+        }
+
+        public async Task DeleteRoleAsync(Guid id)
+        {
+            var role = await _unitOfWork.Roles.GetByIdAsync(id);
+            if (role == null)
+                throw new InvalidOperationException($"Role with ID {id} not found");
+
+            await _unitOfWork.Roles.DeleteAsync(role);
             await _unitOfWork.SaveChangesAsync();
         }
     }

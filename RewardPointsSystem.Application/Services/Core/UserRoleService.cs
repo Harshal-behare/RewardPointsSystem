@@ -46,6 +46,12 @@ namespace RewardPointsSystem.Application.Services.Core
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task RevokeRoleAsync(Guid userId, Guid roleId)
+        {
+            // Alias for RemoveRoleAsync
+            await RemoveRoleAsync(userId, roleId);
+        }
+
         public async Task<IEnumerable<Role>> GetUserRolesAsync(Guid userId)
         {
             var userRoles = await _unitOfWork.UserRoles.FindAsync(ur => ur.UserId == userId);

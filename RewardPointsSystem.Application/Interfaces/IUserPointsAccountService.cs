@@ -17,5 +17,8 @@ namespace RewardPointsSystem.Application.Interfaces
         Task AddUserPointsAsync(Guid userId, int userPoints);
         Task DeductUserPointsAsync(Guid userId, int userPoints);
         Task<bool> HasSufficientBalanceAsync(Guid userId, int requiredUserPoints);
+        Task<IEnumerable<UserPointsAccount>> GetAllAccountsAsync();
+        Task<IEnumerable<UserPointsAccount>> GetTopAccountsAsync(int count);
+        Task UpdateAccountAsync(UserPointsAccount account);
     }
 }

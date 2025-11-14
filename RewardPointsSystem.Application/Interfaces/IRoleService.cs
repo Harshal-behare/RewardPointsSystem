@@ -13,8 +13,10 @@ namespace RewardPointsSystem.Application.Interfaces
     public interface IRoleService
     {
         Task<Role> CreateRoleAsync(string name, string description);
+        Task<Role> GetRoleByIdAsync(Guid id);
         Task<Role> GetRoleByNameAsync(string name);
         Task<IEnumerable<Role>> GetAllRolesAsync();
-        Task UpdateRoleAsync(Guid id, string description);
+        Task<Role> UpdateRoleAsync(Guid id, string name, string description);
+        Task DeleteRoleAsync(Guid id);
     }
 }

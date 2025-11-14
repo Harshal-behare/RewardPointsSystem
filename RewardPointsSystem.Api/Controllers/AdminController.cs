@@ -230,10 +230,10 @@ namespace RewardPointsSystem.Api.Controllers
                 var alerts = lowStockItems.Select(item => new
                 {
                     ProductId = item.ProductId,
-                    ProductName = item.Product?.Name,
-                    CurrentQuantity = item.Quantity,
+                    ProductName = item.ProductName,
+                    CurrentStock = item.CurrentStock,
                     ReorderLevel = item.ReorderLevel,
-                    Status = item.Quantity == 0 ? "Out of Stock" : "Low Stock"
+                    AlertType = item.AlertType
                 });
 
                 return Success(alerts);

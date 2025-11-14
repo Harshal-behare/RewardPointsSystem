@@ -83,11 +83,11 @@ namespace RewardPointsSystem.Api.Controllers
                         Id = t.Id,
                         UserId = t.UserId,
                         TransactionType = t.TransactionType.ToString(),
-                        UserPoints = t.Points,
+                        UserPoints = t.UserPoints,
                         Description = t.Description,
-                        EventId = t.EventId,
-                        RedemptionId = t.RedemptionId,
-                        Timestamp = t.CreatedAt
+                        EventId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Event ? t.SourceId : (Guid?)null,
+                        RedemptionId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Redemption ? t.SourceId : (Guid?)null,
+                        Timestamp = t.Timestamp
                     });
 
                 var response = PagedSuccess(pagedTransactions, totalCount, page, pageSize);
@@ -125,11 +125,11 @@ namespace RewardPointsSystem.Api.Controllers
                         Id = t.Id,
                         UserId = t.UserId,
                         TransactionType = t.TransactionType.ToString(),
-                        UserPoints = t.Points,
+                        UserPoints = t.UserPoints,
                         Description = t.Description,
-                        EventId = t.EventId,
-                        RedemptionId = t.RedemptionId,
-                        Timestamp = t.CreatedAt
+                        EventId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Event ? t.SourceId : (Guid?)null,
+                        RedemptionId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Redemption ? t.SourceId : (Guid?)null,
+                        Timestamp = t.Timestamp
                     });
 
                 var response = PagedSuccess(pagedTransactions, totalCount, page, pageSize);

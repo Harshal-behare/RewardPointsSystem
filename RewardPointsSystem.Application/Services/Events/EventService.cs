@@ -106,6 +106,11 @@ namespace RewardPointsSystem.Application.Services.Events
             return events.Where(e => e.Status == EventStatus.Active);
         }
 
+        public async Task<IEnumerable<Event>> GetAllEventsAsync()
+        {
+            return await _unitOfWork.Events.GetAllAsync();
+        }
+
         public async Task<Event> GetEventByIdAsync(Guid id)
         {
             return await _unitOfWork.Events.GetByIdAsync(id);

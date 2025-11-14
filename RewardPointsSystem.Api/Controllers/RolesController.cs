@@ -206,7 +206,7 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                await _userRoleService.AssignRoleAsync(userId, dto.RoleId);
+                await _userRoleService.AssignRoleAsync(userId, dto.RoleId, Guid.Empty); // TODO: Get admin user ID from JWT claims
                 return Success<object>(null, "Role assigned successfully");
             }
             catch (KeyNotFoundException)

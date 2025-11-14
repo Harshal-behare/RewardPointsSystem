@@ -7,14 +7,15 @@ namespace RewardPointsSystem.Application.Interfaces
 {
     /// <summary>
     /// Interface: IUserPointsTransactionService
-    /// Responsibility: Record user points transactions only
+    /// Responsibility: Track points transactions only
     /// Architecture Compliant - SRP
     /// </summary>
     public interface IUserPointsTransactionService
     {
-        Task RecordEarnedUserPointsAsync(Guid userId, int userPoints, Guid eventId, string description);
-        Task RecordRedeemedUserPointsAsync(Guid userId, int userPoints, Guid redemptionId, string description);
+        Task RecordEarnedUserPointsAsync(Guid userId, int points, Guid eventId, string description);
+        Task RecordRedeemedUserPointsAsync(Guid userId, int points, Guid redemptionId, string description);
         Task<IEnumerable<UserPointsTransaction>> GetUserTransactionsAsync(Guid userId);
-        Task<IEnumerable<UserPointsTransaction>> GetTransactionsByDateRangeAsync(DateTime from, DateTime to);
+        Task<IEnumerable<UserPointsTransaction>> GetAllTransactionsAsync();
+        Task<UserPointsTransaction> GetTransactionByIdAsync(Guid transactionId);
     }
 }

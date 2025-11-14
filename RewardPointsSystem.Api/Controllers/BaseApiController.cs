@@ -103,5 +103,13 @@ namespace RewardPointsSystem.Api.Controllers
             };
             return Ok(response);
         }
+
+        /// <summary>
+        /// Returns a paginated response with explicit parameters
+        /// </summary>
+        protected PagedResponse<T> PagedSuccess<T>(IEnumerable<T> items, int totalCount, int pageNumber, int pageSize)
+        {
+            return PagedResponse<T>.Create(items, pageNumber, pageSize, totalCount);
+        }
     }
 }

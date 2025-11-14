@@ -13,9 +13,11 @@ namespace RewardPointsSystem.Application.Interfaces
     public interface IRedemptionOrchestrator
     {
         Task<RedemptionResult> ProcessRedemptionAsync(Guid userId, Guid productId);
-        Task ApproveRedemptionAsync(Guid redemptionId);
+        Task<Redemption> CreateRedemptionAsync(Guid userId, Guid productId, int quantity = 1);
+        Task ApproveRedemptionAsync(Guid redemptionId, Guid approvedBy);
         Task DeliverRedemptionAsync(Guid redemptionId, string notes);
-        Task CancelRedemptionAsync(Guid redemptionId);
+        Task MarkAsDeliveredAsync(Guid redemptionId);
+        Task CancelRedemptionAsync(Guid redemptionId, string reason);
     }
 
     /// <summary>

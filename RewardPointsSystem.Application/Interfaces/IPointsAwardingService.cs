@@ -13,6 +13,7 @@ namespace RewardPointsSystem.Application.Interfaces
     public interface IPointsAwardingService
     {
         Task AwardPointsAsync(Guid eventId, Guid userId, int points, int position);
+        Task AwardPointsAsync(Guid userId, int points, string description, Guid? eventId = null);
         Task BulkAwardPointsAsync(Guid eventId, List<WinnerDto> winners);
         Task<bool> HasUserBeenAwardedAsync(Guid eventId, Guid userId);
         Task<int> GetRemainingPointsPoolAsync(Guid eventId);
