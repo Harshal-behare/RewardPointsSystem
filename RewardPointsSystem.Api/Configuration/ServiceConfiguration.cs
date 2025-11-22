@@ -10,6 +10,7 @@ using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Products;
 using RewardPointsSystem.Application.Services.Orchestrators;
 using RewardPointsSystem.Application.Services.Admin;
+using RewardPointsSystem.Infrastructure.Services;
 
 namespace RewardPointsSystem.Api.Configuration
 {
@@ -23,6 +24,9 @@ namespace RewardPointsSystem.Api.Configuration
             
             // Repository Layer - Using EF Core with SQL Server
             services.AddScoped<IUnitOfWork, EfUnitOfWork>();
+
+            // Authentication & Token Services
+            services.AddScoped<ITokenService, TokenService>();
 
             // Core/User Services
             services.AddScoped<IUserService, UserService>();
