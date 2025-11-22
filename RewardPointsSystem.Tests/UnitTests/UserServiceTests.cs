@@ -2,7 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Xunit;
 using FluentAssertions;
-using RewardPointsSystem.Application.Services.Users;
+using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Interfaces;
 

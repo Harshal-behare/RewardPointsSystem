@@ -9,12 +9,8 @@ namespace RewardPointsSystem.Application.Validators.Users
     /// </summary>
     public class CreateUserDtoValidator : AbstractValidator<CreateUserDto>
     {
-        private readonly IUserService _userService;
-
-        public CreateUserDtoValidator(IUserService userService)
+        public CreateUserDtoValidator()
         {
-            _userService = userService;
-
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required")
                 .Length(1, 100).WithMessage("First name must be between 1 and 100 characters")
@@ -28,21 +24,8 @@ namespace RewardPointsSystem.Application.Validators.Users
             RuleFor(x => x.Email)
                 .NotEmpty().WithMessage("Email is required")
                 .EmailAddress().WithMessage("Invalid email format")
-                .MaximumLength(255).WithMessage("Email cannot exceed 255 characters")
-                .MustAsync(BeUniqueEmail).WithMessage("Email already exists");
-        }
-
-        private async Task<bool> BeUniqueEmail(string email, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var existingUser = await _userService.GetUserByEmailAsync(email);
-                return existingUser == null;
-            }
-            catch
-            {
-                return true; // If service fails, allow validation to pass
-            }
+                .MaximumLength(255).WithMessage("Email cannot exceed 255 characters");
+            // Note: Email uniqueness check is handled in the controller/service layer
         }
     }
 }

@@ -27,6 +27,7 @@ namespace RewardPointsSystem.Api.Configuration
 
             // Authentication & Token Services
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<IPasswordHasher, PasswordHasher>();
 
             // Core/User Services
             services.AddScoped<IUserService, UserService>();

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using RewardPointsSystem.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using RewardPointsSystem.Infrastructure.Data;
 namespace RewardPointsSystem.Infrastructure.Migrations
 {
     [DbContext(typeof(RewardPointsDbContext))]
-    partial class RewardPointsDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251122105817_AddPasswordHashToUser")]
+    partial class AddPasswordHashToUser
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

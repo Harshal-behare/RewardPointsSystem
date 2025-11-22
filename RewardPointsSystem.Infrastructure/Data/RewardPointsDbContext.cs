@@ -51,6 +51,7 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.PasswordHash).HasMaxLength(500);
                 entity.Property(e => e.IsActive).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
 

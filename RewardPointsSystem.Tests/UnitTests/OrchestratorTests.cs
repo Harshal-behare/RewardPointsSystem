@@ -7,7 +7,7 @@ using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Orchestrators;
 using RewardPointsSystem.Application.Services.Products;
-using RewardPointsSystem.Application.Services.Users;
+using RewardPointsSystem.Application.Services.Core;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests

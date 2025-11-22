@@ -33,6 +33,9 @@ namespace RewardPointsSystem.Domain.Entities.Core
         [StringLength(100, MinimumLength = 1, ErrorMessage = "Last name must be between 1 and 100 characters")]
         public string LastName { get; private set; }
 
+        [StringLength(500, ErrorMessage = "Password hash cannot exceed 500 characters")]
+        public string? PasswordHash { get; private set; }
+
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
         public DateTime? UpdatedAt { get; private set; }
@@ -139,6 +142,29 @@ namespace RewardPointsSystem.Domain.Entities.Core
         internal void SetPointsAccount(UserPointsAccount account)
         {
             UserPointsAccount = account ?? throw new ArgumentNullException(nameof(account));
+        }
+
+        /// <summary>
+        /// Sets the password hash for the user
+        /// </summary>
+        public void SetPasswordHash(string passwordHash)
+        {
+            if (string.IsNullOrWhiteSpace(passwordHash))
+                throw new ArgumentException("Password hash cannot be empty.", nameof(passwordHash));
+
+            if (passwordHash.Length > 500)
+                throw new ArgumentException("Password hash cannot exceed 500 characters.", nameof(passwordHash));
+
+            PasswordHash = passwordHash;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
+        /// <summary>
+        /// Checks if the user has a password set
+        /// </summary>
+        public bool HasPassword()
+        {
+            return !string.IsNullOrWhiteSpace(PasswordHash);
         }
 
         private static string ValidateEmail(string email)

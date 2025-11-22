@@ -8,6 +8,7 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using RewardPointsSystem.Application.Configuration;
 using RewardPointsSystem.Infrastructure.Data;
+using RewardPointsSystem.Api.Configuration;
 
 namespace RewardPointsSystem.Api
 {
@@ -141,7 +142,23 @@ namespace RewardPointsSystem.Api
                 };
             });
 
-            builder.Services.AddAuthorization();
+            // =====================================================
+            // 8.1. AUTHORIZATION POLICIES
+            // =====================================================
+            builder.Services.AddAuthorization(options =>
+            {
+                // Admin-only policy
+                options.AddPolicy("AdminOnly", policy => 
+                    policy.RequireRole("Admin"));
+
+                // Employee or Admin policy
+                options.AddPolicy("EmployeeOrAdmin", policy => 
+                    policy.RequireRole("Admin", "Employee"));
+
+                // Require authenticated user
+                options.AddPolicy("RequireAuthenticatedUser", policy => 
+                    policy.RequireAuthenticatedUser());
+            });
 
             // =====================================================
             // 9. CORS CONFIGURATION
