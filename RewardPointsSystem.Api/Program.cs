@@ -14,7 +14,7 @@ namespace RewardPointsSystem.Api
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -207,13 +207,30 @@ namespace RewardPointsSystem.Api
             app.MapControllers();
 
             // =====================================================
-            // 12. RUN THE APPLICATION
+            // 12. DATABASE SEEDING
+            // =====================================================
+            //using (var scope = app.Services.CreateScope())
+            //{
+            //    var services = scope.ServiceProvider;
+            //    try
+            //    {
+            //        await DatabaseSeeder.SeedAsync(services);
+            //    }
+            //    catch (Exception ex)
+            //    {
+            //        var logger = services.GetRequiredService<ILogger<Program>>();
+            //        logger.LogError(ex, "An error occurred while seeding the database");
+            //    }
+            //}
+
+            // =====================================================
+            // 13. RUN THE APPLICATION
             // =====================================================
             Console.WriteLine("========================================");
             Console.WriteLine("  Reward Points System API");
             Console.WriteLine("========================================");
             Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
-            Console.WriteLine($"Swagger UI: http://localhost:5000 (or configured port)");
+            Console.WriteLine($"Swagger UI: http://localhost:1352 ");
             Console.WriteLine("========================================\n");
 
             app.Run();

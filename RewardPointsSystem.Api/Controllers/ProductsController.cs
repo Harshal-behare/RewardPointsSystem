@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Products;
 using RewardPointsSystem.Application.Interfaces;
@@ -53,11 +54,13 @@ namespace RewardPointsSystem.Api.Controllers
                         Id = product.Id,
                         Name = product.Name,
                         Description = product.Description,
-                        Category = product.Category,
+                        CategoryId = product.CategoryId,
+                        CategoryName = product.ProductCategory?.Name,
                         ImageUrl = product.ImageUrl,
                         CurrentPointsCost = price,
                         IsActive = product.IsActive,
                         IsInStock = inStock,
+                        StockQuantity = 0,
                         CreatedAt = product.CreatedAt
                     });
                 }
@@ -93,11 +96,13 @@ namespace RewardPointsSystem.Api.Controllers
                     Id = product.Id,
                     Name = product.Name,
                     Description = product.Description,
-                    Category = product.Category,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.ProductCategory?.Name,
                     ImageUrl = product.ImageUrl,
                     CurrentPointsCost = price,
                     IsActive = product.IsActive,
                     IsInStock = inStock,
+                    StockQuantity = 0,
                     CreatedAt = product.CreatedAt
                 };
 
@@ -121,16 +126,29 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var product = await _productService.CreateProductAsync(dto.Name, dto.Description, dto.Category);
+                // Get authenticated user ID
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                    return UnauthorizedError("User not authenticated");
+
+                var product = await _productService.CreateProductAsync(dto, userId);
+
+                // TODO: Set pricing and inventory using separate endpoints
+                // For now, product is created without pricing/inventory
+                // Use POST /api/v1/pricing and POST /api/v1/inventory to set these separately
 
                 var productDto = new ProductResponseDto
                 {
                     Id = product.Id,
                     Name = product.Name,
                     Description = product.Description,
-                    Category = product.Category,
+                    CategoryId = product.CategoryId,
+                    CategoryName = product.ProductCategory?.Name,
                     ImageUrl = product.ImageUrl,
+                    CurrentPointsCost = dto.PointsPrice,
                     IsActive = product.IsActive,
+                    IsInStock = dto.StockQuantity > 0,
+                    StockQuantity = dto.StockQuantity,
                     CreatedAt = product.CreatedAt
                 };
 

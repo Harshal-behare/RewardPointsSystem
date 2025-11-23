@@ -16,14 +16,15 @@ namespace RewardPointsSystem.Application.MappingProfiles
             // Product → ProductResponseDto
             CreateMap<Product, ProductResponseDto>()
                 .ForMember(dest => dest.CurrentPointsCost, opt => opt.MapFrom(src => src.GetCurrentPricing() != null ? src.GetCurrentPricing()!.PointsCost : 0))
-                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.ProductCategory != null ? src.ProductCategory.Name : src.Category))
+                .ForMember(dest => dest.CategoryId, opt => opt.MapFrom(src => src.CategoryId))
+                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.ProductCategory != null ? src.ProductCategory.Name : null))
                 .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.QuantityAvailable : 0))
                 .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.QuantityAvailable > 0));
 
             // Product → ProductDetailsDto
             CreateMap<Product, ProductDetailsDto>()
                 .ForMember(dest => dest.CurrentPointsCost, opt => opt.MapFrom(src => src.GetCurrentPricing() != null ? src.GetCurrentPricing()!.PointsCost : 0))
-                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.ProductCategory != null ? src.ProductCategory.Name : src.Category))
+                .ForMember(dest => dest.Category, opt => opt.MapFrom(src => src.ProductCategory != null ? src.ProductCategory.Name : null))
                 .ForMember(dest => dest.StockQuantity, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.QuantityAvailable : 0))
                 .ForMember(dest => dest.IsInStock, opt => opt.MapFrom(src => src.Inventory != null && src.Inventory.QuantityAvailable > 0))
                 .ForMember(dest => dest.ReorderLevel, opt => opt.MapFrom(src => src.Inventory != null ? src.Inventory.ReorderLevel : 0))

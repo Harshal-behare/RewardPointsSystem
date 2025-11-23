@@ -19,6 +19,8 @@ gitignore.sql
 !PHASE_*.md
 !DEMO_GUIDE.md
 !QUICK_START.md
+!apiresponse.md
+!API_FIX_GUIDE.md
 *.txt
 Database/
 

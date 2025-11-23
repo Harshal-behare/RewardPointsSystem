@@ -10,8 +10,10 @@ namespace RewardPointsSystem.Application.DTOs.Products
     {
         public string Name { get; set; }
         public string Description { get; set; }
-        public string Category { get; set; }
-        public string ImageUrl { get; set; }
+        public Guid? CategoryId { get; set; }
+        public string? ImageUrl { get; set; }
+        public int PointsPrice { get; set; }
+        public int StockQuantity { get; set; }
     }
 
     /// <summary>
@@ -21,9 +23,10 @@ namespace RewardPointsSystem.Application.DTOs.Products
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public string Description { get; set; }
-        public string Category { get; set; }
-        public string ImageUrl { get; set; }
+        public string? Description { get; set; }
+        public Guid? CategoryId { get; set; }
+        public string? CategoryName { get; set; }
+        public string? ImageUrl { get; set; }
         public int CurrentPointsCost { get; set; }
         public bool IsActive { get; set; }
         public bool IsInStock { get; set; }

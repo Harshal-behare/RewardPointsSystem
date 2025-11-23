@@ -15,11 +15,13 @@ namespace RewardPointsSystem.Application.Validators.Products
                 .Length(2, 200).WithMessage("Product name must be between 2 and 200 characters");
 
             RuleFor(x => x.Description)
-                .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters");
+                .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters");
 
-            RuleFor(x => x.Category)
-                .NotEmpty().WithMessage("Category is required")
-                .Length(2, 100).WithMessage("Category must be between 2 and 100 characters");
+            RuleFor(x => x.PointsPrice)
+                .GreaterThan(0).WithMessage("Points price must be greater than 0");
+
+            RuleFor(x => x.StockQuantity)
+                .GreaterThanOrEqualTo(0).WithMessage("Stock quantity cannot be negative");
 
             RuleFor(x => x.ImageUrl)
                 .MaximumLength(500).WithMessage("Image URL cannot exceed 500 characters")
