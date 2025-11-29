@@ -15,12 +15,6 @@ gitignore.sql
 !agdata-srp-architecture.md
 !Project_Description.md 
 !SYSTEM_DOCUMENTATION.md
-!PLAN.md
-!PHASE_*.md
-!DEMO_GUIDE.md
-!QUICK_START.md
-!apiresponse.md
-!API_FIX_GUIDE.md
 *.txt
 Database/
 
