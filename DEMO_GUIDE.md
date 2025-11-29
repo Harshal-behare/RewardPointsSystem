@@ -108,7 +108,7 @@ Open your browser and navigate to: **http://localhost:5000**
     "refreshToken": "6X/5h9CB+Tz0+/wsYC1qnGtQyIG33KdRT5qywkKX06GzDr7h145me32LA1Fqnwaw1OTJ1yyH4tXCgIYExvHHrA==",
     "expiresAt": "2025-11-22T11:27:12.2330306Z",
     "roles": [
-      "Employee"
+      "Admin"
     ]
   },
   "timestamp": "2025-11-22T11:12:12.2403073Z"

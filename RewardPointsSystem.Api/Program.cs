@@ -62,16 +62,16 @@ namespace RewardPointsSystem.Api
                     Version = "v1",
                     Title = "Reward Points System API",
                     Description = "Production-grade reward points management API with JWT authentication, built with Clean Architecture principles",
-                    Contact = new OpenApiContact
-                    {
-                        Name = "Development Team",
-                        Email = "dev@rewardpoints.com"
-                    },
-                    License = new OpenApiLicense
-                    {
-                        Name = "MIT License",
-                        Url = new Uri("https://opensource.org/licenses/MITz")
-                    }
+                    //Contact = new OpenApiContact
+                    //{
+                    //    Name = "Development Team",
+                    //    Email = "dev@rewardpoints.com"
+                    //},
+                    //License = new OpenApiLicense
+                    //{
+                    //    Name = "MIT License",
+                    //    Url = new Uri("https://opensource.org/licenses/MITz")
+                    //}
                 });
 
                 // JWT Authentication in Swagger
