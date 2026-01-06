@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Application.DTOs;
+using RewardPointsSystem.Application.DTOs.Products;
 
 namespace RewardPointsSystem.Application.Interfaces
 {
@@ -13,10 +14,10 @@ namespace RewardPointsSystem.Application.Interfaces
     /// </summary>
     public interface IProductCatalogService
     {
-        Task<Product> CreateProductAsync(string name, string description, string category);
+        Task<Product> CreateProductAsync(CreateProductDto dto, Guid createdBy);
         Task<Product> UpdateProductAsync(Guid id, ProductUpdateDto updates);
         Task<IEnumerable<Product>> GetActiveProductsAsync();
-        Task<IEnumerable<Product>> GetProductsByCategoryAsync(string category);
+        Task<IEnumerable<Product>> GetProductsByCategoryAsync(Guid? categoryId);
         Task DeactivateProductAsync(Guid id);
     }
 }

@@ -17,6 +17,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<Event> UpdateEventAsync(Guid id, UpdateEventDto updates);
         Task<IEnumerable<Event>> GetUpcomingEventsAsync();
         Task<IEnumerable<Event>> GetActiveEventsAsync();
+        Task<IEnumerable<Event>> GetAllEventsAsync();
         Task<Event> GetEventByIdAsync(Guid id);
         Task PublishEventAsync(Guid id);
         Task ActivateEventAsync(Guid id);

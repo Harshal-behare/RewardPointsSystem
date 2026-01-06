@@ -17,6 +17,21 @@ namespace RewardPointsSystem.Application.Services.Events
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
+        public async Task AwardPointsAsync(Guid userId, int points, string description, Guid? eventId = null)
+        {
+            // Simple award points without event context
+            if (points <= 0)
+                throw new ArgumentException("Points must be greater than zero", nameof(points));
+
+            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            if (account == null)
+                throw new InvalidOperationException($"User points account not found for user {userId}");
+
+            account.CreditPoints(points, Guid.Empty);
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int eventRank)
         {
             if (points <= 0)

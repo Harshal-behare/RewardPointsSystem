@@ -21,6 +21,7 @@ namespace RewardPointsSystem.Infrastructure.Data
         public DbSet<User> Users { get; set; }
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         // Account Entities
         public DbSet<UserPointsAccount> UserPointsAccounts { get; set; }
@@ -50,6 +51,7 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.FirstName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.PasswordHash).HasMaxLength(500);
                 entity.Property(e => e.IsActive).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
 
@@ -114,6 +116,32 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.AssignedBy).IsRequired();
 
                 // Relationships configured in User and Role entities
+            });
+
+            // Configure RefreshToken Entity
+            modelBuilder.Entity<RefreshToken>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.UserId).IsRequired();
+                entity.Property(e => e.Token).IsRequired().HasMaxLength(500);
+                entity.Property(e => e.ExpiresAt).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.CreatedByIp).HasMaxLength(45);
+                entity.Property(e => e.IsRevoked).IsRequired();
+                entity.Property(e => e.RevokedByIp).HasMaxLength(45);
+                entity.Property(e => e.ReplacedByToken).HasMaxLength(500);
+                entity.Property(e => e.RevocationReason).HasMaxLength(200);
+
+                // Relationship with User
+                entity.HasOne(e => e.User)
+                    .WithMany()
+                    .HasForeignKey(e => e.UserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Indexes for performance
+                entity.HasIndex(e => e.Token).IsUnique();
+                entity.HasIndex(e => e.UserId);
+                entity.HasIndex(e => new { e.UserId, e.IsRevoked, e.ExpiresAt });
             });
 
             // Configure UserPointsAccount Entity

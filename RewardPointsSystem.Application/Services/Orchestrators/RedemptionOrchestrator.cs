@@ -103,7 +103,15 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             }
         }
 
-        public async Task ApproveRedemptionAsync(Guid redemptionId)
+        public async Task<Redemption> CreateRedemptionAsync(Guid userId, Guid productId, int quantity = 1)
+        {
+            var result = await ProcessRedemptionAsync(userId, productId);
+            if (!result.Success)
+                throw new InvalidOperationException(result.Message);
+            return result.Redemption;
+        }
+
+        public async Task ApproveRedemptionAsync(Guid redemptionId, Guid approvedBy)
         {
             var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
             if (redemption == null)
@@ -112,7 +120,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Pending)
                 throw new InvalidOperationException($"Only pending redemptions can be approved. Current status: {redemption.Status}");
 
-            redemption.Approve(Guid.Empty);
+            redemption.Approve(approvedBy);
             await _unitOfWork.SaveChangesAsync();
         }
 
@@ -130,7 +138,12 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task CancelRedemptionAsync(Guid redemptionId)
+        public async Task MarkAsDeliveredAsync(Guid redemptionId)
+        {
+            await DeliverRedemptionAsync(redemptionId, "Delivered");
+        }
+
+        public async Task CancelRedemptionAsync(Guid redemptionId, string reason)
         {
             var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
             if (redemption == null)
@@ -152,7 +165,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
                 redemption.Id, $"Redemption cancellation refund - Redemption ID: {redemption.Id}");
 
-            redemption.Cancel("User cancelled redemption");
+            redemption.Cancel(reason ?? "User cancelled redemption");
             await _unitOfWork.SaveChangesAsync();
         }
     }

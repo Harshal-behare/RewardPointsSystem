@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="NewFolder\**" />
+    <EmbeddedResource Remove="NewFolder\**" />
+    <None Remove="NewFolder\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="6.12.0" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.10" />
@@ -28,6 +34,11 @@
     <ProjectReference Include="..\RewardPointsSystem.Application\RewardPointsSystem.Application.csproj" />
     <ProjectReference Include="..\RewardPointsSystem.Infrastructure\RewardPointsSystem.Infrastructure.csproj" />
     <ProjectReference Include="..\RewardPointsSystem.Api\RewardPointsSystem.Api.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="IntegrationTests\" />
+    <Folder Include="ApiTests\" />
   </ItemGroup>
 
 </Project>

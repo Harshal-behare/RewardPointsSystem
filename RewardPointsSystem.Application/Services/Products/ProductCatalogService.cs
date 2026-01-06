@@ -7,6 +7,7 @@ using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Operations;
 using RewardPointsSystem.Application.DTOs;
+using RewardPointsSystem.Application.DTOs.Products;
 
 namespace RewardPointsSystem.Application.Services.Products
 {
@@ -23,29 +24,30 @@ namespace RewardPointsSystem.Application.Services.Products
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<Product> CreateProductAsync(string name, string description, string category)
+        public async Task<Product> CreateProductAsync(CreateProductDto dto, Guid createdBy)
         {
-            if (string.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Product name is required", nameof(name));
-            
-            if (string.IsNullOrWhiteSpace(description))
-                throw new ArgumentException("Product description is required", nameof(description));
-            
-            if (string.IsNullOrWhiteSpace(category))
-                throw new ArgumentException("Product category is required", nameof(category));
+            if (dto == null)
+                throw new ArgumentNullException(nameof(dto));
 
-            // Get or create system user for product creation
-            var systemUser = await GetOrCreateSystemUserAsync();
+            if (string.IsNullOrWhiteSpace(dto.Name))
+                throw new ArgumentException("Product name is required", nameof(dto));
 
+            if (createdBy == Guid.Empty)
+                throw new ArgumentException("Created by user ID is required", nameof(createdBy));
+
+            // Create product
             var product = Product.Create(
-                name.Trim(),
-                systemUser.Id,
-                description.Trim(),
-                null,
-                "");
+                dto.Name.Trim(),
+                createdBy,
+                dto.Description?.Trim(),
+                dto.CategoryId,
+                dto.ImageUrl?.Trim());
 
             await _unitOfWork.Products.AddAsync(product);
             await _unitOfWork.SaveChangesAsync();
+
+            // Note: Pricing and inventory are created separately via PricingService and InventoryService
+            // This maintains single responsibility principle
             
             return product;
         }
@@ -92,14 +94,13 @@ namespace RewardPointsSystem.Application.Services.Products
             return products.Where(p => p.IsActive);
         }
 
-        public async Task<IEnumerable<Product>> GetProductsByCategoryAsync(string category)
+        public async Task<IEnumerable<Product>> GetProductsByCategoryAsync(Guid? categoryId)
         {
-            if (string.IsNullOrWhiteSpace(category))
-                throw new ArgumentException("Category is required", nameof(category));
+            if (!categoryId.HasValue)
+                throw new ArgumentException("Category ID is required", nameof(categoryId));
 
             var products = await _unitOfWork.Products.GetAllAsync();
-            return products.Where(p => p.IsActive && 
-                                      p.Category.Equals(category.Trim(), StringComparison.OrdinalIgnoreCase));
+            return products.Where(p => p.IsActive && p.CategoryId == categoryId.Value);
         }
 
         public async Task DeactivateProductAsync(Guid id)

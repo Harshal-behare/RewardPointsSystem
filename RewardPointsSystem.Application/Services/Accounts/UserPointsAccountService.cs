@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Accounts;
@@ -83,6 +85,26 @@ namespace RewardPointsSystem.Application.Services.Accounts
 
             var balance = await GetBalanceAsync(userId);
             return balance >= requiredUserPoints;
+        }
+
+        public async Task<IEnumerable<UserPointsAccount>> GetAllAccountsAsync()
+        {
+            return await _unitOfWork.UserPointsAccounts.GetAllAsync();
+        }
+
+        public async Task<IEnumerable<UserPointsAccount>> GetTopAccountsAsync(int count)
+        {
+            var accounts = await _unitOfWork.UserPointsAccounts.GetAllAsync();
+            return accounts.OrderByDescending(a => a.CurrentBalance).Take(count);
+        }
+
+        public async Task UpdateAccountAsync(UserPointsAccount account)
+        {
+            if (account == null)
+                throw new ArgumentNullException(nameof(account));
+
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
         }
     }
 }
