@@ -206,9 +206,9 @@ namespace RewardPointsSystem.Api
             // Map Controllers
             app.MapControllers();
 
-            // =====================================================
-            // 12. DATABASE SEEDING
-            // =====================================================
+             //=====================================================
+             //12.DATABASE SEEDING
+             //=====================================================
             //using (var scope = app.Services.CreateScope())
             //{
             //    var services = scope.ServiceProvider;
