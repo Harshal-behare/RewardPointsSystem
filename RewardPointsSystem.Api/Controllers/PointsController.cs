@@ -44,7 +44,10 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 var account = await _accountService.GetAccountAsync(userId);
                 // TODO: Map to PointsAccountResponseDto with user details
-                
+
+                if (account == null)
+                    return NotFoundError($"Points account not found for user {userId}");
+
                 return Success(account);
             }
             catch (KeyNotFoundException)
@@ -189,6 +192,10 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var account = await _accountService.GetAccountAsync(dto.UserId);
+
+                if (account == null)
+                    return NotFoundError($"Points account not found for user {dto.UserId}");
+
                 if (!account.HasSufficientBalance(dto.Points))
                     return Error($"Insufficient balance. Current balance: {account.CurrentBalance}, Required: {dto.Points}", 400);
 
@@ -243,14 +250,16 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var allAccounts = await _accountService.GetAllAccountsAsync();
+                var accountsList = allAccounts.ToList();
+                var hasAccounts = accountsList.Count > 0;
                 
                 var summary = new
                 {
-                    TotalUsers = allAccounts.Count(),
-                    TotalPointsDistributed = allAccounts.Sum(a => a.TotalEarned),
-                    TotalPointsRedeemed = allAccounts.Sum(a => a.TotalRedeemed),
-                    TotalPointsInCirculation = allAccounts.Sum(a => a.CurrentBalance),
-                    AverageBalance = allAccounts.Average(a => a.CurrentBalance)
+                    TotalUsers = accountsList.Count,
+                    TotalPointsDistributed = accountsList.Sum(a => a.TotalEarned),
+                    TotalPointsRedeemed = accountsList.Sum(a => a.TotalRedeemed),
+                    TotalPointsInCirculation = accountsList.Sum(a => a.CurrentBalance),
+                    AverageBalance = hasAccounts ? accountsList.Average(a => a.CurrentBalance) : 0
                 };
 
                 return Success(summary);

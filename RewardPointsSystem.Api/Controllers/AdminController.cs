@@ -75,16 +75,18 @@ namespace RewardPointsSystem.Api.Controllers
                 endDate ??= DateTime.UtcNow;
 
                 var accounts = await _accountService.GetAllAccountsAsync();
+                var accountsList = accounts.ToList();
+                var hasAccounts = accountsList.Count > 0;
                 
                 var report = new
                 {
                     Period = new { Start = startDate, End = endDate },
-                    TotalUsers = accounts.Count(),
-                    TotalPointsDistributed = accounts.Sum(a => a.TotalEarned),
-                    TotalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed),
-                    TotalPointsInCirculation = accounts.Sum(a => a.CurrentBalance),
-                    AverageBalance = accounts.Average(a => a.CurrentBalance),
-                    TopEarners = accounts.OrderByDescending(a => a.TotalEarned).Take(10)
+                    TotalUsers = accountsList.Count,
+                    TotalPointsDistributed = accountsList.Sum(a => a.TotalEarned),
+                    TotalPointsRedeemed = accountsList.Sum(a => a.TotalRedeemed),
+                    TotalPointsInCirculation = accountsList.Sum(a => a.CurrentBalance),
+                    AverageBalance = hasAccounts ? accountsList.Average(a => a.CurrentBalance) : 0,
+                    TopEarners = accountsList.OrderByDescending(a => a.TotalEarned).Take(10)
                 };
 
                 return Success(report);

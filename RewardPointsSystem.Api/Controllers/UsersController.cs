@@ -253,7 +253,6 @@ namespace RewardPointsSystem.Api.Controllers
                 if (user == null)
                     return NotFoundError($"User with ID {id} not found");
 
-                var balance = await _accountService.GetBalanceAsync(id);
                 var account = await _accountService.GetAccountAsync(id);
 
                 var balanceDto = new UserBalanceDto
@@ -262,10 +261,10 @@ namespace RewardPointsSystem.Api.Controllers
                     FirstName = user.FirstName,
                     LastName = user.LastName,
                     Email = user.Email,
-                    CurrentBalance = balance,
-                    TotalEarned = account.TotalEarned,
-                    TotalRedeemed = account.TotalRedeemed,
-                    LastTransaction = account.LastUpdatedAt
+                    CurrentBalance = account?.CurrentBalance ?? 0,
+                    TotalEarned = account?.TotalEarned ?? 0,
+                    TotalRedeemed = account?.TotalRedeemed ?? 0,
+                    LastTransaction = account?.LastUpdatedAt ?? user.CreatedAt
                 };
 
                 return Success(balanceDto);
