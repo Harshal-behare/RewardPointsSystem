@@ -218,8 +218,9 @@ namespace RewardPointsSystem.Infrastructure.Services
             if (userId == Guid.Empty)
                 throw new ArgumentException("User ID cannot be empty.", nameof(userId));
 
+            var now = DateTime.UtcNow;
             var tokens = await _context.RefreshTokens
-                .Where(rt => rt.UserId == userId && !rt.IsRevoked && !rt.IsExpired)
+                .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresAt > now)
                 .ToListAsync();
 
             foreach (var token in tokens)
