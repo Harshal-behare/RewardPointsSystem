@@ -1,0 +1,40 @@
+<div class="login-page">
+  <div class="login-card">
+    <h1 class="brand">AGDATA</h1>
+
+    <div class="login-box">
+      <form [formGroup]="form" (ngSubmit)="onSubmit()">
+        <h2>Login</h2>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input id="email" type="email" formControlName="email" placeholder="" />
+          <div class="error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+            Valid email required
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="password">Password</label>
+          <input id="password" type="password" formControlName="password" placeholder="" />
+          <div class="error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+            Password is required
+          </div>
+        </div>
+
+        <div class="error" *ngIf="errorMsg">{{ errorMsg }}</div>
+
+        <button class="login-btn" type="submit" [disabled]="loading">
+          {{ loading ? 'Signing in...' : 'Login' }}
+        </button>
+
+        <a class="forgot-link" href="#">Forgot password?</a>
+      </form>
+    </div>
+
+    <div class="footer-links">
+      <a href="#">About</a>
+      <a href="#">Privacy Policy</a>
+    </div>
+  </div>
+</div>
