@@ -1,0 +1,195 @@
+<div class="users-container">
+  <app-card>
+    <!-- Header -->
+    <div header class="users-header">
+      <div>
+        <h2>User Management</h2>
+        <p class="subtitle">Manage system users and their roles</p>
+      </div>
+      <app-button (clicked)="openCreateModal()">
+        ➕ Add User
+      </app-button>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Role</th>
+            <th>Status</th>
+            <th>Points Balance</th>
+            <th>Created Date</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let user of users" [class.inactive-row]="user.status === 'Inactive'">
+            <td>
+              <div class="user-name">
+                <div class="user-avatar">
+                  {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                </div>
+                <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+              </div>
+            </td>
+            <td>{{ user.email }}</td>
+            <td>
+              <app-badge [variant]="getRoleBadgeVariant(user.role)">
+                {{ user.role }}
+              </app-badge>
+            </td>
+            <td>
+              <app-badge [variant]="getStatusVariant(user.status)">
+                {{ user.status }}
+              </app-badge>
+            </td>
+            <td>
+              <span class="points-value" *ngIf="user.pointsBalance !== undefined">
+                {{ user.pointsBalance }} pts
+              </span>
+              <span class="no-points" *ngIf="user.pointsBalance === undefined">
+                N/A
+              </span>
+            </td>
+            <td>{{ user.createdAt | date: 'MMM dd, yyyy' }}</td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  class="action-btn edit-btn" 
+                  (click)="openEditModal(user)" 
+                  title="Edit"
+                >
+                  ✏️
+                </button>
+                <button 
+                  class="action-btn" 
+                  [class.toggle-active]="user.status === 'Active'"
+                  [class.toggle-inactive]="user.status === 'Inactive'"
+                  (click)="toggleUserStatus(user)" 
+                  [title]="user.status === 'Active' ? 'Deactivate' : 'Activate'"
+                >
+                  {{ user.status === 'Active' ? '🔒' : '✅' }}
+                </button>
+                <button 
+                  class="action-btn delete-btn" 
+                  (click)="deleteUser(user.id)" 
+                  title="Delete"
+                >
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+</div>
+
+<!-- User Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ modalMode === 'create' ? 'Add New User' : 'Edit User' }}</h3>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name *</label>
+            <input
+              id="firstName"
+              type="text"
+              [(ngModel)]="selectedUser.firstName"
+              name="firstName"
+              placeholder="Enter first name"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name *</label>
+            <input
+              id="lastName"
+              type="text"
+              [(ngModel)]="selectedUser.lastName"
+              name="lastName"
+              placeholder="Enter last name"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input
+            id="email"
+            type="email"
+            [(ngModel)]="selectedUser.email"
+            name="email"
+            placeholder="user@company.com"
+            required
+          />
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="role">Role *</label>
+            <select
+              id="role"
+              [(ngModel)]="selectedUser.role"
+              name="role"
+              required
+            >
+              <option value="Employee">Employee</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status *</label>
+            <select
+              id="status"
+              [(ngModel)]="selectedUser.status"
+              name="status"
+              required
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group" *ngIf="modalMode === 'create'">
+          <label for="password">Initial Password *</label>
+          <input
+            id="password"
+            type="password"
+            placeholder="Enter initial password"
+            name="password"
+            required
+          />
+          <small class="form-help">User will be prompted to change password on first login</small>
+        </div>
+
+        <div class="info-box" *ngIf="modalMode === 'edit'">
+          <strong>ℹ️ Note:</strong> User's password cannot be changed from here. Use the password reset feature.
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeModal()">
+        Cancel
+      </app-button>
+      <app-button (clicked)="saveUser()">
+        {{ modalMode === 'create' ? 'Create User' : 'Save Changes' }}
+      </app-button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,151 @@
+<div class="events-container">
+  <app-card>
+    <!-- Header with Create Button -->
+    <div header class="events-header">
+      <div>
+        <h2>Events Management</h2>
+        <p class="subtitle">Manage all events and reward activities</p>
+      </div>
+      <app-button (clicked)="openCreateModal()">
+        ➕ Create Event
+      </app-button>
+    </div>
+
+    <!-- Events Table -->
+    <div class="table-container">
+      <table class="events-table">
+        <thead>
+          <tr>
+            <th>Event Name</th>
+            <th>Date</th>
+            <th>Status</th>
+            <th>Points Pool</th>
+            <th>Participants</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let event of events">
+            <td>
+              <div class="event-name">
+                <strong>{{ event.name }}</strong>
+                <span class="event-description">{{ event.description }}</span>
+              </div>
+            </td>
+            <td>{{ event.eventDate | date: 'MMM dd, yyyy' }}</td>
+            <td>
+              <app-badge [variant]="getStatusVariant(event.status)">
+                {{ event.status }}
+              </app-badge>
+            </td>
+            <td>
+              <span class="points-value">{{ event.pointsPool }} pts</span>
+            </td>
+            <td>
+              <span class="participant-count">{{ event.participantCount }} users</span>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button class="action-btn edit-btn" (click)="openEditModal(event)" title="Edit">
+                  ✏️
+                </button>
+                <button class="action-btn participants-btn" (click)="manageParticipants(event)" title="Participants">
+                  👥
+                </button>
+                <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
+                  🗑️
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </app-card>
+</div>
+
+<!-- Event Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ modalMode === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
+      <button class="close-btn" (click)="closeModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <div class="form-group">
+          <label for="eventName">Event Name *</label>
+          <input
+            id="eventName"
+            type="text"
+            [(ngModel)]="selectedEvent.name"
+            name="name"
+            placeholder="Enter event name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="eventDescription">Description</label>
+          <textarea
+            id="eventDescription"
+            [(ngModel)]="selectedEvent.description"
+            name="description"
+            placeholder="Enter event description"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="eventDate">Event Date *</label>
+            <input
+              id="eventDate"
+              type="date"
+              [(ngModel)]="selectedEvent.eventDate"
+              name="eventDate"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="pointsPool">Points Pool *</label>
+            <input
+              id="pointsPool"
+              type="number"
+              [(ngModel)]="selectedEvent.pointsPool"
+              name="pointsPool"
+              placeholder="0"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="eventStatus">Status *</label>
+          <select
+            id="eventStatus"
+            [(ngModel)]="selectedEvent.status"
+            name="status"
+            required
+          >
+            <option value="Upcoming">Upcoming</option>
+            <option value="Active">Active</option>
+            <option value="Completed">Completed</option>
+            <option value="Cancelled">Cancelled</option>
+          </select>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeModal()">
+        Cancel
+      </app-button>
+      <app-button (clicked)="saveEvent()">
+        {{ modalMode === 'create' ? 'Create Event' : 'Save Changes' }}
+      </app-button>
+    </div>
+  </div>
+</div>

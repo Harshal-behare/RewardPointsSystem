@@ -1,0 +1,75 @@
+<div class="dashboard-container">
+  <!-- KPI Cards Section -->
+  <section class="kpi-section">
+    <app-kpi-card
+      *ngFor="let kpi of kpiData"
+      [icon]="kpi.icon"
+      [label]="kpi.label"
+      [value]="kpi.value"
+      [trend]="kpi.trend"
+    ></app-kpi-card>
+  </section>
+
+  <!-- Charts Section -->
+  <section class="charts-section">
+    <div class="chart-row">
+      <!-- Points Awarded Chart -->
+      <app-card title="Monthly Points Awarded" class="chart-card">
+        <div class="chart-placeholder">
+          <div class="chart-info">
+            <p class="chart-label">📈 Monthly Trend</p>
+            <p class="chart-value">Total: 26,600 points</p>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-item" *ngFor="let value of chartData.pointsAwarded; let i = index">
+              <div class="bar" [style.height.%]="(value / 6000) * 100">
+                <span class="bar-label">{{ value }}</span>
+              </div>
+              <span class="bar-month">{{ chartData.labels[i] }}</span>
+            </div>
+          </div>
+        </div>
+      </app-card>
+
+      <!-- Redemptions Chart -->
+      <app-card title="Redemption Trends" class="chart-card">
+        <div class="chart-placeholder">
+          <div class="chart-info">
+            <p class="chart-label">📊 Redemption Activity</p>
+            <p class="chart-value">Total: 11,200 points</p>
+          </div>
+          <div class="bar-chart">
+            <div class="bar-item" *ngFor="let value of chartData.redemptions; let i = index">
+              <div class="bar redemption-bar" [style.height.%]="(value / 3000) * 100">
+                <span class="bar-label">{{ value }}</span>
+              </div>
+              <span class="bar-month">{{ chartData.labels[i] }}</span>
+            </div>
+          </div>
+        </div>
+      </app-card>
+    </div>
+  </section>
+
+  <!-- Recent Activity Section -->
+  <section class="activity-section">
+    <app-card title="Recent Activity">
+      <div class="activity-list">
+        <div class="activity-item" *ngFor="let activity of recentActivities">
+          <div class="activity-icon">
+            <app-badge [variant]="getActivityTypeClass(activity.type)">
+              {{ activity.type }}
+            </app-badge>
+          </div>
+          <div class="activity-content">
+            <p class="activity-description">{{ activity.description }}</p>
+            <div class="activity-meta">
+              <span class="activity-user">{{ activity.user }}</span>
+              <span class="activity-time">{{ activity.timestamp }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </app-card>
+  </section>
+</div>

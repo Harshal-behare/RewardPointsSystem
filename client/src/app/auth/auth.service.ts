@@ -16,6 +16,15 @@ interface LoginResponse {
     accessToken: string;
     refreshToken?: string;
     expiresAt?: string;
+    user?: {
+      id: string;
+      email: string;
+      firstName?: string;
+      lastName?: string;
+      role: string;
+      roles?: string[];
+    };
+    role?: string;
   };
 }
 
@@ -31,16 +40,34 @@ export class AuthService {
     return this.http.post<any>(`${environment.apiUrl}/api/v1/Auth/login`, payload)
       .pipe(
         map((raw: any) => {
+          const d = raw?.Data ?? raw?.data ?? null;
+          
           const normalized: LoginResponse = {
             success: raw?.Success ?? raw?.success ?? false,
             message: raw?.Message ?? raw?.message,
             data: (() => {
-              const d = raw?.Data ?? raw?.data ?? null;
               if (!d) return undefined;
+              
+              // Extract roles array
+              const rolesArray = d.Roles ?? d.roles ?? [];
+              const primaryRole = Array.isArray(rolesArray) && rolesArray.length > 0 ? rolesArray[0] : null;
+              
+              // Build user object from data fields
+              const userObj = {
+                id: d.UserId ?? d.userId ?? null,
+                email: d.Email ?? d.email ?? null,
+                firstName: d.FirstName ?? d.firstName ?? null,
+                lastName: d.LastName ?? d.lastName ?? null,
+                role: primaryRole,
+                roles: rolesArray
+              };
+              
               return {
                 accessToken: d.AccessToken ?? d.accessToken ?? d.access_token ?? null,
                 refreshToken: d.RefreshToken ?? d.refreshToken ?? d.refresh_token ?? null,
-                expiresAt: d.ExpiresAt ?? d.expiresAt ?? d.expires_at ?? null
+                expiresAt: d.ExpiresAt ?? d.expiresAt ?? d.expires_at ?? null,
+                user: userObj,
+                role: primaryRole
               } as any;
             })()
           };

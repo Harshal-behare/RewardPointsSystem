@@ -1,0 +1,181 @@
+.dashboard-container {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// KPI Section
+.kpi-section {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+
+// Charts Section
+.charts-section {
+  margin-bottom: 32px;
+}
+
+.chart-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+  gap: 24px;
+}
+
+.chart-card {
+  min-height: 350px;
+}
+
+.chart-placeholder {
+  height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.chart-info {
+  margin-bottom: 24px;
+}
+
+.chart-label {
+  font-size: 14px;
+  color: #7A7A7A;
+  margin: 0 0 4px 0;
+}
+
+.chart-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #2C3E50;
+  margin: 0;
+}
+
+// Bar Chart Styles
+.bar-chart {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-around;
+  height: 200px;
+  gap: 8px;
+  padding: 16px;
+  background-color: #F4F6F7;
+  border-radius: 8px;
+}
+
+.bar-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.bar {
+  width: 100%;
+  background: linear-gradient(180deg, #27AE60 0%, #1B8A4B 100%);
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  min-height: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  transition: all 0.3s ease;
+}
+
+.bar:hover {
+  background: linear-gradient(180deg, #2ECC71 0%, #27AE60 100%);
+  transform: scaleY(1.05);
+}
+
+.redemption-bar {
+  background: linear-gradient(180deg, #3498DB 0%, #2874A6 100%);
+}
+
+.redemption-bar:hover {
+  background: linear-gradient(180deg, #5DADE2 0%, #3498DB 100%);
+}
+
+.bar-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: white;
+}
+
+.bar-month {
+  font-size: 13px;
+  color: #7A7A7A;
+  font-weight: 500;
+}
+
+// Activity Section
+.activity-section {
+  margin-bottom: 32px;
+}
+
+.activity-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  gap: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  transition: background-color 0.2s ease;
+}
+
+.activity-item:hover {
+  background-color: #F4F6F7;
+}
+
+.activity-icon {
+  flex-shrink: 0;
+}
+
+.activity-content {
+  flex: 1;
+}
+
+.activity-description {
+  margin: 0 0 8px 0;
+  font-size: 15px;
+  color: #2C3E50;
+  font-weight: 500;
+}
+
+.activity-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 13px;
+  color: #7A7A7A;
+}
+
+.activity-user {
+  font-weight: 600;
+}
+
+.activity-time {
+  &::before {
+    content: '•';
+    margin-right: 8px;
+  }
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .kpi-section {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-row {
+    grid-template-columns: 1fr;
+  }
+}
