@@ -1,0 +1,167 @@
+<div class="employee-dashboard">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">Welcome back, John! 👋</h1>
+    <p class="dashboard-subtitle">Here's your rewards summary</p>
+  </div>
+
+  <!-- Points Balance Section -->
+  <div class="points-balance-section">
+    <div class="balance-card main-balance">
+      <div class="balance-icon">🏆</div>
+      <div class="balance-info">
+        <span class="balance-label">Total Points</span>
+        <span class="balance-value">{{ pointsBalance.total }}</span>
+      </div>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-icon available">💰</div>
+      <div class="balance-info">
+        <span class="balance-label">Available Points</span>
+        <span class="balance-value">{{ pointsBalance.available }}</span>
+      </div>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-icon pending">⏳</div>
+      <div class="balance-info">
+        <span class="balance-label">Pending Points</span>
+        <span class="balance-value">{{ pointsBalance.pending }}</span>
+      </div>
+    </div>
+
+    <div class="balance-card">
+      <div class="balance-icon redeemed">🎁</div>
+      <div class="balance-info">
+        <span class="balance-label">Redeemed Points</span>
+        <span class="balance-value">{{ pointsBalance.redeemed }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Two Column Layout -->
+  <div class="dashboard-grid">
+    <!-- Left Column -->
+    <div class="dashboard-column">
+      <!-- Upcoming Events -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2 class="section-title">🎉 Upcoming Events</h2>
+          <button class="view-all-btn" (click)="navigateToEvents()">View All →</button>
+        </div>
+
+        <div class="events-list">
+          <div *ngFor="let event of upcomingEvents" class="event-item">
+            <img [src]="event.image" [alt]="event.name" class="event-image" />
+            <div class="event-details">
+              <h3 class="event-name">{{ event.name }}</h3>
+              <p class="event-meta">
+                <span class="event-date">📅 {{ event.date }}</span>
+                <span class="event-location">📍 {{ event.location }}</span>
+              </p>
+              <div class="event-footer">
+                <span class="event-points">+{{ event.points }} points</span>
+                <button
+                  *ngIf="!event.registered"
+                  class="register-btn"
+                  (click)="registerForEvent(event)"
+                >
+                  Register
+                </button>
+                <span *ngIf="event.registered" class="registered-badge">✓ Registered</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Featured Products -->
+      <div class="section-card">
+        <div class="section-header">
+          <h2 class="section-title">🎁 Featured Products</h2>
+          <button class="view-all-btn" (click)="navigateToProducts()">View All →</button>
+        </div>
+
+        <div class="products-grid">
+          <div *ngFor="let product of featuredProducts" class="product-card">
+            <img [src]="product.image" [alt]="product.name" class="product-image" />
+            <div class="product-info">
+              <span class="product-category">{{ product.category }}</span>
+              <h3 class="product-name">{{ product.name }}</h3>
+              <div class="product-footer">
+                <span class="product-points">{{ product.points }} pts</span>
+                <span
+                  class="product-stock"
+                  [class.low-stock]="product.stock < 10"
+                >
+                  {{ product.stock }} left
+                </span>
+              </div>
+              <button
+                class="redeem-btn"
+                [disabled]="pointsBalance.available < product.points"
+                (click)="redeemProduct(product)"
+              >
+                {{ pointsBalance.available >= product.points ? 'Redeem' : 'Insufficient Points' }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column -->
+    <div class="dashboard-column">
+      <!-- Recent Transactions -->
+      <div class="section-card transactions-card">
+        <div class="section-header">
+          <h2 class="section-title">💳 Recent Transactions</h2>
+          <button class="view-all-btn" (click)="navigateToAccount()">View All →</button>
+        </div>
+
+        <div class="transactions-list">
+          <div
+            *ngFor="let transaction of recentTransactions"
+            class="transaction-item"
+            [class.earned]="transaction.type === 'earned'"
+            [class.redeemed]="transaction.type === 'redeemed'"
+            [class.pending]="transaction.type === 'pending'"
+          >
+            <div class="transaction-icon">
+              <span *ngIf="transaction.type === 'earned'">✅</span>
+              <span *ngIf="transaction.type === 'redeemed'">🎁</span>
+              <span *ngIf="transaction.type === 'pending'">⏳</span>
+            </div>
+            <div class="transaction-details">
+              <span class="transaction-description">{{ transaction.description }}</span>
+              <span class="transaction-date">{{ transaction.date }}</span>
+            </div>
+            <div class="transaction-amount" [class.positive]="transaction.points > 0">
+              {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="section-card quick-actions-card">
+        <h2 class="section-title">⚡ Quick Actions</h2>
+        <div class="quick-actions">
+          <button class="action-btn" (click)="navigateToEvents()">
+            <span class="action-icon">🎉</span>
+            <span class="action-text">Browse Events</span>
+          </button>
+          <button class="action-btn" (click)="navigateToProducts()">
+            <span class="action-icon">🛒</span>
+            <span class="action-text">Shop Products</span>
+          </button>
+          <button class="action-btn" (click)="navigateToAccount()">
+            <span class="action-icon">📊</span>
+            <span class="action-text">View History</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

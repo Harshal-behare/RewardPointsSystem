@@ -1,7 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
 
 interface RecentActivity {
@@ -17,8 +20,10 @@ interface RecentActivity {
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     CardComponent,
     BadgeComponent,
+    ButtonComponent,
     KpiCardComponent
   ],
   templateUrl: './dashboard.component.html',
@@ -26,12 +31,14 @@ interface RecentActivity {
 })
 export class AdminDashboardComponent implements OnInit {
   kpiData = [
-    { icon: '👥', label: 'Total Users', value: 248, trend: 12 },
-    { icon: '📅', label: 'Total Events', value: 36, trend: 8 },
-    { icon: '🎁', label: 'Total Products', value: 124, trend: -3 },
-    { icon: '⭐', label: 'Points Distributed', value: '45.2K', trend: 15 },
-    { icon: '⏳', label: 'Pending Redemptions', value: 18, trend: -5 },
+    { icon: '👥', label: 'Total Users', value: 248, trend: 12, route: '/admin/users' },
+    { icon: '📅', label: 'Total Events', value: 36, trend: 8, route: '/admin/events' },
+    { icon: '🎁', label: 'Total Products', value: 124, trend: -3, route: '/admin/products' },
+    { icon: '⭐', label: 'Points Distributed', value: '45.2K', trend: 15, route: '/admin/dashboard' },
+    { icon: '⏳', label: 'Pending Redemptions', value: 18, trend: -5, route: '/admin/redemptions' },
   ];
+
+  constructor(private router: Router) {}
 
   recentActivities: RecentActivity[] = [
     {
@@ -77,8 +84,79 @@ export class AdminDashboardComponent implements OnInit {
     redemptions: [1200, 1500, 1800, 2100, 2400, 2200],
   };
 
+  // Quick Action Modals
+  showEventModal = false;
+  showProductModal = false;
+  newEvent = {
+    name: '',
+    description: '',
+    eventDate: '',
+    pointsPool: 0
+  };
+  newProduct = {
+    name: '',
+    description: '',
+    category: '',
+    pointsPrice: 0,
+    stock: 0,
+    imageUrl: ''
+  };
+
   ngOnInit(): void {
     // Load dashboard data
+  }
+
+  navigateToPage(route: string): void {
+    this.router.navigate([route]);
+  }
+
+  // Quick Action Methods
+  openEventModal(): void {
+    this.newEvent = {
+      name: '',
+      description: '',
+      eventDate: '',
+      pointsPool: 0
+    };
+    this.showEventModal = true;
+  }
+
+  closeEventModal(): void {
+    this.showEventModal = false;
+  }
+
+  createEvent(): void {
+    // TODO: Call API to create event
+    console.log('Creating event:', this.newEvent);
+    alert(`✓ Event "${this.newEvent.name}" created successfully!`);
+    this.closeEventModal();
+    // Optionally navigate to events page
+    // this.router.navigate(['/admin/events']);
+  }
+
+  openProductModal(): void {
+    this.newProduct = {
+      name: '',
+      description: '',
+      category: 'Electronics',
+      pointsPrice: 0,
+      stock: 0,
+      imageUrl: ''
+    };
+    this.showProductModal = true;
+  }
+
+  closeProductModal(): void {
+    this.showProductModal = false;
+  }
+
+  createProduct(): void {
+    // TODO: Call API to create product
+    console.log('Creating product:', this.newProduct);
+    alert(`✓ Product "${this.newProduct.name}" created successfully!`);
+    this.closeProductModal();
+    // Optionally navigate to products page
+    // this.router.navigate(['/admin/products']);
   }
 
   getActivityTypeClass(type: string): 'success' | 'warning' | 'info' | 'danger' | 'secondary' {

@@ -7,7 +7,49 @@
       [label]="kpi.label"
       [value]="kpi.value"
       [trend]="kpi.trend"
+      (click)="navigateToPage(kpi.route)"
+      style="cursor: pointer;"
+      title="Click to view {{ kpi.label }}"
     ></app-kpi-card>
+  </section>
+
+  <!-- Quick Actions Section -->
+  <section class="quick-actions-section">
+    <app-card title="⚡ Quick Actions">
+      <div class="quick-actions-grid">
+        <button class="quick-action-btn event-btn" (click)="openEventModal()">
+          <span class="action-icon">📅</span>
+          <div class="action-content">
+            <h3>Create Event</h3>
+            <p>Add a new reward event</p>
+          </div>
+        </button>
+
+        <button class="quick-action-btn product-btn" (click)="openProductModal()">
+          <span class="action-icon">🎁</span>
+          <div class="action-content">
+            <h3>Add Product</h3>
+            <p>Add new product to catalog</p>
+          </div>
+        </button>
+
+        <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
+          <span class="action-icon">👥</span>
+          <div class="action-content">
+            <h3>Manage Users</h3>
+            <p>View and manage users</p>
+          </div>
+        </button>
+
+        <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
+          <span class="action-icon">🛍️</span>
+          <div class="action-content">
+            <h3>Redemptions</h3>
+            <p>Process pending redemptions</p>
+          </div>
+        </button>
+      </div>
+    </app-card>
   </section>
 
   <!-- Charts Section -->
@@ -72,4 +114,176 @@
       </div>
     </app-card>
   </section>
+</div>
+
+<!-- Create Event Modal -->
+<div class="modal-overlay" *ngIf="showEventModal" (click)="closeEventModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📅 Create New Event</h3>
+      <button class="close-btn" (click)="closeEventModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <div class="form-group">
+          <label for="eventName">Event Name *</label>
+          <input
+            id="eventName"
+            type="text"
+            [(ngModel)]="newEvent.name"
+            name="name"
+            placeholder="Enter event name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="eventDescription">Description</label>
+          <textarea
+            id="eventDescription"
+            [(ngModel)]="newEvent.description"
+            name="description"
+            placeholder="Enter event description"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="eventDate">Event Date *</label>
+            <input
+              id="eventDate"
+              type="date"
+              [(ngModel)]="newEvent.eventDate"
+              name="eventDate"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="pointsPool">Points Pool *</label>
+            <input
+              id="pointsPool"
+              type="number"
+              [(ngModel)]="newEvent.pointsPool"
+              name="pointsPool"
+              placeholder="0"
+              required
+            />
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeEventModal()">
+        Cancel
+      </app-button>
+      <app-button (clicked)="createEvent()">
+        Create Event
+      </app-button>
+    </div>
+  </div>
+</div>
+
+<!-- Create Product Modal -->
+<div class="modal-overlay" *ngIf="showProductModal" (click)="closeProductModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>🎁 Add New Product</h3>
+      <button class="close-btn" (click)="closeProductModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <div class="form-group">
+          <label for="productName">Product Name *</label>
+          <input
+            id="productName"
+            type="text"
+            [(ngModel)]="newProduct.name"
+            name="name"
+            placeholder="Enter product name"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="productDescription">Description</label>
+          <textarea
+            id="productDescription"
+            [(ngModel)]="newProduct.description"
+            name="description"
+            placeholder="Enter product description"
+            rows="3"
+          ></textarea>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="productCategory">Category *</label>
+            <select
+              id="productCategory"
+              [(ngModel)]="newProduct.category"
+              name="category"
+              required
+            >
+              <option value="Electronics">Electronics</option>
+              <option value="Appliances">Appliances</option>
+              <option value="Wearables">Wearables</option>
+              <option value="Office">Office</option>
+              <option value="Accessories">Accessories</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="pointsPrice">Points Price *</label>
+            <input
+              id="pointsPrice"
+              type="number"
+              [(ngModel)]="newProduct.pointsPrice"
+              name="pointsPrice"
+              placeholder="0"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="stock">Stock Quantity *</label>
+            <input
+              id="stock"
+              type="number"
+              [(ngModel)]="newProduct.stock"
+              name="stock"
+              placeholder="0"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="imageUrl">Image URL</label>
+            <input
+              id="imageUrl"
+              type="text"
+              [(ngModel)]="newProduct.imageUrl"
+              name="imageUrl"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeProductModal()">
+        Cancel
+      </app-button>
+      <app-button (clicked)="createProduct()">
+        Add Product
+      </app-button>
+    </div>
+  </div>
 </div>

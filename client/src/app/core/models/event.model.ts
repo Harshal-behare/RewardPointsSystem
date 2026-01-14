@@ -5,6 +5,8 @@ export interface Event {
   eventDate: Date | string;
   status: 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
   pointsPool: number;
+  imageUrl?: string;
+  maxParticipants?: number;
   createdBy?: number;
   createdAt?: Date | string;
   participantCount?: number;
@@ -15,6 +17,10 @@ export interface EventParticipant {
   eventId: number;
   userId: number;
   userName: string;
-  pointsAwarded: number;
+  userEmail: string;
+  registeredAt: Date | string;
+  status: 'Registered' | 'CheckedIn' | 'Attended' | 'NoShow' | 'Cancelled' | 'Winner';
+  pointsAwarded?: number;
   awardedAt?: Date | string;
+  eventRank?: number;
 }

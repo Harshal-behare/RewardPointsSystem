@@ -1,4 +1,24 @@
 <div class="products-container">
+  <!-- Quick Actions -->
+  <div class="quick-actions-bar">
+    <button class="quick-action-btn primary" (click)="openCreateModal()">
+      <span class="action-icon">➕</span>
+      <span>Add New Product</span>
+    </button>
+    <button class="quick-action-btn secondary" (click)="importProducts()">
+      <span class="action-icon">📤</span>
+      <span>Import Products</span>
+    </button>
+    <button class="quick-action-btn secondary" (click)="exportProducts()">
+      <span class="action-icon">📥</span>
+      <span>Export Products</span>
+    </button>
+    <button class="quick-action-btn secondary" (click)="refreshData()">
+      <span class="action-icon">🔄</span>
+      <span>Refresh</span>
+    </button>
+  </div>
+
   <app-card>
     <!-- Header -->
     <div header class="products-header">
@@ -16,9 +36,41 @@
       </div>
     </div>
 
+    <!-- Filters & Search -->
+    <div class="filters-section">
+      <div class="filter-tabs">
+        <button
+          class="filter-tab"
+          [class.active]="selectedCategory === 'all'"
+          (click)="onCategoryChange('all')"
+        >
+          All Products
+        </button>
+        <button
+          *ngFor="let category of categories.slice(1)"
+          class="filter-tab"
+          [class.active]="selectedCategory === category"
+          (click)="onCategoryChange(category)"
+        >
+          {{ category }}
+        </button>
+      </div>
+
+      <div class="search-box">
+        <input
+          type="text"
+          placeholder="Search products..."
+          [(ngModel)]="searchQuery"
+          (input)="onSearchChange()"
+          class="search-input"
+        />
+        <span class="search-icon">🔍</span>
+      </div>
+    </div>
+
     <!-- Grid View -->
     <div *ngIf="viewMode === 'grid'" class="products-grid">
-      <div class="product-card" *ngFor="let product of products">
+      <div class="product-card" *ngFor="let product of filteredProducts">
         <div class="product-image">
           <img [src]="product.imageUrl" [alt]="product.name" />
           <app-badge 
@@ -70,7 +122,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let product of products">
+          <tr *ngFor="let product of filteredProducts">
             <td>
               <div class="table-product">
                 <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" />

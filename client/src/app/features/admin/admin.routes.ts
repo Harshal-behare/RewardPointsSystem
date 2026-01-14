@@ -32,6 +32,11 @@ export const adminRoutes: Routes = [
           .then(m => m.AdminProfileComponent)
       },
       {
+        path: 'redemptions',
+        loadComponent: () => import('./redemptions/redemptions.component')
+          .then(m => m.AdminRedemptionsComponent)
+      },
+      {
         path: '',
         redirectTo: 'dashboard',
         pathMatch: 'full'

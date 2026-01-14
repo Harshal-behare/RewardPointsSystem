@@ -1,0 +1,302 @@
+<div class="redemptions-container">
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #E8F5E9;">📊</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.total }}</div>
+        <div class="stat-label">Total Requests</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #FFF3E0;">⏳</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.pending }}</div>
+        <div class="stat-label">Pending</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #E3F2FD;">✓</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.approved }}</div>
+        <div class="stat-label">Approved</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #FFEBEE;">✗</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats.rejected }}</div>
+        <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+  </div>
+
+  <app-card>
+    <!-- Header with Filter Tabs -->
+    <div header class="redemptions-header">
+      <div>
+        <h2>Redemption Requests</h2>
+        <p class="subtitle">Manage product redemption requests from employees</p>
+      </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="filter-tabs">
+      <button 
+        class="tab-button" 
+        [class.active]="currentFilter === 'All'"
+        (click)="setFilter('All')">
+        All ({{ stats.total }})
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="currentFilter === 'Pending'"
+        (click)="setFilter('Pending')">
+        Pending ({{ stats.pending }})
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="currentFilter === 'Approved'"
+        (click)="setFilter('Approved')">
+        Approved ({{ stats.approved }})
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="currentFilter === 'Rejected'"
+        (click)="setFilter('Rejected')">
+        Rejected ({{ stats.rejected }})
+      </button>
+    </div>
+
+    <!-- Redemptions Table -->
+    <div class="table-container">
+      <table class="redemptions-table">
+        <thead>
+          <tr>
+            <th>Employee Name</th>
+            <th>Product Name</th>
+            <th>Points Redeemed</th>
+            <th>Request Date</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let request of filteredRequests">
+            <td>
+              <div class="user-info">
+                <div class="user-avatar">{{ getUserInitials(request.userName) }}</div>
+                <div>
+                  <strong>{{ request.userName }}</strong>
+                  <span class="user-email">{{ request.userEmail }}</span>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="product-info">
+                <div class="product-thumbnail">📦</div>
+                <strong>{{ request.productName }}</strong>
+              </div>
+            </td>
+            <td>
+              <span class="points-value">{{ request.pointsSpent }} pts</span>
+            </td>
+            <td>{{ request.requestedAt | date: 'MMM dd, yyyy' }}</td>
+            <td>
+              <app-badge [variant]="getStatusVariant(request.status)">
+                {{ request.status }}
+              </app-badge>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <button 
+                  *ngIf="request.status === 'Pending'" 
+                  class="action-btn approve-btn" 
+                  (click)="openApproveModal(request)"
+                  title="Approve">
+                  ✓ Approve
+                </button>
+                <button 
+                  *ngIf="request.status === 'Pending'" 
+                  class="action-btn reject-btn" 
+                  (click)="openRejectModal(request)"
+                  title="Reject">
+                  ✗ Reject
+                </button>
+                <button 
+                  class="action-btn view-btn" 
+                  (click)="openDetailsModal(request)"
+                  title="View Details">
+                  👁 Details
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      
+      <div *ngIf="filteredRequests.length === 0" class="empty-state">
+        <div class="empty-icon">📋</div>
+        <h3>No redemption requests</h3>
+        <p>There are no {{ currentFilter.toLowerCase() }} redemption requests at the moment.</p>
+      </div>
+    </div>
+  </app-card>
+</div>
+
+<!-- Approve Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showApproveModal" (click)="closeApproveModal()">
+  <div class="modal-content approve-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✓ Approve Redemption</h3>
+      <button class="close-btn" (click)="closeApproveModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="confirmation-message">
+        <p><strong>Are you sure you want to approve this redemption request?</strong></p>
+        <div class="request-summary">
+          <p><strong>Employee:</strong> {{ selectedRequest?.userName }}</p>
+          <p><strong>Product:</strong> {{ selectedRequest?.productName }}</p>
+          <p><strong>Points:</strong> {{ selectedRequest?.pointsSpent }} pts</p>
+        </div>
+        <div class="warning-box">
+          <p>⚠️ This action will deduct {{ selectedRequest?.pointsSpent }} points from the employee's account.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeApproveModal()">
+        Cancel
+      </button>
+      <button class="btn btn-success" (click)="confirmApprove()">
+        Confirm Approval
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Reject Confirmation Modal -->
+<div class="modal-overlay" *ngIf="showRejectModal" (click)="closeRejectModal()">
+  <div class="modal-content reject-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>✗ Reject Redemption</h3>
+      <button class="close-btn" (click)="closeRejectModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="request-summary">
+        <p><strong>Employee:</strong> {{ selectedRequest?.userName }}</p>
+        <p><strong>Product:</strong> {{ selectedRequest?.productName }}</p>
+        <p><strong>Points:</strong> {{ selectedRequest?.pointsSpent }} pts</p>
+      </div>
+      
+      <div class="form-group">
+        <label for="rejectionReason">Rejection Reason *</label>
+        <textarea
+          id="rejectionReason"
+          [(ngModel)]="rejectionReason"
+          name="rejectionReason"
+          placeholder="Please provide a reason for rejecting this request..."
+          rows="4"
+          required
+        ></textarea>
+        <span class="error-message" *ngIf="rejectionError">{{ rejectionError }}</span>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeRejectModal()">
+        Cancel
+      </button>
+      <button class="btn btn-danger" (click)="confirmReject()">
+        Confirm Rejection
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- View Details Modal -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+  <div class="modal-content details-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📋 Redemption Details</h3>
+      <button class="close-btn" (click)="closeDetailsModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="details-section">
+        <h4>Employee Information</h4>
+        <div class="detail-row">
+          <span class="detail-label">Name:</span>
+          <span class="detail-value">{{ selectedRequest?.userName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Email:</span>
+          <span class="detail-value">{{ selectedRequest?.userEmail }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Employee ID:</span>
+          <span class="detail-value">{{ selectedRequest?.userId }}</span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h4>Product Information</h4>
+        <div class="detail-row">
+          <span class="detail-label">Product Name:</span>
+          <span class="detail-value">{{ selectedRequest?.productName }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Points Redeemed:</span>
+          <span class="detail-value points-highlight">{{ selectedRequest?.pointsSpent }} pts</span>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h4>Delivery Address</h4>
+        <div class="address-box">
+          <p>{{ selectedRequest?.deliveryAddress || 'Office Address: 123 Business Park, Suite 100, City, ST 12345' }}</p>
+        </div>
+      </div>
+
+      <div class="details-section">
+        <h4>Request Information</h4>
+        <div class="detail-row">
+          <span class="detail-label">Request Date:</span>
+          <span class="detail-value">{{ selectedRequest?.requestedAt | date: 'MMM dd, yyyy HH:mm' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="detail-label">Status:</span>
+          <span class="detail-value">
+            <app-badge [variant]="getStatusVariant(selectedRequest?.status || 'Pending')">
+              {{ selectedRequest?.status }}
+            </app-badge>
+          </span>
+        </div>
+        <div class="detail-row" *ngIf="selectedRequest?.approvedAt">
+          <span class="detail-label">Approved At:</span>
+          <span class="detail-value">{{ selectedRequest?.approvedAt | date: 'MMM dd, yyyy HH:mm' }}</span>
+        </div>
+        <div class="detail-row" *ngIf="selectedRequest?.deliveredAt">
+          <span class="detail-label">Delivered At:</span>
+          <span class="detail-value">{{ selectedRequest?.deliveredAt | date: 'MMM dd, yyyy HH:mm' }}</span>
+        </div>
+      </div>
+
+      <div class="details-section" *ngIf="selectedRequest?.notes">
+        <h4>Notes</h4>
+        <div class="notes-box">
+          <p>{{ selectedRequest?.notes }}</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeDetailsModal()">
+        Close
+      </button>
+    </div>
+  </div>
+</div>

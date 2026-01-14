@@ -1,0 +1,218 @@
+<div class="employee-profile">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title">👤 My Profile</h1>
+    <p class="page-subtitle">Manage your personal information and settings</p>
+  </div>
+
+  <div class="profile-grid">
+    <!-- Left Column - Profile Card -->
+    <div class="profile-card">
+      <div class="profile-avatar-section">
+        <div class="avatar-container">
+          <img
+            [src]="previewUrl || profile.avatarUrl"
+            alt="Profile Avatar"
+            class="profile-avatar"
+          />
+          <div *ngIf="isEditMode" class="avatar-overlay">
+            <label for="avatar-upload" class="upload-label">
+              📷 Change Photo
+            </label>
+            <input
+              type="file"
+              id="avatar-upload"
+              accept="image/*"
+              (change)="onFileSelected($event)"
+              style="display: none"
+            />
+          </div>
+        </div>
+
+        <h2 class="profile-name">{{ profile.name }}</h2>
+        <p class="profile-position">{{ profile.position }}</p>
+        <p class="profile-department">{{ profile.department }} Department</p>
+
+        <div class="profile-meta">
+          <div class="meta-item">
+            <span class="meta-icon">📅</span>
+            <span class="meta-text">Joined {{ profile.joinDate }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-actions" *ngIf="!isEditMode">
+        <button class="action-btn primary" (click)="enableEditMode()">
+          ✏️ Edit Profile
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Column - Forms -->
+    <div class="profile-forms">
+      <!-- Profile Information Form -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3 class="section-title">Personal Information</h3>
+          <div *ngIf="isEditMode" class="section-actions">
+            <button class="btn-secondary" (click)="cancelEdit()">Cancel</button>
+            <button class="btn-primary" (click)="saveProfile()">Save Changes</button>
+          </div>
+        </div>
+
+        <div class="form-content">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Full Name *</label>
+              <input
+                type="text"
+                [(ngModel)]="editedProfile.name"
+                [disabled]="!isEditMode"
+                class="form-input"
+                placeholder="Enter your full name"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Email Address *</label>
+              <input
+                type="email"
+                [(ngModel)]="editedProfile.email"
+                [disabled]="!isEditMode"
+                class="form-input"
+                placeholder="Enter your email"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input
+                type="tel"
+                [(ngModel)]="editedProfile.phone"
+                [disabled]="!isEditMode"
+                class="form-input"
+                placeholder="Enter your phone number"
+              />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Department</label>
+              <input
+                type="text"
+                [(ngModel)]="editedProfile.department"
+                disabled
+                class="form-input"
+                placeholder="Department"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label class="form-label">Position</label>
+              <input
+                type="text"
+                [(ngModel)]="editedProfile.position"
+                disabled
+                class="form-input"
+                placeholder="Position"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Change Password Form -->
+      <div class="form-section">
+        <div class="section-header">
+          <h3 class="section-title">Change Password</h3>
+        </div>
+
+        <div class="form-content">
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label class="form-label">Current Password *</label>
+              <input
+                type="password"
+                [(ngModel)]="currentPassword"
+                class="form-input"
+                placeholder="Enter current password"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label class="form-label">New Password *</label>
+              <input
+                type="password"
+                [(ngModel)]="newPassword"
+                class="form-input"
+                placeholder="Enter new password"
+              />
+              <div *ngIf="newPassword" class="password-strength">
+                <div class="strength-bar" [attr.data-strength]="getPasswordStrength()">
+                  <div class="strength-fill"></div>
+                </div>
+                <span class="strength-text" [attr.data-strength]="getPasswordStrength()">
+                  {{ getPasswordStrength() | titlecase }}
+                </span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label">Confirm New Password *</label>
+              <input
+                type="password"
+                [(ngModel)]="confirmPassword"
+                class="form-input"
+                placeholder="Confirm new password"
+              />
+              <div *ngIf="confirmPassword" class="password-match">
+                <span
+                  *ngIf="newPassword === confirmPassword"
+                  class="match-success"
+                >
+                  ✓ Passwords match
+                </span>
+                <span
+                  *ngIf="newPassword !== confirmPassword"
+                  class="match-error"
+                >
+                  ✗ Passwords do not match
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
+              <div class="password-requirements">
+                <p class="requirements-title">Password Requirements:</p>
+                <ul class="requirements-list">
+                  <li [class.met]="hasMinLength()">At least 8 characters</li>
+                  <li [class.met]="hasUpperCase()">One uppercase letter</li>
+                  <li [class.met]="hasLowerCase()">One lowercase letter</li>
+                  <li [class.met]="hasNumber()">One number</li>
+                  <li [class.met]="hasSpecialChar()">One special character</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <button
+              class="btn-primary full-width"
+              (click)="changePassword()"
+              [disabled]="!currentPassword || !newPassword || !confirmPassword || newPassword !== confirmPassword"
+            >
+              Update Password
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

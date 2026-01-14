@@ -1,0 +1,78 @@
+<div class="employee-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
+    <div class="sidebar-header">
+      <div class="logo">
+        <span class="logo-icon">🏆</span>
+        <span class="logo-text" *ngIf="!isSidebarCollapsed">Rewards Portal</span>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <a
+        *ngFor="let item of menuItems"
+        [routerLink]="item.route"
+        routerLinkActive="active"
+        class="nav-item"
+        (click)="setActiveMenu(item)"
+      >
+        <span class="nav-icon">{{ item.icon }}</span>
+        <span class="nav-text" *ngIf="!isSidebarCollapsed">{{ item.name }}</span>
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <span>{{ isSidebarCollapsed ? '→' : '←' }}</span>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">Employee Portal</h1>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Notifications -->
+        <button class="icon-btn" title="Notifications">
+          <span class="notification-badge">3</span>
+          🔔
+        </button>
+
+        <!-- Profile Dropdown -->
+        <div class="profile-dropdown" (click)="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            <img src="https://i.pravatar.cc/150?img=1" alt="User Avatar" />
+          </div>
+          <div class="profile-info">
+            <span class="profile-name">John Doe</span>
+            <span class="profile-role">Employee</span>
+          </div>
+          <span class="dropdown-arrow">▼</span>
+
+          <div class="dropdown-menu" *ngIf="showProfileDropdown">
+            <a [routerLink]="['/employee/profile']" class="dropdown-item">
+              <span>👤</span> My Profile
+            </a>
+            <a [routerLink]="['/employee/account']" class="dropdown-item">
+              <span>💰</span> My Points
+            </a>
+            <hr />
+            <a (click)="logout()" class="dropdown-item logout">
+              <span>🚪</span> Logout
+            </a>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

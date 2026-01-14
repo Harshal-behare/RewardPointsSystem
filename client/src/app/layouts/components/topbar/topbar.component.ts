@@ -19,11 +19,39 @@ import { Router } from '@angular/router';
           </div>
           <div class="user-info">
             <div class="user-name">{{ userName }}</div>
-            <div class="user-role">{{ userRole }}</div>
+            <div class="user-role">{{ currentRole }}</div>
           </div>
-          <button class="logout-btn" (click)="logout()">
-            <span>🚪</span>
+          
+          <!-- Dropdown Toggle Button -->
+          <button class="dropdown-toggle" (click)="toggleDropdown()">
+            <span>▼</span>
           </button>
+          
+          <!-- Dropdown Menu -->
+          <div class="dropdown-menu" [class.show]="showDropdown">
+            <div class="dropdown-header">
+              <strong>Switch Role</strong>
+            </div>
+            <button 
+              class="dropdown-item" 
+              [class.active]="currentRole === 'Administrator'"
+              (click)="switchRole('admin')">
+              <span class="role-icon">👨‍💼</span>
+              <span>Admin Dashboard</span>
+            </button>
+            <button 
+              class="dropdown-item"
+              [class.active]="currentRole === 'Employee'"
+              (click)="switchRole('employee')">
+              <span class="role-icon">👤</span>
+              <span>Employee Dashboard</span>
+            </button>
+            <div class="dropdown-divider"></div>
+            <button class="dropdown-item logout-item" (click)="logout()">
+              <span class="role-icon">🚪</span>
+              <span>Log out</span>
+            </button>
+          </div>
         </div>
       </div>
     </header>
@@ -64,6 +92,7 @@ import { Router } from '@angular/router';
       padding: 8px;
       border-radius: 8px;
       transition: background-color 0.2s ease;
+      position: relative;
     }
 
     .user-menu:hover {
@@ -99,32 +128,135 @@ import { Router } from '@angular/router';
       color: #7A7A7A;
     }
 
-    .logout-btn {
+   
+.logout-btn {
+    background-color: #E74C3C; /* Red shade */
+    color: white;             /* Text color for contrast */
+    border: none;
+    padding: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    border-radius: 4px;
+    transition: background-color 0.2s ease;
+}
+
+.logout-btn:hover {
+    background-color: #C0392B; /* Darker red on hover */
+}
+
+    /* Dropdown Toggle */
+    .dropdown-toggle {
       background: none;
       border: none;
-      padding: 8px;
       cursor: pointer;
-      font-size: 18px;
+      padding: 4px 8px;
+      color: #7A7A7A;
+      font-size: 12px;
       border-radius: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .dropdown-toggle:hover {
+      background-color: #E8EBED;
+      color: #2C3E50;
+    }
+
+    /* Dropdown Menu */
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+      min-width: 220px;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: all 0.2s ease;
+      z-index: 1000;
+    }
+
+    .dropdown-menu.show {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+
+    .dropdown-header {
+      padding: 12px 16px;
+      border-bottom: 1px solid #F4F6F7;
+      color: #7A7A7A;
+      font-size: 12px;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 14px;
+      color: #2C3E50;
+      text-align: left;
       transition: background-color 0.2s ease;
     }
 
-    .logout-btn:hover {
+    .dropdown-item:hover {
+      background-color: #F4F6F7;
+    }
+
+    .dropdown-item.active {
+      background-color: #D5F4E6;
+      color: #27AE60;
+    }
+
+    .dropdown-item.logout-item {
+      border-top: 1px solid #F4F6F7;
+      color: #E74C3C;
+    }
+
+    .dropdown-item.logout-item:hover {
       background-color: #FADBD8;
     }
+
+    .role-icon {
+      font-size: 16px;
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background-color: #F4F6F7;
+      margin: 4px 0;
+    }
+
   `]
 })
 export class TopbarComponent implements OnInit {
   pageTitle = 'Dashboard';
   userName = 'Admin User';
   userRole = 'Administrator';
+  currentRole = 'Administrator';
   userInitials = 'AU';
+  showDropdown = false;
 
   constructor(private router: Router) {}
 
   ngOnInit(): void {
     // Try to get user info from localStorage or API
     this.loadUserInfo();
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', (event) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest('.user-menu')) {
+        this.showDropdown = false;
+      }
+    });
   }
 
   loadUserInfo(): void {
@@ -135,6 +267,7 @@ export class TopbarComponent implements OnInit {
         const userData = JSON.parse(userDataStr);
         this.userName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User';
         this.userRole = userData.role || 'User';
+        this.currentRole = userData.role || 'Administrator';
         this.userInitials = this.getInitials(userData.firstName, userData.lastName);
       } catch (e) {
         console.error('Error parsing user data', e);
@@ -148,7 +281,26 @@ export class TopbarComponent implements OnInit {
     return first + last || 'U';
   }
 
+  toggleDropdown(): void {
+    this.showDropdown = !this.showDropdown;
+  }
+
+  switchRole(role: 'admin' | 'employee'): void {
+    this.showDropdown = false;
+    
+    if (role === 'admin') {
+      this.currentRole = 'Administrator';
+      this.router.navigate(['/admin/dashboard']);
+    } else {
+      this.currentRole = 'Employee';
+      // TODO: Navigate to employee dashboard when available
+      alert('Employee dashboard is not yet implemented. Will redirect to /employee/dashboard');
+      // this.router.navigate(['/employee/dashboard']);
+    }
+  }
+
   logout(): void {
+    this.showDropdown = false;
     // Clear auth and redirect to login
     localStorage.removeItem('token');
     localStorage.removeItem('user');

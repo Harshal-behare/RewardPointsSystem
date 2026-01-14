@@ -83,6 +83,12 @@ export class AdminProductsComponent implements OnInit {
     },
   ];
 
+  // Filter and Search
+  filteredProducts: Product[] = [];
+  searchQuery = '';
+  selectedCategory: string = 'all';
+  categories = ['all', 'Electronics', 'Appliances', 'Wearables', 'Office', 'Accessories'];
+
   showModal = false;
   modalMode: 'create' | 'edit' = 'create';
   selectedProduct: Partial<Product> = {};
@@ -91,6 +97,37 @@ export class AdminProductsComponent implements OnInit {
 
   ngOnInit(): void {
     // Load products from API
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.products];
+
+    // Filter by category
+    if (this.selectedCategory !== 'all') {
+      filtered = filtered.filter(product => product.category === this.selectedCategory);
+    }
+
+    // Filter by search query
+    if (this.searchQuery.trim()) {
+      const query = this.searchQuery.toLowerCase();
+      filtered = filtered.filter(product =>
+        product.name.toLowerCase().includes(query) ||
+        product.description.toLowerCase().includes(query) ||
+        product.category.toLowerCase().includes(query)
+      );
+    }
+
+    this.filteredProducts = filtered;
+  }
+
+  onCategoryChange(category: string): void {
+    this.selectedCategory = category;
+    this.applyFilters();
+  }
+
+  onSearchChange(): void {
+    this.applyFilters();
   }
 
   getStockStatus(stock: number): { label: string; variant: 'success' | 'warning' | 'danger' } {
@@ -133,8 +170,28 @@ export class AdminProductsComponent implements OnInit {
   saveProduct(): void {
     if (this.modalMode === 'create') {
       console.log('Creating product:', this.selectedProduct);
+      // TODO: Call API to create product
+      // Add new product to the list with a generated ID
+      const newProduct: Product = {
+        id: Math.max(...this.products.map(p => p.id)) + 1,
+        name: this.selectedProduct.name || '',
+        description: this.selectedProduct.description || '',
+        category: this.selectedProduct.category || '',
+        pointsPrice: this.selectedProduct.pointsPrice || 0,
+        stock: this.selectedProduct.stock || 0,
+        imageUrl: this.selectedProduct.imageUrl || 'https://via.placeholder.com/150',
+        status: this.selectedProduct.status || 'Active'
+      };
+      this.products.unshift(newProduct);
+      alert('Product added successfully!');
     } else {
       console.log('Updating product:', this.selectedProduct);
+      // TODO: Call API to update product
+      const index = this.products.findIndex(p => p.id === this.selectedProduct.id);
+      if (index !== -1) {
+        this.products[index] = { ...this.selectedProduct } as Product;
+      }
+      alert('Product updated successfully!');
     }
     this.closeModal();
   }
@@ -148,5 +205,25 @@ export class AdminProductsComponent implements OnInit {
 
   toggleViewMode(): void {
     this.viewMode = this.viewMode === 'grid' ? 'table' : 'grid';
+  }
+
+  // Quick Action Methods
+  importProducts(): void {
+    // TODO: Implement import functionality
+    console.log('Importing products...');
+    alert('📤 Products import feature coming soon!');
+  }
+
+  exportProducts(): void {
+    // TODO: Implement export functionality
+    console.log('Exporting products...');
+    alert('📥 Products export feature coming soon!');
+  }
+
+  refreshData(): void {
+    // TODO: Reload products from API
+    console.log('Refreshing products data...');
+    this.applyFilters();
+    alert('🔄 Data refreshed!');
   }
 }

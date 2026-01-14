@@ -10,8 +10,13 @@ export const routes: Routes = [
 		loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes)
 	},
 	{
+		path: 'employee',
+		loadChildren: () => import('./features/employee/employee.routes').then(m => m.employeeRoutes)
+	},
+	{
 		path: 'dashboard',
-		loadComponent: () => import('./dashboard/dashboard.component').then(m => m.DashboardComponent)
+		redirectTo: 'employee/dashboard',
+		pathMatch: 'full'
 	},
 	{ 
 		path: '', 

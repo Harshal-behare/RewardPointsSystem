@@ -95,6 +95,7 @@ export class SidebarComponent {
     { icon: '📊', label: 'Dashboard', route: '/admin/dashboard' },
     { icon: '📅', label: 'Events', route: '/admin/events' },
     { icon: '🎁', label: 'Products', route: '/admin/products' },
+    { icon: '🛒', label: 'Redemptions', route: '/admin/redemptions' },
     { icon: '👥', label: 'Users', route: '/admin/users' },
     { icon: '👤', label: 'Profile', route: '/admin/profile' },
   ];
