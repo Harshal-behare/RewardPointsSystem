@@ -25,8 +25,8 @@ namespace RewardPointsSystem.Application.MappingProfiles
                 .ForMember(dest => dest.ProductCategory, opt => opt.MapFrom(src => src.Product != null && src.Product.ProductCategory != null ? src.Product.ProductCategory.Name : string.Empty))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status.ToString()))
                 .ForMember(dest => dest.ApprovedByName, opt => opt.MapFrom(src => src.Approver != null ? $"{src.Approver.FirstName} {src.Approver.LastName}" : string.Empty))
-                .ForMember(dest => dest.CancelledAt, opt => opt.MapFrom(src => src.Status == RedemptionStatus.Cancelled ? src.RequestedAt : (DateTime?)null))
-                .ForMember(dest => dest.CancellationReason, opt => opt.MapFrom(src => src.RejectionReason));
+                .ForMember(dest => dest.ProcessedAt, opt => opt.MapFrom(src => src.ProcessedAt))
+                .ForMember(dest => dest.RejectionReason, opt => opt.MapFrom(src => src.RejectionReason));
 
             // CreateRedemptionDto → Redemption (for reference - use Redemption.Create() factory method in services)
             CreateMap<CreateRedemptionDto, Redemption>()

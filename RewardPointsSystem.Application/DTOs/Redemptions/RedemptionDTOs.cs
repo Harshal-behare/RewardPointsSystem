@@ -47,9 +47,9 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
         public Guid? ApprovedBy { get; set; }
         public string ApprovedByName { get; set; }
         public DateTime? DeliveredAt { get; set; }
-        public DateTime? CancelledAt { get; set; }
+        public DateTime? ProcessedAt { get; set; }
         public string DeliveryNotes { get; set; }
-        public string CancellationReason { get; set; }
+        public string RejectionReason { get; set; }
     }
 
     /// <summary>

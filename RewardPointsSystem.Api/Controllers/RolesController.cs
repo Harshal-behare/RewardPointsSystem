@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Roles;
 using RewardPointsSystem.Application.Interfaces;
@@ -199,23 +200,32 @@ namespace RewardPointsSystem.Api.Controllers
         /// <param name="dto">Role assignment data</param>
         /// <response code="200">Role assigned successfully</response>
         /// <response code="404">User or role not found</response>
-        [HttpPost("../users/{userId}/roles")]
+        [HttpPost("users/{userId}/assign")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> AssignRoleToUser(Guid userId, [FromBody] AssignRoleDto dto)
         {
             try
             {
-                await _userRoleService.AssignRoleAsync(userId, dto.RoleId, Guid.Empty); // TODO: Get admin user ID from JWT claims
+                // Get admin user ID from JWT claims
+                var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminUserId))
+                    return UnauthorizedError("Admin user not authenticated");
+
+                await _userRoleService.AssignRoleAsync(userId, dto.RoleId, adminUserId);
                 return Success<object>(null, "Role assigned successfully");
             }
             catch (KeyNotFoundException)
             {
                 return NotFoundError("User or role not found");
             }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, 400);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error assigning role to user");
+                _logger.LogError(ex, "Error assigning role to user {UserId}", userId);
                 return Error("Failed to assign role");
             }
         }
@@ -227,7 +237,7 @@ namespace RewardPointsSystem.Api.Controllers
         /// <param name="roleId">Role ID</param>
         /// <response code="200">Role revoked successfully</response>
         /// <response code="404">User or role not found</response>
-        [HttpDelete("../users/{userId}/roles/{roleId}")]
+        [HttpDelete("users/{userId}/roles/{roleId}")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> RevokeRoleFromUser(Guid userId, Guid roleId)
@@ -241,9 +251,13 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 return NotFoundError("User or role not found");
             }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, 400);
+            }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error revoking role from user");
+                _logger.LogError(ex, "Error revoking role from user {UserId}", userId);
                 return Error("Failed to revoke role");
             }
         }
@@ -254,7 +268,7 @@ namespace RewardPointsSystem.Api.Controllers
         /// <param name="userId">User ID</param>
         /// <response code="200">Returns user's roles</response>
         /// <response code="404">User not found</response>
-        [HttpGet("../users/{userId}/roles")]
+        [HttpGet("users/{userId}/roles")]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<RoleResponseDto>>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetUserRoles(Guid userId)
@@ -278,7 +292,7 @@ namespace RewardPointsSystem.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error retrieving user roles");
+                _logger.LogError(ex, "Error retrieving user roles for {UserId}", userId);
                 return Error("Failed to retrieve user roles");
             }
         }

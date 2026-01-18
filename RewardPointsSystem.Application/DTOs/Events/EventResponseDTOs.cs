@@ -20,6 +20,17 @@ namespace RewardPointsSystem.Application.DTOs.Events
     }
 
     /// <summary>
+    /// DTO for changing event status
+    /// </summary>
+    public class ChangeEventStatusDto
+    {
+        /// <summary>
+        /// Target status: Published, Active, Completed, or Cancelled
+        /// </summary>
+        public string Status { get; set; }
+    }
+
+    /// <summary>
     /// Detailed event response with participants
     /// </summary>
     public class EventDetailsDto

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Points;
 using RewardPointsSystem.Application.Interfaces;
@@ -15,17 +16,20 @@ namespace RewardPointsSystem.Api.Controllers
         private readonly IUserPointsAccountService _accountService;
         private readonly IUserPointsTransactionService _transactionService;
         private readonly IPointsAwardingService _awardingService;
+        private readonly IUserService _userService;
         private readonly ILogger<PointsController> _logger;
 
         public PointsController(
             IUserPointsAccountService accountService,
             IUserPointsTransactionService transactionService,
             IPointsAwardingService awardingService,
+            IUserService userService,
             ILogger<PointsController> logger)
         {
             _accountService = accountService;
             _transactionService = transactionService;
             _awardingService = awardingService;
+            _userService = userService;
             _logger = logger;
         }
 
@@ -43,9 +47,21 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var account = await _accountService.GetAccountAsync(userId);
-                // TODO: Map to PointsAccountResponseDto with user details
+                var user = await _userService.GetUserByIdAsync(userId);
                 
-                return Success(account);
+                var accountDto = new PointsAccountResponseDto
+                {
+                    UserId = account.UserId,
+                    UserName = user != null ? $"{user.FirstName} {user.LastName}" : null,
+                    UserEmail = user?.Email,
+                    CurrentBalance = account.CurrentBalance,
+                    TotalEarned = account.TotalEarned,
+                    TotalRedeemed = account.TotalRedeemed,
+                    LastTransaction = account.LastUpdatedAt,
+                    CreatedAt = account.CreatedAt
+                };
+                
+                return Success(accountDto);
             }
             catch (KeyNotFoundException)
             {
@@ -188,11 +204,16 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
+                // Get admin user ID from JWT claims
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var adminUserId))
+                    return UnauthorizedError("Admin user not authenticated");
+
                 var account = await _accountService.GetAccountAsync(dto.UserId);
                 if (!account.HasSufficientBalance(dto.Points))
                     return Error($"Insufficient balance. Current balance: {account.CurrentBalance}, Required: {dto.Points}", 400);
 
-                account.DebitPoints(dto.Points, Guid.Empty); // TODO: Get admin user ID from claims
+                account.DebitPoints(dto.Points, adminUserId);
                 await _accountService.UpdateAccountAsync(account);
 
                 return Success<object>(null, $"Successfully deducted {dto.Points} points");
@@ -220,9 +241,25 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var accounts = await _accountService.GetTopAccountsAsync(top);
-                // TODO: Map to PointsAccountResponseDto with user details
+                var leaderboard = new List<PointsAccountResponseDto>();
                 
-                return Success(accounts);
+                foreach (var account in accounts)
+                {
+                    var user = await _userService.GetUserByIdAsync(account.UserId);
+                    leaderboard.Add(new PointsAccountResponseDto
+                    {
+                        UserId = account.UserId,
+                        UserName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown",
+                        UserEmail = user?.Email,
+                        CurrentBalance = account.CurrentBalance,
+                        TotalEarned = account.TotalEarned,
+                        TotalRedeemed = account.TotalRedeemed,
+                        LastTransaction = account.LastUpdatedAt,
+                        CreatedAt = account.CreatedAt
+                    });
+                }
+                
+                return Success(leaderboard);
             }
             catch (Exception ex)
             {
