@@ -28,21 +28,24 @@
   }
 
   .user-points {
-    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-    color: #ffffff;
+    background: #ffffff;
+    color: #27AE60;
     padding: 16px 24px;
     border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    border: 2px solid #27AE60;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 
     .points-label {
       font-size: 14px;
-      opacity: 0.9;
+      color: #7A7A7A;
+      font-weight: 500;
       margin-right: 8px;
     }
 
     .points-value {
       font-size: 28px;
       font-weight: 700;
+      color: #27AE60;
     }
   }
 }
@@ -79,12 +82,12 @@
       white-space: nowrap;
 
       &:hover {
-        color: #27ae60;
+        color: #27AE60;
         background-color: #f4f6f7;
       }
 
       &.active {
-        background-color: #27ae60;
+        background-color: #27AE60;
         color: #ffffff;
       }
     }
@@ -201,7 +204,7 @@
       .product-category {
         font-size: 12px;
         font-weight: 600;
-        color: #27ae60;
+        color: #27AE60;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         margin-bottom: 8px;
@@ -246,7 +249,7 @@
           .product-points {
             font-size: 20px;
             font-weight: 700;
-            color: #27ae60;
+            color: #27AE60;
           }
 
           .product-stock {
@@ -259,7 +262,7 @@
         .redeem-btn {
           width: 100%;
           padding: 12px;
-          background-color: #27ae60;
+          background-color: #27AE60;
           color: #ffffff;
           border: none;
           border-radius: 8px;
@@ -269,8 +272,8 @@
           transition: all 0.2s;
 
           &:hover:not(:disabled) {
-            background-color: #1b8a4b;
-            transform: translateY(-2px);
+            background-color: #229954;
+            transform: translateY(-1px);
           }
 
           &:disabled {
@@ -500,11 +503,11 @@
         }
 
         &.confirm-btn {
-          background-color: #27ae60;
+          background-color: #27AE60;
           color: #ffffff;
 
           &:hover:not(:disabled) {
-            background-color: #1b8a4b;
+            background-color: #229954;
           }
 
           &:disabled {

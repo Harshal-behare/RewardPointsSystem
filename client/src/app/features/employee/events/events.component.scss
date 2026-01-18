@@ -52,12 +52,12 @@
       transition: all 0.2s;
 
       &:hover {
-        color: #27ae60;
+        color: #27AE60;
         background-color: #f4f6f7;
       }
 
       &.active {
-        background-color: #27ae60;
+        background-color: #27AE60;
         color: #ffffff;
       }
     }
@@ -77,7 +77,7 @@
 
       &:focus {
         outline: none;
-        border-color: #27ae60;
+        border-color: #27AE60;
       }
     }
 
@@ -238,11 +238,11 @@
 
         .availability-fill {
           height: 100%;
-          background: linear-gradient(90deg, #27ae60 0%, #2ecc71 100%);
+          background: #27AE60;
           transition: width 0.3s;
 
           &.full {
-            background: linear-gradient(90deg, #e74c3c 0%, #e67e73 100%);
+            background: #E74C3C;
           }
         }
       }
@@ -258,7 +258,7 @@
         .event-points {
           font-size: 16px;
           font-weight: 700;
-          color: #27ae60;
+          color: #27AE60;
         }
 
         .event-actions {
@@ -284,11 +284,11 @@
             }
 
             &.register-btn {
-              background-color: #27ae60;
+              background-color: #27AE60;
               color: #ffffff;
 
               &:hover:not(:disabled) {
-                background-color: #1b8a4b;
+                background-color: #229954;
               }
 
               &:disabled {
@@ -302,15 +302,15 @@
               color: #ffffff;
 
               &:hover {
-                background-color: #c0392b;
+                background-color: #C0392B;
               }
             }
           }
 
           .registered-badge {
             padding: 8px 16px;
-            background-color: #d4edda;
-            color: #155724;
+            background-color: #D5F4E6;
+            color: #27AE60;
             border-radius: 6px;
             font-size: 13px;
             font-weight: 600;
@@ -472,8 +472,8 @@
             }
 
             &.badge-ongoing {
-              background-color: #d4edda;
-              color: #27ae60;
+              background-color: #D5F4E6;
+              color: #27AE60;
             }
 
             &.badge-completed {
@@ -516,11 +516,11 @@
         }
 
         &.register-btn {
-          background-color: #27ae60;
+          background-color: #27AE60;
           color: #ffffff;
 
           &:hover:not(:disabled) {
-            background-color: #1b8a4b;
+            background-color: #229954;
           }
 
           &:disabled {

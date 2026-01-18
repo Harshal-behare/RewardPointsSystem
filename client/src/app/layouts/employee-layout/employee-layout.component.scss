@@ -7,12 +7,13 @@
 /* ===== SIDEBAR ===== */
 .sidebar {
   width: 260px;
-  background: linear-gradient(180deg, #27ae60 0%, #1b8a4b 100%);
-  color: #ffffff;
+  background: #ffffff;
+  color: #2C3E50;
   display: flex;
   flex-direction: column;
   transition: width 0.3s ease;
-  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 2px 0 8px rgba(0, 0, 0, 0.08);
+  border-right: 1px solid #E8EBED;
   position: relative;
   z-index: 100;
 
@@ -33,7 +34,7 @@
 
 .sidebar-header {
   padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid #F4F6F7;
 
   .logo {
     display: flex;
@@ -41,9 +42,11 @@
     gap: 12px;
     font-size: 20px;
     font-weight: 700;
+    color: #27AE60;
 
     .logo-icon {
       font-size: 28px;
+      color: #27AE60;
     }
 
     .logo-text {
@@ -62,7 +65,7 @@
     align-items: center;
     gap: 12px;
     padding: 14px 20px;
-    color: rgba(255, 255, 255, 0.8);
+    color: #7A7A7A;
     text-decoration: none;
     transition: all 0.2s;
     cursor: pointer;
@@ -81,14 +84,14 @@
     }
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.1);
-      color: #ffffff;
+      background-color: #F4F6F7;
+      color: #2C3E50;
     }
 
     &.active {
-      background-color: rgba(255, 255, 255, 0.15);
-      color: #ffffff;
-      border-left-color: #ffffff;
+      background-color: #E8F8F0;
+      color: #27AE60;
+      border-left-color: #27AE60;
       font-weight: 600;
     }
   }
@@ -96,21 +99,22 @@
 
 .sidebar-footer {
   padding: 20px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  border-top: 1px solid #F4F6F7;
 
   .collapse-btn {
     width: 100%;
     padding: 10px;
-    background-color: rgba(255, 255, 255, 0.1);
+    background-color: #F4F6F7;
     border: none;
     border-radius: 6px;
-    color: #ffffff;
+    color: #7A7A7A;
     font-size: 18px;
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
-      background-color: rgba(255, 255, 255, 0.2);
+      background-color: #E8EBED;
+      color: #2C3E50;
     }
   }
 }
@@ -199,7 +203,7 @@
       height: 40px;
       border-radius: 50%;
       overflow: hidden;
-      border: 2px solid #27ae60;
+      border: 2px solid #27AE60;
 
       img {
         width: 100%;

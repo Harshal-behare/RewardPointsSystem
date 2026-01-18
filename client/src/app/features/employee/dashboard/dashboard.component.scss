@@ -29,44 +29,48 @@
   margin-bottom: 30px;
 
   .balance-card {
-    background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
-    color: #ffffff;
+    background: #ffffff;
+    color: #2c3e50;
     padding: 24px;
     border-radius: 12px;
     display: flex;
     align-items: center;
     gap: 16px;
-    box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 2px solid #E8EBED;
     transition: all 0.3s;
 
     &:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 6px 16px rgba(39, 174, 96, 0.3);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: #27AE60;
     }
 
     &.main-balance {
-      background: linear-gradient(135deg, #1b8a4b 0%, #27ae60 100%);
-      box-shadow: 0 6px 16px rgba(27, 138, 75, 0.3);
+      border-color: #27AE60;
+      background: #E8F8F0;
 
       .balance-value {
         font-size: 36px;
+        color: #27AE60;
       }
     }
 
     .balance-icon {
       font-size: 48px;
-      opacity: 0.9;
+      color: #27AE60;
+      opacity: 0.8;
 
       &.available {
-        filter: brightness(1.2);
+        color: #27AE60;
       }
 
       &.pending {
-        filter: brightness(1.1);
+        color: #F39C12;
       }
 
       &.redeemed {
-        filter: brightness(1.1);
+        color: #95A5A6;
       }
     }
 
@@ -76,13 +80,15 @@
 
       .balance-label {
         font-size: 14px;
-        opacity: 0.9;
+        color: #7A7A7A;
+        font-weight: 500;
         margin-bottom: 4px;
       }
 
       .balance-value {
         font-size: 28px;
         font-weight: 700;
+        color: #2C3E50;
       }
     }
   }
@@ -107,6 +113,7 @@
   border-radius: 12px;
   padding: 24px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F4F6F7;
 
   .section-header {
     display: flex;
@@ -124,14 +131,14 @@
     .view-all-btn {
       background: none;
       border: none;
-      color: #27ae60;
+      color: #27AE60;
       font-size: 14px;
       font-weight: 600;
       cursor: pointer;
       transition: all 0.2s;
 
       &:hover {
-        color: #1b8a4b;
+        color: #229954;
       }
     }
   }
@@ -147,13 +154,14 @@
     display: flex;
     gap: 16px;
     padding: 16px;
-    background-color: #f8f9fa;
+    background-color: #ffffff;
     border-radius: 10px;
-    border-left: 4px solid #27ae60;
+    border-left: 4px solid #27AE60;
+    border: 1px solid #F4F6F7;
     transition: all 0.2s;
 
     &:hover {
-      background-color: #ecf9f2;
+      background-color: #E8F8F0;
       box-shadow: 0 2px 8px rgba(39, 174, 96, 0.1);
     }
 
@@ -201,12 +209,12 @@
         .event-points {
           font-size: 14px;
           font-weight: 600;
-          color: #27ae60;
+          color: #27AE60;
         }
 
         .register-btn {
           padding: 6px 16px;
-          background-color: #27ae60;
+          background-color: #27AE60;
           color: #ffffff;
           border: none;
           border-radius: 6px;
@@ -216,14 +224,15 @@
           transition: all 0.2s;
 
           &:hover {
-            background-color: #1b8a4b;
+            background-color: #229954;
+            transform: translateY(-1px);
           }
         }
 
         .registered-badge {
           padding: 6px 12px;
-          background-color: #d4edda;
-          color: #155724;
+          background-color: #D5F4E6;
+          color: #27AE60;
           border-radius: 6px;
           font-size: 13px;
           font-weight: 600;
@@ -240,13 +249,14 @@
   gap: 16px;
 
   .product-card {
-    background-color: #f8f9fa;
+    background-color: #ffffff;
+    border: 1px solid #F4F6F7;
     border-radius: 10px;
     overflow: hidden;
     transition: all 0.3s;
 
     &:hover {
-      transform: translateY(-4px);
+      transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
 
@@ -262,7 +272,7 @@
       .product-category {
         font-size: 11px;
         font-weight: 600;
-        color: #27ae60;
+        color: #27AE60;
         text-transform: uppercase;
         letter-spacing: 0.5px;
       }
@@ -287,7 +297,7 @@
         .product-points {
           font-size: 15px;
           font-weight: 700;
-          color: #27ae60;
+          color: #27AE60;
         }
 
         .product-stock {
@@ -304,7 +314,7 @@
       .redeem-btn {
         width: 100%;
         padding: 8px;
-        background-color: #27ae60;
+        background-color: #27AE60;
         color: #ffffff;
         border: none;
         border-radius: 6px;
@@ -314,7 +324,8 @@
         transition: all 0.2s;
 
         &:hover:not(:disabled) {
-          background-color: #1b8a4b;
+          background-color: #229954;
+          transform: translateY(-1px);
         }
 
         &:disabled {
@@ -408,7 +419,7 @@
       color: #e74c3c;
 
       &.positive {
-        color: #27ae60;
+        color: #27AE60;
       }
     }
   }
@@ -443,11 +454,11 @@
       }
 
       &:hover {
-        background-color: #27ae60;
-        border-color: #27ae60;
+        background-color: #E8F8F0;
+        border-color: #27AE60;
 
         .action-text {
-          color: #ffffff;
+          color: #27AE60;
         }
       }
     }
