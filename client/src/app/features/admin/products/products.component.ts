@@ -189,6 +189,7 @@ export class AdminProductsComponent implements OnInit {
       categoryId: undefined,
       pointsPrice: 0,
       stock: 0,
+      imageUrl: '',
       status: 'Active'
     };
     this.showModal.set(true);
@@ -196,7 +197,18 @@ export class AdminProductsComponent implements OnInit {
 
   openEditModal(product: DisplayProduct): void {
     this.modalMode.set('edit');
-    this.selectedProduct = { ...product };
+    // Deep copy all product fields to ensure everything is editable
+    this.selectedProduct = { 
+      id: product.id,
+      name: product.name,
+      description: product.description,
+      category: product.category,
+      categoryId: product.categoryId,
+      pointsPrice: product.pointsPrice,
+      stock: product.stock,
+      imageUrl: product.imageUrl,
+      status: product.status
+    };
     this.showModal.set(true);
   }
 
@@ -205,21 +217,13 @@ export class AdminProductsComponent implements OnInit {
     this.selectedProduct = {};
   }
 
-  // Helper to get categoryId from category name
-  private getCategoryIdByName(categoryName: string): string | undefined {
-    const cat = this.dbCategories().find(c => c.name === categoryName);
-    return cat?.id;
-  }
-
   saveProduct(): void {
-    // Get categoryId from category name if not already set
-    const categoryId = this.selectedProduct.categoryId || this.getCategoryIdByName(this.selectedProduct.category || '');
-    
+    // CategoryId is now directly bound from dropdown, no need for name lookup
     if (this.modalMode() === 'create') {
       const createData: CreateProductDto = {
         name: this.selectedProduct.name || '',
         description: this.selectedProduct.description || '',
-        categoryId: categoryId,
+        categoryId: this.selectedProduct.categoryId,
         pointsPrice: this.selectedProduct.pointsPrice || 0,
         stockQuantity: this.selectedProduct.stock || 0,
         imageUrl: this.selectedProduct.imageUrl || 'https://via.placeholder.com/150'
@@ -244,7 +248,7 @@ export class AdminProductsComponent implements OnInit {
       const updateData: UpdateProductDto = {
         name: this.selectedProduct.name,
         description: this.selectedProduct.description,
-        categoryId: categoryId,
+        categoryId: this.selectedProduct.categoryId,
         pointsPrice: this.selectedProduct.pointsPrice,
         stockQuantity: this.selectedProduct.stock,
         imageUrl: this.selectedProduct.imageUrl,

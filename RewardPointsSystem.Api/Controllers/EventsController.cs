@@ -35,13 +35,11 @@ namespace RewardPointsSystem.Api.Controllers
             return status switch
             {
                 EventStatus.Draft => "Draft",
-                EventStatus.Published or EventStatus.Upcoming => "Upcoming",
-                EventStatus.RegistrationOpen => "Upcoming",
-                EventStatus.RegistrationClosed => "Upcoming",
+                EventStatus.Published or EventStatus.Upcoming or EventStatus.RegistrationOpen or EventStatus.RegistrationClosed => "Upcoming",
                 EventStatus.InProgress or EventStatus.Active => "Active",
                 EventStatus.Completed => "Completed",
                 EventStatus.Cancelled => "Cancelled",
-                _ => status.ToString()
+                _ => "Upcoming"
             };
         }
 
@@ -212,7 +210,7 @@ namespace RewardPointsSystem.Api.Controllers
                 if (existingEvent == null)
                     return NotFoundError($"Event with ID {id} not found");
 
-                await _eventService.CancelEventAsync(id);
+                await _eventService.DeleteEventAsync(id);
 
                 return Success<object>(null, "Event cancelled successfully");
             }
@@ -299,6 +297,53 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error changing event status {EventId}", id);
                 return Error("Failed to change event status");
+            }
+        }
+
+        /// <summary>
+        /// Get participants for a specific event
+        /// </summary>
+        /// <param name="id">Event ID from route</param>
+        /// <response code="200">Returns list of participants</response>
+        /// <response code="404">Event not found</response>
+        [HttpGet("{id}/participants")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventParticipantResponseDto>>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> GetEventParticipants(Guid id)
+        {
+            try
+            {
+                var eventEntity = await _eventService.GetEventByIdAsync(id);
+                if (eventEntity == null)
+                {
+                    return NotFoundError($"Event with ID {id} not found");
+                }
+
+                var participants = await _participationService.GetEventParticipantsAsync(id);
+                var participantDtos = participants.Select(p => new EventParticipantResponseDto
+                {
+                    Id = p.Id,
+                    EventId = p.EventId,
+                    UserId = p.UserId,
+                    UserName = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Unknown",
+                    UserEmail = p.User?.Email ?? "Unknown",
+                    RegisteredAt = p.RegisteredAt,
+                    Status = p.AttendanceStatus.ToString(),
+                    PointsAwarded = p.PointsAwarded,
+                    EventRank = p.EventRank
+                });
+
+                return Success(participantDtos);
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFoundError($"Event with ID {id} not found");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving participants for event {EventId}", id);
+                return Error("Failed to retrieve event participants");
             }
         }
 

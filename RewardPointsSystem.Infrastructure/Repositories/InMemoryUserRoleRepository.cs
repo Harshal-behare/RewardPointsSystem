@@ -50,6 +50,14 @@ namespace RewardPointsSystem.Infrastructure.Repositories
             return Task.FromResult(result);
         }
 
+        public Task<IEnumerable<UserRole>> FindWithIncludesAsync(Expression<Func<UserRole, bool>> predicate, params Expression<Func<UserRole, object>>[] includes)
+        {
+            // In-memory repository doesn't need to handle includes since all data is in memory
+            var compiledPredicate = predicate.Compile();
+            var result = _entities.Values.Where(compiledPredicate);
+            return Task.FromResult(result);
+        }
+
         public Task<UserRole> SingleOrDefaultAsync(Expression<Func<UserRole, bool>> predicate)
         {
             var compiledPredicate = predicate.Compile();

@@ -91,16 +91,22 @@ export class AdminRedemptionsComponent implements OnInit {
     this.redemptionService.getRedemptions().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          this.redemptionRequests.set(response.data.map((r: any) => this.mapRedemptionToDisplay(r)));
+          const data = Array.isArray(response.data) ? response.data : 
+                      (response.data as any).items || [];
+          this.redemptionRequests.set(data.map((r: any) => this.mapRedemptionToDisplay(r)));
+          this.calculateStats();
+          this.filterRequests();
         } else {
-          this.loadFallbackData();
+          this.toast.error('Failed to load redemptions');
+          this.redemptionRequests.set([]);
+          this.calculateStats();
+          this.filterRequests();
         }
-        this.calculateStats();
-        this.filterRequests();
       },
       error: (error) => {
         console.error('Error loading redemptions:', error);
-        this.loadFallbackData();
+        this.toast.error('Failed to load redemptions from server');
+        this.redemptionRequests.set([]);
         this.calculateStats();
         this.filterRequests();
       }

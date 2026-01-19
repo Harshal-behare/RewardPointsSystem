@@ -18,6 +18,7 @@ gitignore.sql
 !API_DOCUMENTATION.md
 *.txt
 Database/
+!Database/Database_RPS.sql
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs

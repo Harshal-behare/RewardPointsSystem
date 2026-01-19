@@ -41,7 +41,11 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var products = await _productService.GetActiveProductsAsync();
+                // Load products with ProductCategory navigation property
+                var products = await _unitOfWork.Products.FindWithIncludesAsync(
+                    p => p.IsActive,
+                    p => p.ProductCategory
+                );
                 var allInventory = await _unitOfWork.Inventory.GetAllAsync();
                 var productDtos = new List<ProductResponseDto>();
 

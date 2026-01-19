@@ -193,12 +193,12 @@
             <label for="category">Category *</label>
             <select
               id="category"
-              [(ngModel)]="selectedProduct.category"
-              name="category"
+              [(ngModel)]="selectedProduct.categoryId"
+              name="categoryId"
               required
             >
               <option value="">Select a category</option>
-              <option *ngFor="let cat of dbCategories()" [value]="cat.name">{{ cat.name }}</option>
+              <option *ngFor="let cat of dbCategories()" [value]="cat.id">{{ cat.name }}</option>
             </select>
           </div>
 

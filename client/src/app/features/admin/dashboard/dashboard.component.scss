@@ -242,6 +242,22 @@
   }
 }
 
+.no-data-message {
+  text-align: center;
+  padding: 40px 20px;
+  color: #7A7A7A;
+  
+  p {
+    margin: 0 0 8px 0;
+    font-size: 16px;
+  }
+  
+  .no-data-hint {
+    font-size: 13px;
+    color: #9A9A9A;
+  }
+}
+
 // Responsive Design
 @media (max-width: 1024px) {
   .chart-row {

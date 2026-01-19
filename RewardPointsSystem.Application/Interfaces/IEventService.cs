@@ -23,5 +23,6 @@ namespace RewardPointsSystem.Application.Interfaces
         Task ActivateEventAsync(Guid id);
         Task CompleteEventAsync(Guid id);
         Task CancelEventAsync(Guid id);
+        Task DeleteEventAsync(Guid id);
     }
 }

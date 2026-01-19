@@ -124,33 +124,37 @@ export class AdminDashboardComponent implements OnInit {
 
   private updateKpiData(stats: DashboardStats): void {
     this.kpiData.set([
-      { icon: '👥', label: 'Total Users', value: stats.totalUsers || 0, trend: 12, route: '/admin/users' },
-      { icon: '📅', label: 'Total Events', value: stats.totalEvents || 0, trend: 8, route: '/admin/events' },
-      { icon: '🎁', label: 'Total Products', value: stats.totalProducts || 0, trend: -3, route: '/admin/products' },
-      { icon: '⭐', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 15, route: '/admin/dashboard' },
-      { icon: '⏳', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: -5, route: '/admin/redemptions' },
+      { icon: '👥', label: 'Total Users', value: stats.totalUsers || 0, trend: 0, route: '/admin/users' },
+      { icon: '📅', label: 'Total Events', value: stats.totalEvents || 0, trend: 0, route: '/admin/events' },
+      { icon: '🎁', label: 'Total Products', value: stats.totalProducts || 0, trend: 0, route: '/admin/products' },
+      { icon: '⭐', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 0, route: '/admin/dashboard' },
+      { icon: '⏳', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: 0, route: '/admin/redemptions' },
     ]);
+    
+    // Clear recent activities - no endpoint available yet
+    this.recentActivities.set([]);
+    
+    // Clear chart data - no historical data available yet
+    this.chartData.set({
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      pointsAwarded: [0, 0, 0, 0, 0, 0],
+      redemptions: [0, 0, 0, 0, 0, 0],
+    });
   }
 
   private useFallbackData(): void {
     this.kpiData.set([
-      { icon: '👥', label: 'Total Users', value: 248, trend: 12, route: '/admin/users' },
-      { icon: '📅', label: 'Total Events', value: 36, trend: 8, route: '/admin/events' },
-      { icon: '🎁', label: 'Total Products', value: 124, trend: -3, route: '/admin/products' },
-      { icon: '⭐', label: 'Points Distributed', value: '45.2K', trend: 15, route: '/admin/dashboard' },
-      { icon: '⏳', label: 'Pending Redemptions', value: 18, trend: -5, route: '/admin/redemptions' },
+      { icon: '👥', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
+      { icon: '📅', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
+      { icon: '🎁', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
+      { icon: '⭐', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
+      { icon: '⏳', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
     ]);
-    this.recentActivities.set([
-      { id: 1, type: 'Event Created', description: 'Summer Sales Challenge event was created', timestamp: '2 hours ago', user: 'John Doe' },
-      { id: 2, type: 'Product Added', description: 'New product "Wireless Headphones" added', timestamp: '4 hours ago', user: 'Jane Smith' },
-      { id: 3, type: 'Points Awarded', description: '500 points awarded to 15 users', timestamp: '6 hours ago', user: 'Admin' },
-      { id: 4, type: 'Redemption Approved', description: 'Product redemption approved', timestamp: '1 day ago', user: 'Admin' },
-      { id: 5, type: 'User Registered', description: '3 new employees joined', timestamp: '2 days ago', user: 'System' },
-    ]);
+    this.recentActivities.set([]);
     this.chartData.set({
       labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-      pointsAwarded: [3200, 4100, 3800, 5200, 4800, 5500],
-      redemptions: [1200, 1500, 1800, 2100, 2400, 2200],
+      pointsAwarded: [0, 0, 0, 0, 0, 0],
+      redemptions: [0, 0, 0, 0, 0, 0],
     });
   }
 

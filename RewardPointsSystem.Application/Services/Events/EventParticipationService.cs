@@ -37,7 +37,9 @@ namespace RewardPointsSystem.Application.Services.Events
 
         public async Task<IEnumerable<EventParticipant>> GetEventParticipantsAsync(Guid eventId)
         {
-            return await _unitOfWork.EventParticipants.FindAsync(ep => ep.EventId == eventId);
+            return await _unitOfWork.EventParticipants.FindWithIncludesAsync(
+                ep => ep.EventId == eventId,
+                ep => ep.User);
         }
 
         public async Task<IEnumerable<EventParticipant>> GetUserEventsAsync(Guid userId)

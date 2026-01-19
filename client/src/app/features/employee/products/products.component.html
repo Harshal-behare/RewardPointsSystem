@@ -7,7 +7,7 @@
     </div>
     <div class="user-points">
       <span class="points-label">Your Points:</span>
-      <span class="points-value">{{ userPoints }}</span>
+      <span class="points-value">{{ userPoints() }}</span>
     </div>
   </div>
 
@@ -17,7 +17,7 @@
       <button
         *ngFor="let category of categories"
         class="category-tab"
-        [class.active]="selectedCategory === category.value"
+        [class.active]="selectedCategory() === category.value"
         (click)="onCategoryChange(category.value)"
       >
         {{ category.label }}
@@ -28,8 +28,8 @@
       <input
         type="text"
         placeholder="Search products..."
-        [(ngModel)]="searchQuery"
-        (input)="onSearchChange()"
+        [ngModel]="searchQuery()"
+        (ngModelChange)="onSearchChange($event)"
         class="search-input"
       />
       <span class="search-icon">🔍</span>
@@ -38,7 +38,7 @@
 
   <!-- Products Grid -->
   <div class="products-grid">
-    <div *ngFor="let product of filteredProducts" class="product-card">
+    <div *ngFor="let product of filteredProducts()" class="product-card">
       <div class="product-image-container">
         <img [src]="product.image" [alt]="product.name" class="product-image" />
         <span *ngIf="product.featured" class="featured-badge">⭐ Featured</span>
@@ -62,7 +62,7 @@
             [disabled]="!canRedeem(product)"
             (click)="openRedeemModal(product)"
           >
-            {{ isOutOfStock(product) ? 'Out of Stock' : (userPoints >= product.points ? 'Redeem Now' : 'Insufficient Points') }}
+            {{ isOutOfStock(product) ? 'Out of Stock' : (userPoints() >= product.points ? 'Redeem Now' : 'Insufficient Points') }}
           </button>
         </div>
       </div>
@@ -70,7 +70,7 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="filteredProducts.length === 0" class="empty-state">
+  <div *ngIf="filteredProducts().length === 0" class="empty-state">
     <span class="empty-icon">🔍</span>
     <h3>No products found</h3>
     <p>Try adjusting your filters or search query</p>
@@ -78,7 +78,7 @@
 </div>
 
 <!-- Redeem Modal -->
-<div *ngIf="showRedeemModal && selectedProduct" class="modal-overlay" (click)="closeRedeemModal()">
+<div *ngIf="showRedeemModal() && selectedProduct()" class="modal-overlay" (click)="closeRedeemModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2 class="modal-title">Redeem Product</h2>
@@ -87,18 +87,19 @@
 
     <div class="modal-body">
       <div class="product-summary">
-        <img [src]="selectedProduct.image" [alt]="selectedProduct.name" class="summary-image" />
+        <img [src]="selectedProduct()!.image" [alt]="selectedProduct()!.name" class="summary-image" />
         <div class="summary-details">
-          <h3 class="summary-title">{{ selectedProduct.name }}</h3>
-          <p class="summary-category">{{ selectedProduct.category }}</p>
-          <p class="summary-points">{{ selectedProduct.points }} points</p>
+          <h3 class="summary-title">{{ selectedProduct()!.name }}</h3>
+          <p class="summary-category">{{ selectedProduct()!.category }}</p>
+          <p class="summary-points">{{ selectedProduct()!.points }} points</p>
         </div>
       </div>
 
       <div class="form-group">
         <label class="form-label">Delivery Address *</label>
         <textarea
-          [(ngModel)]="deliveryAddress"
+          [ngModel]="deliveryAddress()"
+          (ngModelChange)="deliveryAddress.set($event)"
           placeholder="Enter your complete delivery address..."
           class="form-textarea"
           rows="4"
@@ -108,15 +109,15 @@
       <div class="points-summary">
         <div class="summary-row">
           <span>Current Points:</span>
-          <span class="current-points">{{ userPoints }}</span>
+          <span class="current-points">{{ userPoints() }}</span>
         </div>
         <div class="summary-row">
           <span>Product Cost:</span>
-          <span class="product-cost">-{{ selectedProduct.points }}</span>
+          <span class="product-cost">-{{ selectedProduct()!.points }}</span>
         </div>
         <div class="summary-row total">
           <span>Remaining Points:</span>
-          <span class="remaining-points">{{ userPoints - selectedProduct.points }}</span>
+          <span class="remaining-points">{{ userPoints() - selectedProduct()!.points }}</span>
         </div>
       </div>
     </div>
@@ -125,7 +126,7 @@
       <button class="modal-btn cancel-btn" (click)="closeRedeemModal()">Cancel</button>
       <button
         class="modal-btn confirm-btn"
-        [disabled]="!deliveryAddress.trim() || userPoints < selectedProduct.points"
+        [disabled]="!deliveryAddress().trim() || userPoints() < selectedProduct()!.points"
         (click)="confirmRedeem()"
       >
         Confirm Redemption

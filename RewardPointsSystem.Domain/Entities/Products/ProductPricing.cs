@@ -85,6 +85,14 @@ namespace RewardPointsSystem.Domain.Entities.Products
         }
 
         /// <summary>
+        /// Updates the points cost for this pricing
+        /// </summary>
+        public void UpdatePointsCost(int newPointsCost)
+        {
+            PointsCost = ValidatePointsCost(newPointsCost);
+        }
+
+        /// <summary>
         /// Checks if pricing is currently effective
         /// </summary>
         public bool IsCurrentlyEffective()

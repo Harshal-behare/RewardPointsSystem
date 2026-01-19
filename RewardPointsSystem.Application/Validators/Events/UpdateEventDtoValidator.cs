@@ -22,13 +22,13 @@ namespace RewardPointsSystem.Application.Validators.Events
                     .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters");
             });
 
-            When(x => x.EventDate != default, () =>
+            When(x => x.EventDate.HasValue, () =>
             {
                 RuleFor(x => x.EventDate)
                     .GreaterThan(DateTime.UtcNow).WithMessage("Event date must be in the future");
             });
 
-            When(x => x.TotalPointsPool > 0, () =>
+            When(x => x.TotalPointsPool.HasValue && x.TotalPointsPool > 0, () =>
             {
                 RuleFor(x => x.TotalPointsPool)
                     .LessThanOrEqualTo(1000000).WithMessage("Points pool cannot exceed 1,000,000");

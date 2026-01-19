@@ -30,19 +30,25 @@ namespace RewardPointsSystem.Application.Services.Products
             if (points <= 0)
                 throw new ArgumentException("Points cost must be positive", nameof(points));
 
-            // Deactivate current active pricing
+            // Check if an active pricing record already exists for this product
             var allPricing = await _unitOfWork.Pricing.GetAllAsync();
-            var currentPricing = allPricing.Where(p => p.ProductId == productId && p.IsActive);
+            var currentPricing = allPricing
+                .Where(p => p.ProductId == productId && p.IsActive)
+                .FirstOrDefault();
             
-            foreach (var pricing in currentPricing)
+            if (currentPricing != null)
             {
-                pricing.Deactivate(effectiveFrom.AddTicks(-1));
+                // Update existing pricing record instead of creating a new one
+                currentPricing.UpdatePointsCost(points);
+                await _unitOfWork.Pricing.UpdateAsync(currentPricing);
+            }
+            else
+            {
+                // Create new pricing record only if none exists
+                var newPricing = ProductPricing.Create(productId, points, effectiveFrom);
+                await _unitOfWork.Pricing.AddAsync(newPricing);
             }
 
-            // Create new pricing
-            var newPricing = ProductPricing.Create(productId, points, effectiveFrom);
-
-            await _unitOfWork.Pricing.AddAsync(newPricing);
             await _unitOfWork.SaveChangesAsync();
         }
 

@@ -230,14 +230,27 @@ export class AdminEventsComponent implements OnInit {
       description: '',
       eventDate: '',
       status: 'Upcoming',
-      pointsPool: 0
+      pointsPool: 0,
+      maxParticipants: 0,
+      imageUrl: ''
     };
     this.showModal.set(true);
   }
 
   openEditModal(event: DisplayEvent): void {
     this.modalMode.set('edit');
-    this.selectedEvent = { ...event };
+    // Deep copy all event fields to ensure everything is editable
+    this.selectedEvent = { 
+      id: event.id,
+      name: event.name,
+      description: event.description,
+      eventDate: this.formatDateForInput(event.eventDate),
+      status: event.status,
+      pointsPool: event.pointsPool,
+      participantCount: event.participantCount,
+      maxParticipants: event.maxParticipants,
+      imageUrl: event.imageUrl
+    };
     this.showModal.set(true);
   }
 
@@ -246,12 +259,32 @@ export class AdminEventsComponent implements OnInit {
     this.selectedEvent = {};
   }
 
+  // Helper to format date for input[type="date"] (YYYY-MM-DD)
+  private formatDateForInput(dateString: string): string {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  // Helper to convert date input to ISO string for API
+  private formatDateForAPI(dateString: string): string {
+    if (!dateString) return new Date().toISOString();
+    // If already ISO format, return as is
+    if (dateString.includes('T')) return dateString;
+    // Convert YYYY-MM-DD to ISO format
+    const date = new Date(dateString + 'T00:00:00Z');
+    return date.toISOString();
+  }
+
   saveEvent(): void {
     if (this.modalMode() === 'create') {
       const createData: CreateEventDto = {
         name: this.selectedEvent.name || '',
         description: this.selectedEvent.description || '',
-        eventDate: this.selectedEvent.eventDate || new Date().toISOString(),
+        eventDate: this.formatDateForAPI(this.selectedEvent.eventDate || ''),
         totalPointsPool: this.selectedEvent.pointsPool || 0
       };
 
@@ -274,7 +307,7 @@ export class AdminEventsComponent implements OnInit {
       const updateData: UpdateEventDto = {
         name: this.selectedEvent.name,
         description: this.selectedEvent.description,
-        eventDate: this.selectedEvent.eventDate,
+        eventDate: this.formatDateForAPI(this.selectedEvent.eventDate || ''),
         totalPointsPool: this.selectedEvent.pointsPool
       };
 

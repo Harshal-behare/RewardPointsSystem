@@ -35,6 +35,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (pointsPool <= 0)
                 throw new InvalidEventDataException("Points pool must be positive");
             
+            // Only validate future date for creation
             if (date < DateTime.UtcNow.Date)
                 throw new InvalidEventDataException("Cannot create events in the past");
 
@@ -63,7 +64,7 @@ namespace RewardPointsSystem.Application.Services.Events
             {
                 // Create system user
                 systemUser = User.Create(
-                    "system@rewardpoints.com",
+                    "system@agdata.com",
                     "System",
                     "Administrator");
                 
@@ -85,8 +86,8 @@ namespace RewardPointsSystem.Application.Services.Events
 
             var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
             var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
-            var eventDate = updates.EventDate != default ? updates.EventDate : eventEntity.EventDate;
-            var pointsPool = updates.TotalPointsPool > 0 ? updates.TotalPointsPool : eventEntity.TotalPointsPool;
+            var eventDate = updates.EventDate ?? eventEntity.EventDate;
+            var pointsPool = updates.TotalPointsPool ?? eventEntity.TotalPointsPool;
 
             eventEntity.UpdateDetails(name, eventDate, pointsPool, description);
 
@@ -168,6 +169,17 @@ namespace RewardPointsSystem.Application.Services.Events
                 throw new InvalidEventStateException(id, "Cannot cancel completed events");
 
             eventEntity.Cancel();
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task DeleteEventAsync(Guid id)
+        {
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
+            if (eventEntity == null)
+                throw new EventNotFoundException(id);
+
+            eventEntity.Delete();
 
             await _unitOfWork.SaveChangesAsync();
         }

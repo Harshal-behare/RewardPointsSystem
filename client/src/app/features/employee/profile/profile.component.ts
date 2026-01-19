@@ -1,6 +1,16 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { ApiService } from '../../../core/services/api.service';
+import { ToastService } from '../../../core/services/toast.service';
+
+interface UserProfileResponse {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+}
 
 interface UserProfile {
   name: string;
@@ -20,14 +30,16 @@ interface UserProfile {
   styleUrl: './profile.component.scss'
 })
 export class EmployeeProfileComponent implements OnInit {
+  isLoading = true;
+  
   profile: UserProfile = {
-    name: 'John Doe',
-    email: 'john.doe@company.com',
-    phone: '+1 (555) 123-4567',
-    department: 'Sales',
-    position: 'Senior Sales Representative',
+    name: '',
+    email: '',
+    phone: '',
+    department: '',
+    position: '',
     avatarUrl: 'https://i.pravatar.cc/200?img=1',
-    joinDate: '2022-03-15'
+    joinDate: ''
   };
 
   // Password change
@@ -43,8 +55,40 @@ export class EmployeeProfileComponent implements OnInit {
   selectedFile: File | null = null;
   previewUrl: string | null = null;
 
+  constructor(
+    private api: ApiService,
+    private toast: ToastService
+  ) {}
+
   ngOnInit(): void {
-    // Load user profile
+    this.loadProfile();
+  }
+
+  loadProfile(): void {
+    this.isLoading = true;
+    this.api.get<UserProfileResponse>('Auth/me').subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const user = response.data;
+          this.profile = {
+            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+            email: user.email || '',
+            phone: '',
+            department: '',
+            position: user.roles?.[0] || 'Employee',
+            avatarUrl: 'https://i.pravatar.cc/200?img=1',
+            joinDate: ''
+          };
+          this.editedProfile = { ...this.profile };
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile:', error);
+        this.toast.error('Failed to load profile data');
+        this.isLoading = false;
+      }
+    });
   }
 
   enableEditMode(): void {
@@ -62,16 +106,16 @@ export class EmployeeProfileComponent implements OnInit {
   saveProfile(): void {
     // Validate
     if (!this.editedProfile.name.trim()) {
-      alert('Name is required');
+      this.toast.error('Name is required');
       return;
     }
 
     if (!this.editedProfile.email.trim()) {
-      alert('Email is required');
+      this.toast.error('Email is required');
       return;
     }
 
-    // Save profile
+    // For now, just save locally - API update will be added later
     this.profile = { ...this.editedProfile };
     
     if (this.previewUrl) {
@@ -82,7 +126,7 @@ export class EmployeeProfileComponent implements OnInit {
     this.previewUrl = null;
     this.selectedFile = null;
     
-    alert('Profile updated successfully!');
+    this.toast.success('Profile updated locally. Backend update coming soon.');
   }
 
   onFileSelected(event: Event): void {
@@ -102,23 +146,23 @@ export class EmployeeProfileComponent implements OnInit {
   changePassword(): void {
     // Validate
     if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
-      alert('Please fill in all password fields');
+      this.toast.error('Please fill in all password fields');
       return;
     }
 
     if (this.newPassword.length < 8) {
-      alert('New password must be at least 8 characters');
+      this.toast.error('New password must be at least 8 characters');
       return;
     }
 
     if (this.newPassword !== this.confirmPassword) {
-      alert('New passwords do not match');
+      this.toast.error('New passwords do not match');
       return;
     }
 
     // Change password
     console.log('Password changed successfully');
-    alert('Password changed successfully!');
+    this.toast.info('Password change feature coming soon');
     
     // Reset fields
     this.currentPassword = '';

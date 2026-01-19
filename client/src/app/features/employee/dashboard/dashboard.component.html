@@ -11,7 +11,7 @@
       <div class="balance-icon">🏆</div>
       <div class="balance-info">
         <span class="balance-label">Total Points</span>
-        <span class="balance-value">{{ pointsBalance.total }}</span>
+        <span class="balance-value">{{ pointsBalance().total }}</span>
       </div>
     </div>
 
@@ -19,7 +19,7 @@
       <div class="balance-icon available">💰</div>
       <div class="balance-info">
         <span class="balance-label">Available Points</span>
-        <span class="balance-value">{{ pointsBalance.available }}</span>
+        <span class="balance-value">{{ pointsBalance().available }}</span>
       </div>
     </div>
 
@@ -27,7 +27,7 @@
       <div class="balance-icon pending">⏳</div>
       <div class="balance-info">
         <span class="balance-label">Pending Points</span>
-        <span class="balance-value">{{ pointsBalance.pending }}</span>
+        <span class="balance-value">{{ pointsBalance().pending }}</span>
       </div>
     </div>
 
@@ -35,7 +35,7 @@
       <div class="balance-icon redeemed">🎁</div>
       <div class="balance-info">
         <span class="balance-label">Redeemed Points</span>
-        <span class="balance-value">{{ pointsBalance.redeemed }}</span>
+        <span class="balance-value">{{ pointsBalance().redeemed }}</span>
       </div>
     </div>
   </div>
@@ -52,7 +52,7 @@
         </div>
 
         <div class="events-list">
-          <div *ngFor="let event of upcomingEvents" class="event-item">
+          <div *ngFor="let event of upcomingEvents()" class="event-item">
             <img [src]="event.image" [alt]="event.name" class="event-image" />
             <div class="event-details">
               <h3 class="event-name">{{ event.name }}</h3>
@@ -73,6 +73,10 @@
               </div>
             </div>
           </div>
+
+          <div *ngIf="upcomingEvents().length === 0 && !isLoading()" class="empty-state">
+            <p>No upcoming events at the moment</p>
+          </div>
         </div>
       </div>
 
@@ -84,7 +88,7 @@
         </div>
 
         <div class="products-grid">
-          <div *ngFor="let product of featuredProducts" class="product-card">
+          <div *ngFor="let product of featuredProducts()" class="product-card">
             <img [src]="product.image" [alt]="product.name" class="product-image" />
             <div class="product-info">
               <span class="product-category">{{ product.category }}</span>
@@ -100,10 +104,10 @@
               </div>
               <button
                 class="redeem-btn"
-                [disabled]="pointsBalance.available < product.points"
+                [disabled]="pointsBalance().available < product.points"
                 (click)="redeemProduct(product)"
               >
-                {{ pointsBalance.available >= product.points ? 'Redeem' : 'Insufficient Points' }}
+                {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
               </button>
             </div>
           </div>
@@ -122,7 +126,7 @@
 
         <div class="transactions-list">
           <div
-            *ngFor="let transaction of recentTransactions"
+            *ngFor="let transaction of recentTransactions()"
             class="transaction-item"
             [class.earned]="transaction.type === 'earned'"
             [class.redeemed]="transaction.type === 'redeemed'"
@@ -140,6 +144,10 @@
             <div class="transaction-amount" [class.positive]="transaction.points > 0">
               {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
             </div>
+          </div>
+
+          <div *ngIf="recentTransactions().length === 0 && !isLoading()" class="empty-state">
+            <p>No transactions yet</p>
           </div>
         </div>
       </div>

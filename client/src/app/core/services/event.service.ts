@@ -53,6 +53,7 @@ export interface ChangeEventStatusDto {
 }
 
 export interface RegisterParticipantDto {
+  eventId: string;
   userId: string;
 }
 
@@ -65,6 +66,11 @@ export class EventService {
   // Get all published events (public)
   getEvents(): Observable<ApiResponse<EventDto[]>> {
     return this.api.get<EventDto[]>('Events');
+  }
+
+  // Alias for getEvents() for consistency
+  getAllEvents(): Observable<ApiResponse<EventDto[]>> {
+    return this.getEvents();
   }
 
   // Get all events including drafts (admin)

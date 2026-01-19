@@ -20,6 +20,17 @@ namespace RewardPointsSystem.Application.DTOs
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; }
+
+        /// <summary>
+        /// Initial password for the user (optional - if not provided, a random password will be generated)
+        /// </summary>
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "Password must be at least 6 characters")]
+        public string Password { get; set; }
+
+        /// <summary>
+        /// Role to assign to the user (default: Employee)
+        /// </summary>
+        public string Role { get; set; } = "Employee";
     }
 
     /// <summary>
@@ -36,6 +47,11 @@ namespace RewardPointsSystem.Application.DTOs
         [EmailAddress(ErrorMessage = "Invalid email format")]
         [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; set; }
+
+        /// <summary>
+        /// Active/Inactive status
+        /// </summary>
+        public bool? IsActive { get; set; }
     }
 
     /// <summary>

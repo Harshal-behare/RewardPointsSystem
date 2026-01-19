@@ -131,7 +131,7 @@ namespace RewardPointsSystem.Domain.Entities.Events
         }
 
         /// <summary>
-        /// Updates event details (only in Draft status)
+        /// Updates event details (not allowed for Completed or Cancelled events)
         /// </summary>
         public void UpdateDetails(
             string name,
@@ -143,11 +143,11 @@ namespace RewardPointsSystem.Domain.Entities.Events
             string? virtualLink = null,
             string? bannerImageUrl = null)
         {
-            if (Status != EventStatus.Draft)
-                throw new InvalidEventStateException(Id, "Event details can only be updated in Draft status.");
+            if (Status == EventStatus.Completed || Status == EventStatus.Cancelled)
+                throw new InvalidEventStateException(Id, $"Cannot update {Status} events.");
 
             Name = ValidateName(name);
-            EventDate = ValidateEventDate(eventDate);
+            EventDate = eventDate; // Allow any date for updates
             TotalPointsPool = ValidatePointsPool(totalPointsPool);
             Description = description;
             MaxParticipants = maxParticipants;
@@ -227,6 +227,14 @@ namespace RewardPointsSystem.Domain.Entities.Events
                 throw new InvalidEventStateException(Id, "Event is already cancelled.");
 
             Status = EventStatus.Cancelled;
+        }
+
+        /// <summary>
+        /// Marks event as deleted (soft delete by cancelling)
+        /// </summary>
+        public void Delete()
+        {
+            Cancel();
         }
 
         /// <summary>

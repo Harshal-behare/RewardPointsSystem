@@ -3,6 +3,16 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { ApiService } from '../../../core/services/api.service';
+import { ToastService } from '../../../core/services/toast.service';
+
+interface UserProfileResponse {
+  userId: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  roles: string[];
+}
 
 @Component({
   selector: 'app-admin-profile',
@@ -17,13 +27,15 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
   styleUrls: ['./profile.component.scss']
 })
 export class AdminProfileComponent implements OnInit {
+  isLoading = true;
+  
   profileData = {
-    firstName: 'Admin',
-    lastName: 'User',
-    email: 'admin@company.com',
-    phone: '+1 (555) 123-4567',
-    role: 'Administrator',
-    joinedDate: '2024-01-15'
+    firstName: '',
+    lastName: '',
+    email: '',
+    phone: '',
+    role: '',
+    joinedDate: ''
   };
 
   passwordData = {
@@ -36,28 +48,56 @@ export class AdminProfileComponent implements OnInit {
   showNewPassword = false;
   showConfirmPassword = false;
 
+  constructor(
+    private api: ApiService,
+    private toast: ToastService
+  ) {}
+
   ngOnInit(): void {
-    // Load profile data from API
+    this.loadProfile();
+  }
+
+  loadProfile(): void {
+    this.isLoading = true;
+    this.api.get<UserProfileResponse>('Auth/me').subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const user = response.data;
+          this.profileData = {
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
+            email: user.email || '',
+            phone: '',
+            role: user.roles?.[0] || 'Administrator',
+            joinedDate: ''
+          };
+        }
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Error loading profile:', error);
+        this.toast.error('Failed to load profile data');
+        this.isLoading = false;
+      }
+    });
   }
 
   updateProfile(): void {
-    console.log('Updating profile:', this.profileData);
-    alert('Profile updated successfully!');
+    this.toast.info('Profile update feature coming soon');
   }
 
   changePassword(): void {
     if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
-      alert('New passwords do not match!');
+      this.toast.error('New passwords do not match!');
       return;
     }
 
     if (this.passwordData.newPassword.length < 8) {
-      alert('Password must be at least 8 characters long!');
+      this.toast.error('Password must be at least 8 characters long!');
       return;
     }
 
-    console.log('Changing password');
-    alert('Password changed successfully!');
+    this.toast.info('Password change feature coming soon');
     this.passwordData = {
       currentPassword: '',
       newPassword: '',

@@ -55,7 +55,7 @@ namespace RewardPointsSystem.Application.Services.Admin
                 TotalActiveUsers = activeUsers.Count(),
                 TotalEvents = events.Count(),
                 ActiveEvents = activeEvents.Count(),
-                TotalProducts = products.Count(),
+                TotalProducts = activeProducts.Count(), // Only count active products (not soft-deleted)
                 ActiveProducts = activeProducts.Count(),
                 TotalPointsDistributed = accounts.Sum(a => a.TotalEarned),
                 TotalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed),

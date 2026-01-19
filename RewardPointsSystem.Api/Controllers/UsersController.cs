@@ -14,17 +14,26 @@ namespace RewardPointsSystem.Api.Controllers
     {
         private readonly IUserService _userService;
         private readonly IUserPointsAccountService _accountService;
+        private readonly IRoleService _roleService;
+        private readonly IUserRoleService _userRoleService;
+        private readonly IPasswordHasher _passwordHasher;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(
             IUserService userService,
             IUserPointsAccountService accountService,
+            IRoleService roleService,
+            IUserRoleService userRoleService,
+            IPasswordHasher passwordHasher,
             IUnitOfWork unitOfWork,
             ILogger<UsersController> logger)
         {
             _userService = userService;
             _accountService = accountService;
+            _roleService = roleService;
+            _userRoleService = userRoleService;
+            _passwordHasher = passwordHasher;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -147,7 +156,36 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
+                // Create user
                 var user = await _userService.CreateUserAsync(dto.Email, dto.FirstName, dto.LastName);
+
+                // Set password - use provided password or generate a random one
+                var password = !string.IsNullOrEmpty(dto.Password) ? dto.Password : GenerateRandomPassword();
+                var passwordHash = _passwordHasher.HashPassword(password);
+                user.SetPasswordHash(passwordHash);
+                
+                // Update user to save password hash
+                var updateDto = new Application.Interfaces.UserUpdateDto
+                {
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
+                await _userService.UpdateUserAsync(user.Id, updateDto);
+
+                // Assign role (default: Employee)
+                var roleName = !string.IsNullOrEmpty(dto.Role) ? dto.Role : "Employee";
+                var role = await _roleService.GetRoleByNameAsync(roleName);
+                if (role != null)
+                {
+                    await _userRoleService.AssignRoleAsync(user.Id, role.Id, user.Id);
+                }
+
+                // Create points account for the user
+                await _accountService.CreateAccountAsync(user.Id);
+
+                // Get assigned roles for response
+                var assignedRoles = await _userRoleService.GetUserRolesAsync(user.Id);
 
                 var userDto = new UserResponseDto
                 {
@@ -156,9 +194,12 @@ namespace RewardPointsSystem.Api.Controllers
                     LastName = user.LastName,
                     Email = user.Email,
                     IsActive = user.IsActive,
-                    CreatedAt = user.CreatedAt
+                    CreatedAt = user.CreatedAt,
+                    Roles = assignedRoles.Select(r => r.Name).ToList(),
+                    PointsBalance = 0
                 };
 
+                _logger.LogInformation("User {Email} created successfully by admin", user.Email);
                 return Created(userDto, "User created successfully");
             }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
@@ -202,6 +243,24 @@ namespace RewardPointsSystem.Api.Controllers
                 };
 
                 await _userService.UpdateUserAsync(id, updateDto);
+
+                // Handle activation/deactivation separately if isActive is provided
+                if (dto.IsActive.HasValue)
+                {
+                    if (dto.IsActive.Value && !user.IsActive)
+                    {
+                        // Activate user - use User.Activate method
+                        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                        var activatedBy = Guid.TryParse(userIdClaim, out var activatorId) ? activatorId : id;
+                        user.Activate(activatedBy);
+                        await _unitOfWork.SaveChangesAsync();
+                    }
+                    else if (!dto.IsActive.Value && user.IsActive)
+                    {
+                        // Deactivate user
+                        await _userService.DeactivateUserAsync(id);
+                    }
+                }
 
                 var updatedUser = await _userService.GetUserByIdAsync(id);
                 
@@ -298,6 +357,21 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error retrieving balance for user {UserId}", id);
                 return Error("Failed to retrieve user balance");
             }
+        }
+
+        /// <summary>
+        /// Generate a random password for new users
+        /// </summary>
+        private static string GenerateRandomPassword()
+        {
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+            var random = new Random();
+            var password = new char[12];
+            for (int i = 0; i < password.Length; i++)
+            {
+                password[i] = chars[random.Next(chars.Length)];
+            }
+            return new string(password);
         }
     }
 }

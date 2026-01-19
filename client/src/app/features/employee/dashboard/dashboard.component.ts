@@ -1,6 +1,11 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
+import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
+import { EventService, EventDto } from '../../../core/services/event.service';
+import { ProductService, ProductDto } from '../../../core/services/product.service';
+import { AuthService } from '../../../auth/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface PointsBalance {
   total: number;
@@ -10,18 +15,18 @@ interface PointsBalance {
 }
 
 interface Event {
-  id: number;
+  id: string;
   name: string;
   date: string;
   location: string;
   points: number;
   image: string;
-  status: 'upcoming' | 'ongoing' | 'completed';
+  status: 'Upcoming' | 'Active' | 'Completed';
   registered: boolean;
 }
 
 interface Product {
-  id: number;
+  id: string;
   name: string;
   points: number;
   image: string;
@@ -30,7 +35,7 @@ interface Product {
 }
 
 interface Transaction {
-  id: number;
+  id: string;
   type: 'earned' | 'redeemed' | 'pending';
   description: string;
   points: number;
@@ -46,128 +51,147 @@ interface Transaction {
   styleUrl: './dashboard.component.scss'
 })
 export class EmployeeDashboardComponent implements OnInit {
-  pointsBalance: PointsBalance = {
-    total: 2450,
-    available: 1850,
-    pending: 350,
-    redeemed: 600
-  };
+  pointsBalance = signal<PointsBalance>({
+    total: 0,
+    available: 0,
+    pending: 0,
+    redeemed: 0
+  });
 
-  upcomingEvents: Event[] = [
-    {
-      id: 1,
-      name: 'Annual Sales Conference 2024',
-      date: '2024-02-15',
-      location: 'Grand Hall, Building A',
-      points: 500,
-      image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',
-      status: 'upcoming',
-      registered: true
-    },
-    {
-      id: 2,
-      name: 'Team Building Workshop',
-      date: '2024-02-20',
-      location: 'Conference Room 3',
-      points: 300,
-      image: 'https://images.unsplash.com/photo-1511578314322-379afb476865?w=400',
-      status: 'upcoming',
-      registered: false
-    },
-    {
-      id: 3,
-      name: 'Product Launch Event',
-      date: '2024-02-25',
-      location: 'Virtual Event',
-      points: 400,
-      image: 'https://images.unsplash.com/photo-1505373877841-8d25f7d46678?w=400',
-      status: 'upcoming',
-      registered: false
+  upcomingEvents = signal<Event[]>([]);
+  featuredProducts = signal<Product[]>([]);
+  recentTransactions = signal<Transaction[]>([]);
+  isLoading = signal(true);
+  currentUserId: string = '';
+
+  constructor(
+    private router: Router,
+    private pointsService: PointsService,
+    private eventService: EventService,
+    private productService: ProductService,
+    private authService: AuthService,
+    private toast: ToastService
+  ) {
+    // Get current user ID from JWT token
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                            payload.sub || 
+                            payload.userId || '';
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
     }
-  ];
-
-  featuredProducts: Product[] = [
-    {
-      id: 1,
-      name: 'Premium Wireless Headphones',
-      points: 500,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
-      stock: 15,
-      category: 'Electronics'
-    },
-    {
-      id: 2,
-      name: 'Smart Watch Series 5',
-      points: 800,
-      image: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=400',
-      stock: 8,
-      category: 'Electronics'
-    },
-    {
-      id: 3,
-      name: '$50 Amazon Gift Card',
-      points: 400,
-      image: 'https://images.unsplash.com/photo-1606318313036-a6706adfb249?w=400',
-      stock: 50,
-      category: 'Gift Cards'
-    },
-    {
-      id: 4,
-      name: 'Coffee Maker Deluxe',
-      points: 350,
-      image: 'https://images.unsplash.com/photo-1517668808822-9ebb02f2a0e6?w=400',
-      stock: 12,
-      category: 'Home & Kitchen'
-    }
-  ];
-
-  recentTransactions: Transaction[] = [
-    {
-      id: 1,
-      type: 'earned',
-      description: 'Attended Q4 Sales Meeting',
-      points: 250,
-      date: '2024-01-28',
-      status: 'Completed'
-    },
-    {
-      id: 2,
-      type: 'redeemed',
-      description: 'Redeemed: Wireless Mouse',
-      points: -150,
-      date: '2024-01-25',
-      status: 'Approved'
-    },
-    {
-      id: 3,
-      type: 'earned',
-      description: 'Completed Training Module',
-      points: 100,
-      date: '2024-01-22',
-      status: 'Completed'
-    },
-    {
-      id: 4,
-      type: 'pending',
-      description: 'Pending: Team Building Event',
-      points: 350,
-      date: '2024-01-20',
-      status: 'Pending'
-    },
-    {
-      id: 5,
-      type: 'earned',
-      description: 'Won Innovation Challenge',
-      points: 500,
-      date: '2024-01-15',
-      status: 'Completed'
-    }
-  ];
-
-  constructor(private router: Router) {}
+  }
 
   ngOnInit(): void {
-    // Load user data
+    this.loadDashboardData();
+  }
+
+  loadDashboardData(): void {
+    this.isLoading.set(true);
+    
+    if (!this.currentUserId) {
+      this.toast.error('User not authenticated');
+      this.isLoading.set(false);
+      return;
+    }
+
+    // Load points balance
+    this.pointsService.getPointsAccount(this.currentUserId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const account = response.data;
+          this.pointsBalance.set({
+            total: account.totalEarned,
+            available: account.currentBalance,
+            pending: 0, // Not available from API yet
+            redeemed: account.totalRedeemed
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading points balance:', error);
+      }
+    });
+
+    // Load recent transactions
+    this.pointsService.getUserTransactions(this.currentUserId, 1, 5).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const transactions = Array.isArray(response.data) ? response.data : 
+                              (response.data as any).items || [];
+          this.recentTransactions.set(transactions.map((t: PointsTransactionDto) => ({
+            id: t.id,
+            type: t.transactionType === 'Credit' ? 'earned' as const : 'redeemed' as const,
+            description: t.description,
+            points: t.transactionType === 'Credit' ? t.points : -t.points,
+            date: new Date(t.createdAt).toISOString().split('T')[0],
+            status: 'Completed'
+          })));
+        }
+      },
+      error: (error) => {
+        console.error('Error loading transactions:', error);
+      }
+    });
+
+    // Load upcoming events
+    this.eventService.getAllEvents().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const events = Array.isArray(response.data) ? response.data : 
+                        (response.data as any).items || [];
+          const upcomingEvents = events
+            .filter((e: EventDto) => e.status === 'Published' || e.status === 'Draft')
+            .slice(0, 3)
+            .map((e: EventDto) => ({
+              id: e.id,
+              name: e.name,
+              date: new Date(e.eventDate).toISOString().split('T')[0],
+              location: 'Event Location',
+              points: e.totalPointsPool,
+              image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',
+              status: e.status === 'Published' ? 'Upcoming' as const : e.status === 'Draft' ? 'Active' as const : 'Completed' as const,
+              registered: false
+            }));
+          this.upcomingEvents.set(upcomingEvents);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading events:', error);
+      }
+    });
+
+    // Load featured products
+    this.productService.getProducts().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const products = Array.isArray(response.data) ? response.data : 
+                          (response.data as any).items || [];
+          const featured = products
+            .filter((p: ProductDto) => p.isActive && p.isInStock)
+            .slice(0, 4)
+            .map((p: ProductDto) => ({
+              id: p.id,
+              name: p.name,
+              points: p.currentPointsCost,
+              image: p.imageUrl || 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400',
+              stock: p.stockQuantity || 0,
+              category: p.categoryName || 'General'
+            }));
+          this.featuredProducts.set(featured);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading products:', error);
+      },
+      complete: () => {
+        this.isLoading.set(false);
+      }
+    });
   }
 
   navigateToEvents(): void {
@@ -183,16 +207,15 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   registerForEvent(event: Event): void {
-    event.registered = true;
-    console.log('Registered for event:', event.name);
+    this.router.navigate(['/employee/events']);
   }
 
   redeemProduct(product: Product): void {
-    if (this.pointsBalance.available >= product.points) {
-      console.log('Redeeming product:', product.name);
+    const balance = this.pointsBalance();
+    if (balance.available >= product.points) {
       this.router.navigate(['/employee/products']);
     } else {
-      alert('Insufficient points!');
+      this.toast.warning('Insufficient points!');
     }
   }
 }

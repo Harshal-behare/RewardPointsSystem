@@ -1,4 +1,16 @@
 <div class="users-container">
+  <!-- Quick Actions Bar -->
+  <div class="quick-actions-bar">
+    <button class="quick-action-btn primary" (click)="openCreateModal()">
+      <span class="action-icon">➕</span>
+      <span>Add New User</span>
+    </button>
+    <button class="quick-action-btn secondary" (click)="loadUsers()">
+      <span class="action-icon">🔄</span>
+      <span>Refresh</span>
+    </button>
+  </div>
+
   <app-card>
     <!-- Header -->
     <div header class="users-header">
@@ -170,6 +182,7 @@
           <input
             id="password"
             type="password"
+            [(ngModel)]="selectedUser.password"
             placeholder="Enter initial password"
             name="password"
             required

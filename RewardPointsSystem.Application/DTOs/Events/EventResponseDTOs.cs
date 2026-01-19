@@ -73,12 +73,16 @@ namespace RewardPointsSystem.Application.DTOs.Events
     /// </summary>
     public class EventParticipantResponseDto
     {
+        public Guid Id { get; set; }
+        public Guid EventId { get; set; }
         public Guid UserId { get; set; }
         public string UserName { get; set; }
         public string UserEmail { get; set; }
         public DateTime RegisteredAt { get; set; }
+        public string Status { get; set; }
         public bool HasAttended { get; set; }
         public int? PointsAwarded { get; set; }
+        public int? EventRank { get; set; }
     }
 
     /// <summary>

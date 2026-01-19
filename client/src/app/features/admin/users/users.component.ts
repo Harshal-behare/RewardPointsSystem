@@ -18,6 +18,7 @@ interface DisplayUser {
   status: 'Active' | 'Inactive';
   pointsBalance?: number;
   createdAt: string;
+  password?: string; // Only for create mode
 }
 
 @Component({
@@ -120,14 +121,25 @@ export class AdminUsersComponent implements OnInit {
       lastName: '',
       email: '',
       role: 'Employee',
-      status: 'Active'
+      status: 'Active',
+      password: ''
     };
     this.showModal.set(true);
   }
 
   openEditModal(user: DisplayUser): void {
     this.modalMode.set('edit');
-    this.selectedUser = { ...user };
+    // Deep copy all fields to ensure everything is editable
+    this.selectedUser = {
+      id: user.id,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      email: user.email,
+      role: user.role,
+      status: user.status,
+      pointsBalance: user.pointsBalance,
+      createdAt: user.createdAt
+    };
     this.showModal.set(true);
   }
 
@@ -141,7 +153,9 @@ export class AdminUsersComponent implements OnInit {
       const createData: CreateUserDto = {
         email: this.selectedUser.email || '',
         firstName: this.selectedUser.firstName || '',
-        lastName: this.selectedUser.lastName || ''
+        lastName: this.selectedUser.lastName || '',
+        password: this.selectedUser.password || '',
+        role: this.selectedUser.role || 'Employee'
       };
       
       this.userService.createUser(createData).subscribe({

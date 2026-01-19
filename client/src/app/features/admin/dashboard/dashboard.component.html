@@ -60,12 +60,12 @@
         <div class="chart-placeholder">
           <div class="chart-info">
             <p class="chart-label">📈 Monthly Trend</p>
-            <p class="chart-value">Total: 26,600 points</p>
+            <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
             <div class="bar-item" *ngFor="let value of chartData().pointsAwarded; let i = index">
-              <div class="bar" [style.height.%]="(value / 6000) * 100">
-                <span class="bar-label">{{ value }}</span>
+              <div class="bar" [style.height.%]="value > 0 ? (value / 6000) * 100 : 5">
+                <span class="bar-label" *ngIf="value > 0">{{ value }}</span>
               </div>
               <span class="bar-month">{{ chartData().labels[i] }}</span>
             </div>
@@ -78,12 +78,12 @@
         <div class="chart-placeholder">
           <div class="chart-info">
             <p class="chart-label">📊 Redemption Activity</p>
-            <p class="chart-value">Total: 11,200 points</p>
+            <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
             <div class="bar-item" *ngFor="let value of chartData().redemptions; let i = index">
-              <div class="bar redemption-bar" [style.height.%]="(value / 3000) * 100">
-                <span class="bar-label">{{ value }}</span>
+              <div class="bar redemption-bar" [style.height.%]="value > 0 ? (value / 3000) * 100 : 5">
+                <span class="bar-label" *ngIf="value > 0">{{ value }}</span>
               </div>
               <span class="bar-month">{{ chartData().labels[i] }}</span>
             </div>
@@ -96,7 +96,7 @@
   <!-- Recent Activity Section -->
   <section class="activity-section">
     <app-card title="Recent Activity">
-      <div class="activity-list">
+      <div class="activity-list" *ngIf="recentActivities().length > 0; else noActivities">
         <div class="activity-item" *ngFor="let activity of recentActivities()">
           <div class="activity-icon">
             <app-badge [variant]="getActivityTypeClass(activity.type)">
@@ -112,6 +112,12 @@
           </div>
         </div>
       </div>
+      <ng-template #noActivities>
+        <div class="no-data-message">
+          <p>📋 No recent activity to display</p>
+          <p class="no-data-hint">Activity will appear here as you create events, add products, and manage the system.</p>
+        </div>
+      </ng-template>
     </app-card>
   </section>
 </div>
