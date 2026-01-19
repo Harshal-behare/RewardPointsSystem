@@ -42,12 +42,15 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var products = await _productService.GetActiveProductsAsync();
+                var allInventory = await _unitOfWork.Inventory.GetAllAsync();
                 var productDtos = new List<ProductResponseDto>();
 
                 foreach (var product in products)
                 {
                     var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
                     var inStock = await _inventoryService.IsInStockAsync(product.Id);
+                    var inventory = allInventory.FirstOrDefault(i => i.ProductId == product.Id);
+                    var stockQuantity = inventory != null ? inventory.QuantityAvailable - inventory.QuantityReserved : 0;
 
                     productDtos.Add(new ProductResponseDto
                     {
@@ -60,7 +63,7 @@ namespace RewardPointsSystem.Api.Controllers
                         CurrentPointsCost = price,
                         IsActive = product.IsActive,
                         IsInStock = inStock,
-                        StockQuantity = 0,
+                        StockQuantity = stockQuantity,
                         CreatedAt = product.CreatedAt
                     });
                 }
@@ -90,6 +93,8 @@ namespace RewardPointsSystem.Api.Controllers
 
                 var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
                 var inStock = await _inventoryService.IsInStockAsync(product.Id);
+                var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
+                var stockQuantity = inventory != null ? inventory.QuantityAvailable - inventory.QuantityReserved : 0;
 
                 var productDto = new ProductResponseDto
                 {
@@ -102,7 +107,7 @@ namespace RewardPointsSystem.Api.Controllers
                     CurrentPointsCost = price,
                     IsActive = product.IsActive,
                     IsInStock = inStock,
-                    StockQuantity = 0,
+                    StockQuantity = stockQuantity,
                     CreatedAt = product.CreatedAt
                 };
 
@@ -133,9 +138,22 @@ namespace RewardPointsSystem.Api.Controllers
 
                 var product = await _productService.CreateProductAsync(dto, userId);
 
-                // TODO: Set pricing and inventory using separate endpoints
-                // For now, product is created without pricing/inventory
-                // Use POST /api/v1/pricing and POST /api/v1/inventory to set these separately
+                // Create pricing record if points price is provided
+                if (dto.PointsPrice > 0)
+                {
+                    await _pricingService.SetProductPointsCostAsync(product.Id, dto.PointsPrice, DateTime.UtcNow);
+                }
+
+                // Create inventory record if stock quantity is provided
+                if (dto.StockQuantity > 0)
+                {
+                    await _inventoryService.CreateInventoryAsync(product.Id, dto.StockQuantity, 5); // Default reorder level of 5
+                }
+                else
+                {
+                    // Create inventory with 0 stock to ensure the record exists
+                    await _inventoryService.CreateInventoryAsync(product.Id, 0, 5);
+                }
 
                 var productDto = new ProductResponseDto
                 {
@@ -201,11 +219,38 @@ namespace RewardPointsSystem.Api.Controllers
                 // Update inventory if provided
                 if (dto.StockQuantity.HasValue)
                 {
-                    await _inventoryService.AddStockAsync(id, dto.StockQuantity.Value);
+                    // Check if inventory exists first
+                    var existingInventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
+                    if (existingInventory != null)
+                    {
+                        // Update existing inventory - set the stock to the new value
+                        var currentStock = existingInventory.QuantityAvailable;
+                        var difference = dto.StockQuantity.Value - currentStock;
+                        if (difference > 0)
+                        {
+                            await _inventoryService.AddStockAsync(id, difference);
+                        }
+                        else if (difference < 0)
+                        {
+                            // For reducing stock, we need to handle it differently
+                            // Just update the quantity directly via the inventory item
+                            existingInventory.Restock(dto.StockQuantity.Value - currentStock, Guid.Empty);
+                            await _unitOfWork.SaveChangesAsync();
+                        }
+                    }
+                    else
+                    {
+                        // Create new inventory if it doesn't exist
+                        await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 5);
+                    }
                 }
 
                 var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
                 var inStock = await _inventoryService.IsInStockAsync(product.Id);
+                
+                // Get actual stock quantity
+                var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
+                var stockQuantity = inventory != null ? inventory.QuantityAvailable - inventory.QuantityReserved : 0;
 
                 var productDto = new ProductResponseDto
                 {
@@ -218,7 +263,7 @@ namespace RewardPointsSystem.Api.Controllers
                     CurrentPointsCost = price,
                     IsActive = product.IsActive,
                     IsInStock = inStock,
-                    StockQuantity = dto.StockQuantity ?? 0,
+                    StockQuantity = stockQuantity,
                     CreatedAt = product.CreatedAt
                 };
 
@@ -309,6 +354,37 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error retrieving products for category {CategoryId}", categoryId);
                 return Error("Failed to retrieve products");
+            }
+        }
+
+        /// <summary>
+        /// Get all product categories
+        /// </summary>
+        /// <response code="200">Returns all product categories</response>
+        [HttpGet("categories")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryResponseDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetCategories()
+        {
+            try
+            {
+                var categories = await _unitOfWork.ProductCategories.GetAllAsync();
+                var activeCat = categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder);
+                
+                var categoryDtos = activeCat.Select(c => new CategoryResponseDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    DisplayOrder = c.DisplayOrder,
+                    IsActive = c.IsActive
+                });
+
+                return Success(categoryDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving categories");
+                return Error("Failed to retrieve categories");
             }
         }
     }

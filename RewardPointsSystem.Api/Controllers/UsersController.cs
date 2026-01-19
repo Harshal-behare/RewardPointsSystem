@@ -14,15 +14,18 @@ namespace RewardPointsSystem.Api.Controllers
     {
         private readonly IUserService _userService;
         private readonly IUserPointsAccountService _accountService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<UsersController> _logger;
 
         public UsersController(
             IUserService userService,
             IUserPointsAccountService accountService,
+            IUnitOfWork unitOfWork,
             ILogger<UsersController> logger)
         {
             _userService = userService;
             _accountService = accountService;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -45,14 +48,30 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 var users = await _userService.GetActiveUsersAsync();
                 
-                var userDtos = users.Select(u => new UserResponseDto
-                {
-                    Id = u.Id,
-                    FirstName = u.FirstName,
-                    LastName = u.LastName,
-                    Email = u.Email,
-                    IsActive = u.IsActive,
-                    CreatedAt = u.CreatedAt
+                // Get all user roles and points accounts for efficient lookup
+                var allUserRoles = await _unitOfWork.UserRoles.GetAllAsync();
+                var allRoles = await _unitOfWork.Roles.GetAllAsync();
+                var allPointsAccounts = await _unitOfWork.UserPointsAccounts.GetAllAsync();
+                
+                var userDtos = users.Select(u => {
+                    // Get roles for this user
+                    var userRoleIds = allUserRoles.Where(ur => ur.UserId == u.Id).Select(ur => ur.RoleId).ToList();
+                    var roleNames = allRoles.Where(r => userRoleIds.Contains(r.Id)).Select(r => r.Name).ToList();
+                    
+                    // Get points balance for this user
+                    var pointsAccount = allPointsAccounts.FirstOrDefault(pa => pa.UserId == u.Id);
+                    
+                    return new UserResponseDto
+                    {
+                        Id = u.Id,
+                        FirstName = u.FirstName,
+                        LastName = u.LastName,
+                        Email = u.Email,
+                        IsActive = u.IsActive,
+                        CreatedAt = u.CreatedAt,
+                        Roles = roleNames,
+                        PointsBalance = pointsAccount?.CurrentBalance
+                    };
                 }).ToList();
 
                 // Apply pagination

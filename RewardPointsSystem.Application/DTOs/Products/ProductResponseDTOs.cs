@@ -109,4 +109,16 @@ namespace RewardPointsSystem.Application.DTOs.Products
         public int PointsCost { get; set; }
         public DateTime EffectiveDate { get; set; }
     }
+
+    /// <summary>
+    /// DTO for product category response
+    /// </summary>
+    public class CategoryResponseDto
+    {
+        public Guid Id { get; set; }
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public int DisplayOrder { get; set; }
+        public bool IsActive { get; set; }
+    }
 }

@@ -73,23 +73,33 @@ namespace RewardPointsSystem.Api.Controllers
                     redemptions = redemptions.Where(r => r.Status == statusEnum);
                 }
                 
+                // Get all users and products for lookup
+                var allUsers = await _unitOfWork.Users.GetAllAsync();
+                var allProducts = await _unitOfWork.Products.GetAllAsync();
+                
                 // Apply pagination
                 var totalCount = redemptions.Count();
                 var pagedRedemptions = redemptions
                     .OrderByDescending(r => r.RequestedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(r => new RedemptionResponseDto
-                    {
-                        Id = r.Id,
-                        UserId = r.UserId,
-                        ProductId = r.ProductId,
-                        ProductName = r.Product?.Name,
-                        PointsSpent = r.PointsSpent,
-                        Status = r.Status.ToString(),
-                        RequestedAt = r.RequestedAt,
-                        ApprovedAt = r.ApprovedAt,
-                        DeliveredAt = r.DeliveredAt
+                    .Select(r => {
+                        var user = allUsers.FirstOrDefault(u => u.Id == r.UserId);
+                        var product = allProducts.FirstOrDefault(p => p.Id == r.ProductId);
+                        return new RedemptionResponseDto
+                        {
+                            Id = r.Id,
+                            UserId = r.UserId,
+                            UserName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User",
+                            UserEmail = user?.Email ?? "",
+                            ProductId = r.ProductId,
+                            ProductName = product?.Name ?? r.Product?.Name ?? "Unknown Product",
+                            PointsSpent = r.PointsSpent,
+                            Status = r.Status.ToString(),
+                            RequestedAt = r.RequestedAt,
+                            ApprovedAt = r.ApprovedAt,
+                            DeliveredAt = r.DeliveredAt
+                        };
                     });
 
                 var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);
@@ -288,6 +298,39 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error marking redemption as delivered {RedemptionId}", id);
                 return Error("Failed to mark as delivered");
+            }
+        }
+
+        /// <summary>
+        /// Reject redemption (Admin only)
+        /// </summary>
+        /// <param name="id">Redemption ID</param>
+        /// <param name="dto">Rejection data with reason</param>
+        /// <response code="200">Redemption rejected successfully</response>
+        /// <response code="404">Redemption not found</response>
+        [HttpPatch("{id}/reject")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> RejectRedemption(Guid id, [FromBody] RejectRedemptionDto dto)
+        {
+            try
+            {
+                await _redemptionOrchestrator.RejectRedemptionAsync(id, dto.RejectionReason);
+                return Success<object>(null, "Redemption rejected successfully");
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFoundError($"Redemption with ID {id} not found");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error rejecting redemption {RedemptionId}", id);
+                return Error("Failed to reject redemption");
             }
         }
 

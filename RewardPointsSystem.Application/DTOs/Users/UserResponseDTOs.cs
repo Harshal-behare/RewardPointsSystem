@@ -14,6 +14,8 @@ namespace RewardPointsSystem.Application.DTOs.Users
         public string Email { get; set; }
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }
+        public List<string> Roles { get; set; } = new List<string>();
+        public int? PointsBalance { get; set; }
     }
 
     /// <summary>

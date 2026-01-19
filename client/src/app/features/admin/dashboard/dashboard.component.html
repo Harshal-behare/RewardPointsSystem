@@ -2,7 +2,7 @@
   <!-- KPI Cards Section -->
   <section class="kpi-section">
     <app-kpi-card
-      *ngFor="let kpi of kpiData"
+      *ngFor="let kpi of kpiData()"
       [icon]="kpi.icon"
       [label]="kpi.label"
       [value]="kpi.value"
@@ -63,11 +63,11 @@
             <p class="chart-value">Total: 26,600 points</p>
           </div>
           <div class="bar-chart">
-            <div class="bar-item" *ngFor="let value of chartData.pointsAwarded; let i = index">
+            <div class="bar-item" *ngFor="let value of chartData().pointsAwarded; let i = index">
               <div class="bar" [style.height.%]="(value / 6000) * 100">
                 <span class="bar-label">{{ value }}</span>
               </div>
-              <span class="bar-month">{{ chartData.labels[i] }}</span>
+              <span class="bar-month">{{ chartData().labels[i] }}</span>
             </div>
           </div>
         </div>
@@ -81,11 +81,11 @@
             <p class="chart-value">Total: 11,200 points</p>
           </div>
           <div class="bar-chart">
-            <div class="bar-item" *ngFor="let value of chartData.redemptions; let i = index">
+            <div class="bar-item" *ngFor="let value of chartData().redemptions; let i = index">
               <div class="bar redemption-bar" [style.height.%]="(value / 3000) * 100">
                 <span class="bar-label">{{ value }}</span>
               </div>
-              <span class="bar-month">{{ chartData.labels[i] }}</span>
+              <span class="bar-month">{{ chartData().labels[i] }}</span>
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@
   <section class="activity-section">
     <app-card title="Recent Activity">
       <div class="activity-list">
-        <div class="activity-item" *ngFor="let activity of recentActivities">
+        <div class="activity-item" *ngFor="let activity of recentActivities()">
           <div class="activity-icon">
             <app-badge [variant]="getActivityTypeClass(activity.type)">
               {{ activity.type }}
@@ -117,7 +117,7 @@
 </div>
 
 <!-- Create Event Modal -->
-<div class="modal-overlay" *ngIf="showEventModal" (click)="closeEventModal()">
+<div class="modal-overlay" *ngIf="showEventModal()" (click)="closeEventModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>📅 Create New Event</h3>
@@ -188,7 +188,7 @@
 </div>
 
 <!-- Create Product Modal -->
-<div class="modal-overlay" *ngIf="showProductModal" (click)="closeProductModal()">
+<div class="modal-overlay" *ngIf="showProductModal()" (click)="closeProductModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>🎁 Add New Product</h3>

@@ -4,6 +4,7 @@ using RewardPointsSystem.Application.DTOs;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Events;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Events;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -27,6 +28,24 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
+        /// Maps backend EventStatus to frontend-friendly status string
+        /// </summary>
+        private string MapEventStatusToFrontend(EventStatus status)
+        {
+            return status switch
+            {
+                EventStatus.Draft => "Draft",
+                EventStatus.Published or EventStatus.Upcoming => "Upcoming",
+                EventStatus.RegistrationOpen => "Upcoming",
+                EventStatus.RegistrationClosed => "Upcoming",
+                EventStatus.InProgress or EventStatus.Active => "Active",
+                EventStatus.Completed => "Completed",
+                EventStatus.Cancelled => "Cancelled",
+                _ => status.ToString()
+            };
+        }
+
+        /// <summary>
         /// Get all events
         /// </summary>
         [HttpGet]
@@ -42,7 +61,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = e.Name,
                     Description = e.Description,
                     EventDate = e.EventDate,
-                    Status = e.Status.ToString(),
+                    Status = MapEventStatusToFrontend(e.Status),
                     TotalPointsPool = e.TotalPointsPool,
                     RemainingPoints = e.GetAvailablePointsPool(),
                     CreatedAt = e.CreatedAt
@@ -77,7 +96,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = ev.Name,
                     Description = ev.Description,
                     EventDate = ev.EventDate,
-                    Status = ev.Status.ToString(),
+                    Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
                     CreatedAt = ev.CreatedAt
@@ -111,7 +130,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = ev.Name,
                     Description = ev.Description,
                     EventDate = ev.EventDate,
-                    Status = ev.Status.ToString(),
+                    Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
                     CreatedAt = ev.CreatedAt
@@ -155,7 +174,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = ev.Name,
                     Description = ev.Description,
                     EventDate = ev.EventDate,
-                    Status = ev.Status.ToString(),
+                    Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
                     ParticipantsCount = ev.Participants?.Count ?? 0,
@@ -230,12 +249,15 @@ namespace RewardPointsSystem.Api.Controllers
                     return NotFoundError($"Event with ID {id} not found");
 
                 // Apply the status change based on the target status
+                // Accept both backend and frontend status names
                 switch (dto.Status?.ToLower())
                 {
                     case "published":
+                    case "upcoming":
                         await _eventService.PublishEventAsync(id);
                         break;
                     case "active":
+                    case "inprogress":
                         await _eventService.ActivateEventAsync(id);
                         break;
                     case "completed":
@@ -245,7 +267,7 @@ namespace RewardPointsSystem.Api.Controllers
                         await _eventService.CancelEventAsync(id);
                         break;
                     default:
-                        return Error($"Invalid status: {dto.Status}. Valid values are: Published, Active, Completed, Cancelled", 400);
+                        return Error($"Invalid status: {dto.Status}. Valid values are: Upcoming, Active, Completed, Cancelled", 400);
                 }
 
                 var ev = await _eventService.GetEventByIdAsync(id);
@@ -256,7 +278,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = ev.Name,
                     Description = ev.Description,
                     EventDate = ev.EventDate,
-                    Status = ev.Status.ToString(),
+                    Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
                     ParticipantsCount = ev.Participants?.Count ?? 0,
@@ -332,7 +354,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Name = e.Name,
                     Description = e.Description,
                     EventDate = e.EventDate,
-                    Status = e.Status.ToString(),
+                    Status = MapEventStatusToFrontend(e.Status),
                     TotalPointsPool = e.TotalPointsPool,
                     RemainingPoints = e.GetAvailablePointsPool(),
                     ParticipantsCount = e.Participants?.Count ?? 0,

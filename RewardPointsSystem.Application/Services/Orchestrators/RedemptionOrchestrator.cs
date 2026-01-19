@@ -168,5 +168,28 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             redemption.Cancel(reason ?? "User cancelled redemption");
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task RejectRedemptionAsync(Guid redemptionId, string reason)
+        {
+            var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
+            if (redemption == null)
+                throw new ArgumentException($"Redemption with ID {redemptionId} not found");
+
+            if (redemption.Status != RedemptionStatus.Pending)
+                throw new InvalidOperationException($"Only pending redemptions can be rejected. Current status: {redemption.Status}");
+
+            // Release reserved stock using the actual quantity from redemption
+            await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
+
+            // Refund user points
+            await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
+
+            // Record refund transaction
+            await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
+                redemption.Id, $"Redemption rejection refund - Redemption ID: {redemption.Id}");
+
+            redemption.Cancel(reason ?? "Rejected by administrator");
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

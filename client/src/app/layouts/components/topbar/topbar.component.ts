@@ -33,6 +33,7 @@ import { Router } from '@angular/router';
               <strong>Switch Role</strong>
             </div>
             <button 
+              *ngIf="isAdmin"
               class="dropdown-item" 
               [class.active]="currentRole === 'Administrator'"
               (click)="switchRole('admin')">
@@ -243,8 +244,11 @@ export class TopbarComponent implements OnInit {
   currentRole = 'Administrator';
   userInitials = 'AU';
   showDropdown = false;
+  isAdmin = false;
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
     // Try to get user info from localStorage or API
@@ -267,10 +271,33 @@ export class TopbarComponent implements OnInit {
         const userData = JSON.parse(userDataStr);
         this.userName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User';
         this.userRole = userData.role || 'User';
-        this.currentRole = userData.role || 'Administrator';
+        // Check if user is admin
+        this.isAdmin = userData.role === 'Admin' || userData.role === 'Administrator' || 
+                       userData.roles?.includes('Admin') || userData.roles?.includes('Administrator');
+        
+        // Set current role based on current route
+        if (this.router.url.includes('/admin')) {
+          this.currentRole = 'Administrator';
+        } else {
+          this.currentRole = 'Employee';
+        }
         this.userInitials = this.getInitials(userData.firstName, userData.lastName);
       } catch (e) {
         console.error('Error parsing user data', e);
+      }
+    }
+    
+    // Also try the token storage key
+    const accessToken = localStorage.getItem('rp_access_token');
+    if (accessToken) {
+      // Decode JWT to get user info
+      try {
+        const payload = JSON.parse(atob(accessToken.split('.')[1]));
+        if (payload.role) {
+          this.isAdmin = payload.role === 'Admin' || payload.role === 'Administrator';
+        }
+      } catch (e) {
+        console.error('Error decoding token', e);
       }
     }
   }
@@ -293,9 +320,7 @@ export class TopbarComponent implements OnInit {
       this.router.navigate(['/admin/dashboard']);
     } else {
       this.currentRole = 'Employee';
-      // TODO: Navigate to employee dashboard when available
-      alert('Employee dashboard is not yet implemented. Will redirect to /employee/dashboard');
-      // this.router.navigate(['/employee/dashboard']);
+      this.router.navigate(['/employee/dashboard']);
     }
   }
 
@@ -304,6 +329,8 @@ export class TopbarComponent implements OnInit {
     // Clear auth and redirect to login
     localStorage.removeItem('token');
     localStorage.removeItem('user');
+    localStorage.removeItem('rp_access_token');
+    localStorage.removeItem('rp_refresh_token');
     this.router.navigate(['/login']);
   }
 }

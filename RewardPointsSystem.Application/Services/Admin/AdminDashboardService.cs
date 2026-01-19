@@ -32,10 +32,12 @@ namespace RewardPointsSystem.Application.Services.Admin
             var accounts = await _unitOfWork.UserPointsAccounts.GetAllAsync();
             var transactions = await _unitOfWork.UserPointsTransactions.GetAllAsync();
             var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
+            var products = await _unitOfWork.Products.GetAllAsync();
 
             var activeUsers = users.Where(u => u.IsActive);
             var activeEvents = events.Where(e => e.Status == EventStatus.Active);
             var completedEvents = events.Where(e => e.Status == EventStatus.Completed);
+            var activeProducts = products.Where(p => p.IsActive);
 
             var userEventParticipation = activeUsers.ToDictionary(
                 u => u.Id.ToString(),
@@ -50,10 +52,16 @@ namespace RewardPointsSystem.Application.Services.Admin
             return new DashboardStats
             {
                 TotalUsers = users.Count(),
+                TotalActiveUsers = activeUsers.Count(),
+                TotalEvents = events.Count(),
                 ActiveEvents = activeEvents.Count(),
-                PendingRedemptions = redemptions.Count(r => r.Status == RedemptionStatus.Pending),
-                TotalPointsAwarded = accounts.Sum(a => a.TotalEarned),
+                TotalProducts = products.Count(),
+                ActiveProducts = activeProducts.Count(),
+                TotalPointsDistributed = accounts.Sum(a => a.TotalEarned),
                 TotalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed),
+                PendingRedemptions = redemptions.Count(r => r.Status == RedemptionStatus.Pending),
+                TotalRedemptions = redemptions.Count(),
+                TotalPointsAwarded = accounts.Sum(a => a.TotalEarned),
                 UserEventParticipation = userEventParticipation,
                 UserPointsEarned = userPointsEarned
             };

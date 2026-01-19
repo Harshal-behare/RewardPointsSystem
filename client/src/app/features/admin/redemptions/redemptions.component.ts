@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, effect } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter } from 'rxjs';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { RedemptionService } from '../../../core/services/redemption.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface RedemptionRequest {
   id: string;
@@ -41,135 +45,171 @@ interface Stats {
 })
 export class AdminRedemptionsComponent implements OnInit {
   // Filter state
-  currentFilter: 'All' | 'Pending' | 'Approved' | 'Rejected' = 'All';
+  currentFilter = signal<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
   
   // Stats
-  stats: Stats = {
+  stats = signal<Stats>({
     total: 0,
     pending: 0,
     approved: 0,
     rejected: 0
-  };
+  });
 
   // Modal states
-  showApproveModal = false;
-  showRejectModal = false;
-  showDetailsModal = false;
-  selectedRequest: RedemptionRequest | null = null;
+  showApproveModal = signal(false);
+  showRejectModal = signal(false);
+  showDetailsModal = signal(false);
+  selectedRequest = signal<RedemptionRequest | null>(null);
   
   // Form fields
-  rejectionReason = '';
-  rejectionError = '';
+  rejectionReason = signal('');
+  rejectionError = signal('');
 
-  // Sample redemption requests data
-  redemptionRequests: RedemptionRequest[] = [
-    {
-      id: '1',
-      userId: 'user-001',
-      userName: 'John Doe',
-      userEmail: 'john.doe@company.com',
-      productId: 'prod-001',
-      productName: 'Wireless Headphones',
-      pointsSpent: 5000,
-      status: 'Pending',
-      requestedAt: new Date('2026-01-10T10:30:00'),
-      deliveryAddress: '123 Main St, Suite 100, Cityville, ST 12345',
-      notes: 'Please deliver during office hours (9 AM - 5 PM)'
-    },
-    {
-      id: '2',
-      userId: 'user-002',
-      userName: 'Jane Smith',
-      userEmail: 'jane.smith@company.com',
-      productId: 'prod-002',
-      productName: 'Coffee Maker',
-      pointsSpent: 3500,
-      status: 'Pending',
-      requestedAt: new Date('2026-01-12T14:15:00'),
-      deliveryAddress: '456 Oak Avenue, Apt 5B, Townsburg, ST 54321'
-    },
-    {
-      id: '3',
-      userId: 'user-003',
-      userName: 'Mike Johnson',
-      userEmail: 'mike.j@company.com',
-      productId: 'prod-003',
-      productName: 'Fitness Tracker',
-      pointsSpent: 2500,
-      status: 'Approved',
-      requestedAt: new Date('2026-01-09T09:00:00'),
-      approvedAt: new Date('2026-01-09T15:00:00'),
-      deliveryAddress: '789 Elm Street, Building C, Villageton, ST 98765'
-    },
-    {
-      id: '4',
-      userId: 'user-004',
-      userName: 'Sarah Williams',
-      userEmail: 'sarah.w@company.com',
-      productId: 'prod-004',
-      productName: 'Desk Lamp',
-      pointsSpent: 1500,
-      status: 'Delivered',
-      requestedAt: new Date('2026-01-08T11:20:00'),
-      approvedAt: new Date('2026-01-08T16:00:00'),
-      deliveredAt: new Date('2026-01-11T10:00:00'),
-      deliveryAddress: '321 Pine Road, Unit 12, Hamlet City, ST 11111'
-    },
-    {
-      id: '5',
-      userId: 'user-005',
-      userName: 'Tom Brown',
-      userEmail: 'tom.brown@company.com',
-      productId: 'prod-005',
-      productName: 'Bluetooth Speaker',
-      pointsSpent: 4000,
-      status: 'Rejected',
-      requestedAt: new Date('2026-01-07T13:45:00'),
-      deliveryAddress: '555 Maple Drive, Floor 3, Boroughville, ST 22222',
-      notes: 'Rejected due to insufficient points verification'
-    },
-    {
-      id: '6',
-      userId: 'user-006',
-      userName: 'Emma Davis',
-      userEmail: 'emma.davis@company.com',
-      productId: 'prod-006',
-      productName: 'Backpack',
-      pointsSpent: 2000,
-      status: 'Pending',
-      requestedAt: new Date('2026-01-13T16:00:00'),
-      deliveryAddress: '999 Cedar Lane, Suite 200, Metrocity, ST 33333'
-    }
-  ];
+  redemptionRequests = signal<RedemptionRequest[]>([]);
+  filteredRequests = signal<RedemptionRequest[]>([]);
 
-  filteredRequests: RedemptionRequest[] = [];
+  constructor(
+    private router: Router,
+    private redemptionService: RedemptionService,
+    private toast: ToastService
+  ) {
+    // Use effect to reload data when navigating back to redemptions
+    effect(() => {
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe(() => {
+        this.loadRedemptions();
+      });
+    });
+  }
 
   ngOnInit(): void {
-    this.calculateStats();
-    this.filterRequests();
+    this.loadRedemptions();
+  }
+
+  loadRedemptions(): void {
+    this.redemptionService.getRedemptions().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.redemptionRequests.set(response.data.map((r: any) => this.mapRedemptionToDisplay(r)));
+        } else {
+          this.loadFallbackData();
+        }
+        this.calculateStats();
+        this.filterRequests();
+      },
+      error: (error) => {
+        console.error('Error loading redemptions:', error);
+        this.loadFallbackData();
+        this.calculateStats();
+        this.filterRequests();
+      }
+    });
+  }
+
+  private mapRedemptionToDisplay(redemption: any): RedemptionRequest {
+    return {
+      id: redemption.id || redemption.redemptionId,
+      userId: redemption.userId,
+      userName: redemption.userName || redemption.userFullName || 'Unknown User',
+      userEmail: redemption.userEmail || '',
+      productId: redemption.productId,
+      productName: redemption.productName || 'Unknown Product',
+      pointsSpent: redemption.pointsSpent || redemption.pointsCost || 0,
+      status: this.mapRedemptionStatus(redemption.status),
+      requestedAt: new Date(redemption.requestedAt || redemption.createdAt),
+      approvedAt: redemption.approvedAt ? new Date(redemption.approvedAt) : undefined,
+      deliveredAt: redemption.deliveredAt ? new Date(redemption.deliveredAt) : undefined,
+      deliveryAddress: redemption.deliveryAddress || redemption.shippingAddress,
+      notes: redemption.notes || redemption.adminNotes
+    };
+  }
+
+  private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' {
+    if (typeof status === 'number') {
+      const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' } = {
+        0: 'Pending',
+        1: 'Approved',
+        2: 'Rejected',
+        3: 'Delivered',
+        4: 'Cancelled'
+      };
+      return statusMap[status] || 'Pending';
+    }
+    return (status as 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled') || 'Pending';
+  }
+
+  private loadFallbackData(): void {
+    this.redemptionRequests.set([
+      {
+        id: '1',
+        userId: 'user-001',
+        userName: 'John Doe',
+        userEmail: 'john.doe@company.com',
+        productId: 'prod-001',
+        productName: 'Wireless Headphones',
+        pointsSpent: 5000,
+        status: 'Pending',
+        requestedAt: new Date('2026-01-10T10:30:00'),
+        deliveryAddress: '123 Main St, Suite 100, Cityville, ST 12345',
+        notes: 'Please deliver during office hours (9 AM - 5 PM)'
+      },
+      {
+        id: '2',
+        userId: 'user-002',
+        userName: 'Jane Smith',
+        userEmail: 'jane.smith@company.com',
+        productId: 'prod-002',
+        productName: 'Coffee Maker',
+        pointsSpent: 3500,
+        status: 'Pending',
+        requestedAt: new Date('2026-01-12T14:15:00'),
+        deliveryAddress: '456 Oak Avenue, Apt 5B, Townsburg, ST 54321'
+      },
+      {
+        id: '3',
+        userId: 'user-003',
+        userName: 'Mike Johnson',
+        userEmail: 'mike.j@company.com',
+        productId: 'prod-003',
+        productName: 'Fitness Tracker',
+        pointsSpent: 2500,
+        status: 'Approved',
+        requestedAt: new Date('2026-01-09T09:00:00'),
+        approvedAt: new Date('2026-01-09T15:00:00'),
+        deliveryAddress: '789 Elm Street, Building C, Villageton, ST 98765'
+      }
+    ]);
+    this.toast.warning('Using demo data - API unavailable');
   }
 
   calculateStats(): void {
-    this.stats.total = this.redemptionRequests.length;
-    this.stats.pending = this.redemptionRequests.filter(r => r.status === 'Pending').length;
-    this.stats.approved = this.redemptionRequests.filter(r => r.status === 'Approved' || r.status === 'Delivered').length;
-    this.stats.rejected = this.redemptionRequests.filter(r => r.status === 'Rejected').length;
+    const requests = this.redemptionRequests();
+    this.stats.set({
+      total: requests.length,
+      pending: requests.filter(r => r.status === 'Pending').length,
+      approved: requests.filter(r => r.status === 'Approved' || r.status === 'Delivered').length,
+      rejected: requests.filter(r => r.status === 'Rejected').length
+    });
   }
 
   setFilter(filter: 'All' | 'Pending' | 'Approved' | 'Rejected'): void {
-    this.currentFilter = filter;
+    this.currentFilter.set(filter);
     this.filterRequests();
   }
 
   filterRequests(): void {
-    if (this.currentFilter === 'All') {
-      this.filteredRequests = [...this.redemptionRequests];
-    } else if (this.currentFilter === 'Approved') {
-      this.filteredRequests = this.redemptionRequests.filter(r => 
+    const filter = this.currentFilter();
+    const requests = this.redemptionRequests();
+    
+    if (filter === 'All') {
+      this.filteredRequests.set([...requests]);
+    } else if (filter === 'Approved') {
+      this.filteredRequests.set(requests.filter(r => 
         r.status === 'Approved' || r.status === 'Delivered'
-      );
+      ));
     } else {
-      this.filteredRequests = this.redemptionRequests.filter(r => r.status === this.currentFilter);
+      this.filteredRequests.set(requests.filter(r => r.status === filter));
     }
   }
 
@@ -190,94 +230,122 @@ export class AdminRedemptionsComponent implements OnInit {
 
   // Approve Modal Methods
   openApproveModal(request: RedemptionRequest): void {
-    this.selectedRequest = request;
-    this.showApproveModal = true;
+    this.selectedRequest.set(request);
+    this.showApproveModal.set(true);
   }
 
   closeApproveModal(): void {
-    this.showApproveModal = false;
-    this.selectedRequest = null;
+    this.showApproveModal.set(false);
+    this.selectedRequest.set(null);
   }
 
   confirmApprove(): void {
-    if (this.selectedRequest) {
-      console.log('Approving redemption:', this.selectedRequest.id);
-      // TODO: Call API to approve redemption and deduct points
-      this.selectedRequest.status = 'Approved';
-      this.selectedRequest.approvedAt = new Date();
-      
-      // Update the request in the list
-      const index = this.redemptionRequests.findIndex(r => r.id === this.selectedRequest?.id);
-      if (index !== -1) {
-        this.redemptionRequests[index] = { ...this.selectedRequest };
-      }
-      
-      // Recalculate stats and filter
-      this.calculateStats();
-      this.filterRequests();
-      
-      // Show success message (TODO: use toast service)
-      alert(`✓ Redemption approved successfully! ${this.selectedRequest.pointsSpent} points have been deducted from ${this.selectedRequest.userName}'s account.`);
+    const request = this.selectedRequest();
+    if (request) {
+      this.redemptionService.approveRedemption(request.id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            const updatedRequest = {
+              ...request,
+              status: 'Approved' as const,
+              approvedAt: new Date()
+            };
+            
+            // Update the request in the list
+            const updatedRequests = this.redemptionRequests().map(r => 
+              r.id === request.id ? updatedRequest : r
+            );
+            this.redemptionRequests.set(updatedRequests);
+            
+            // Recalculate stats and filter
+            this.calculateStats();
+            this.filterRequests();
+            
+            this.toast.success(`Redemption approved! ${request.pointsSpent} points deducted from ${request.userName}'s account.`);
+          } else {
+            this.toast.error(response.message || 'Failed to approve redemption');
+          }
+        },
+        error: (error) => {
+          console.error('Error approving redemption:', error);
+          this.toast.error('Failed to approve redemption');
+        }
+      });
     }
     this.closeApproveModal();
   }
 
   // Reject Modal Methods
   openRejectModal(request: RedemptionRequest): void {
-    this.selectedRequest = request;
-    this.rejectionReason = '';
-    this.rejectionError = '';
-    this.showRejectModal = true;
+    this.selectedRequest.set(request);
+    this.rejectionReason.set('');
+    this.rejectionError.set('');
+    this.showRejectModal.set(true);
   }
 
   closeRejectModal(): void {
-    this.showRejectModal = false;
-    this.selectedRequest = null;
-    this.rejectionReason = '';
-    this.rejectionError = '';
+    this.showRejectModal.set(false);
+    this.selectedRequest.set(null);
+    this.rejectionReason.set('');
+    this.rejectionError.set('');
   }
 
   confirmReject(): void {
     // Validate rejection reason
-    if (!this.rejectionReason || this.rejectionReason.trim().length === 0) {
-      this.rejectionError = 'Please provide a reason for rejecting this request';
+    const reason = this.rejectionReason().trim();
+    if (!reason || reason.length === 0) {
+      this.rejectionError.set('Please provide a reason for rejecting this request');
       return;
     }
 
-    if (this.rejectionReason.trim().length < 10) {
-      this.rejectionError = 'Reason must be at least 10 characters long';
+    if (reason.length < 10) {
+      this.rejectionError.set('Reason must be at least 10 characters long');
       return;
     }
 
-    if (this.selectedRequest) {
-      console.log('Rejecting redemption:', this.selectedRequest.id, 'Reason:', this.rejectionReason);
-      // TODO: Call API to reject redemption with reason
-      this.selectedRequest.status = 'Rejected';
-      
-      // Update the request in the list
-      const index = this.redemptionRequests.findIndex(r => r.id === this.selectedRequest?.id);
-      if (index !== -1) {
-        this.redemptionRequests[index] = { ...this.selectedRequest };
-      }
-      
-      // Recalculate stats and filter
-      this.calculateStats();
-      this.filterRequests();
-      
-      // Show success message (TODO: use toast service)
-      alert(`Redemption request has been rejected. The employee will be notified.`);
+    const request = this.selectedRequest();
+    if (request) {
+      this.redemptionService.rejectRedemption(request.id, reason).subscribe({
+        next: (response) => {
+          if (response.success) {
+            const updatedRequest = {
+              ...request,
+              status: 'Rejected' as const,
+              notes: reason
+            };
+            
+            // Update the request in the list
+            const updatedRequests = this.redemptionRequests().map(r => 
+              r.id === request.id ? updatedRequest : r
+            );
+            this.redemptionRequests.set(updatedRequests);
+            
+            // Recalculate stats and filter
+            this.calculateStats();
+            this.filterRequests();
+            
+            this.toast.success('Redemption request has been rejected. The employee will be notified.');
+          } else {
+            this.rejectionError.set(response.message || 'Failed to reject redemption');
+          }
+        },
+        error: (error) => {
+          console.error('Error rejecting redemption:', error);
+          this.rejectionError.set('Failed to reject redemption');
+        }
+      });
     }
     this.closeRejectModal();
   }
 
   // Details Modal Methods
   openDetailsModal(request: RedemptionRequest): void {
-    this.selectedRequest = request;
-    this.showDetailsModal = true;
+    this.selectedRequest.set(request);
+    this.showDetailsModal.set(true);
   }
 
   closeDetailsModal(): void {
-    this.showDetailsModal = false;
-    this.selectedRequest = null;
+    this.showDetailsModal.set(false);
+    this.selectedRequest.set(null);
   }
 }

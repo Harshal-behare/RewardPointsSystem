@@ -1,11 +1,24 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, model } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Router } from '@angular/router';
+import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { filter } from 'rxjs';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
+import { AdminService, DashboardStats } from '../../../core/services/admin.service';
+import { EventService, CreateEventDto } from '../../../core/services/event.service';
+import { ProductService, CreateProductDto } from '../../../core/services/product.service';
+import { ToastService } from '../../../core/services/toast.service';
+
+interface KpiData {
+  icon: string;
+  label: string;
+  value: number | string;
+  trend: number;
+  route: string;
+}
 
 interface RecentActivity {
   id: number;
@@ -30,63 +43,28 @@ interface RecentActivity {
   styleUrls: ['./dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit {
-  kpiData = [
-    { icon: '👥', label: 'Total Users', value: 248, trend: 12, route: '/admin/users' },
-    { icon: '📅', label: 'Total Events', value: 36, trend: 8, route: '/admin/events' },
-    { icon: '🎁', label: 'Total Products', value: 124, trend: -3, route: '/admin/products' },
-    { icon: '⭐', label: 'Points Distributed', value: '45.2K', trend: 15, route: '/admin/dashboard' },
-    { icon: '⏳', label: 'Pending Redemptions', value: 18, trend: -5, route: '/admin/redemptions' },
-  ];
+  // Signals for reactive state management
+  isLoading = signal(true);
+  
+  kpiData = signal<KpiData[]>([
+    { icon: '👥', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
+    { icon: '📅', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
+    { icon: '🎁', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
+    { icon: '⭐', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
+    { icon: '⏳', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+  ]);
 
-  constructor(private router: Router) {}
+  recentActivities = signal<RecentActivity[]>([]);
 
-  recentActivities: RecentActivity[] = [
-    {
-      id: 1,
-      type: 'Event Created',
-      description: 'Summer Sales Challenge event was created',
-      timestamp: '2 hours ago',
-      user: 'John Doe'
-    },
-    {
-      id: 2,
-      type: 'Product Added',
-      description: 'New product "Wireless Headphones" added to catalog',
-      timestamp: '4 hours ago',
-      user: 'Jane Smith'
-    },
-    {
-      id: 3,
-      type: 'Points Awarded',
-      description: '500 points awarded to 15 users for completing training',
-      timestamp: '6 hours ago',
-      user: 'Admin'
-    },
-    {
-      id: 4,
-      type: 'Redemption Approved',
-      description: 'Product redemption approved for employee #1245',
-      timestamp: '1 day ago',
-      user: 'Admin'
-    },
-    {
-      id: 5,
-      type: 'User Registered',
-      description: '3 new employees joined the system',
-      timestamp: '2 days ago',
-      user: 'System'
-    },
-  ];
-
-  chartData = {
+  chartData = signal({
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
-    pointsAwarded: [3200, 4100, 3800, 5200, 4800, 5500],
-    redemptions: [1200, 1500, 1800, 2100, 2400, 2200],
-  };
+    pointsAwarded: [0, 0, 0, 0, 0, 0],
+    redemptions: [0, 0, 0, 0, 0, 0],
+  });
 
   // Quick Action Modals
-  showEventModal = false;
-  showProductModal = false;
+  showEventModal = signal(false);
+  showProductModal = signal(false);
   newEvent = {
     name: '',
     description: '',
@@ -102,8 +80,84 @@ export class AdminDashboardComponent implements OnInit {
     imageUrl: ''
   };
 
+  constructor(
+    private router: Router,
+    private adminService: AdminService,
+    private eventService: EventService,
+    private productService: ProductService,
+    private toast: ToastService
+  ) {
+    // Use effect to reload data on route changes
+    effect(() => {
+      this.router.events.pipe(
+        filter(event => event instanceof NavigationEnd)
+      ).subscribe(() => {
+        this.loadDashboardData();
+      });
+    });
+  }
+
   ngOnInit(): void {
-    // Load dashboard data
+    this.loadDashboardData();
+  }
+
+  loadDashboardData(): void {
+    this.isLoading.set(true);
+    
+    this.adminService.getDashboardStats().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const stats = response.data;
+          this.updateKpiData(stats);
+        } else {
+          this.useFallbackData();
+        }
+        this.isLoading.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading dashboard data:', error);
+        this.useFallbackData();
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  private updateKpiData(stats: DashboardStats): void {
+    this.kpiData.set([
+      { icon: '👥', label: 'Total Users', value: stats.totalUsers || 0, trend: 12, route: '/admin/users' },
+      { icon: '📅', label: 'Total Events', value: stats.totalEvents || 0, trend: 8, route: '/admin/events' },
+      { icon: '🎁', label: 'Total Products', value: stats.totalProducts || 0, trend: -3, route: '/admin/products' },
+      { icon: '⭐', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 15, route: '/admin/dashboard' },
+      { icon: '⏳', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: -5, route: '/admin/redemptions' },
+    ]);
+  }
+
+  private useFallbackData(): void {
+    this.kpiData.set([
+      { icon: '👥', label: 'Total Users', value: 248, trend: 12, route: '/admin/users' },
+      { icon: '📅', label: 'Total Events', value: 36, trend: 8, route: '/admin/events' },
+      { icon: '🎁', label: 'Total Products', value: 124, trend: -3, route: '/admin/products' },
+      { icon: '⭐', label: 'Points Distributed', value: '45.2K', trend: 15, route: '/admin/dashboard' },
+      { icon: '⏳', label: 'Pending Redemptions', value: 18, trend: -5, route: '/admin/redemptions' },
+    ]);
+    this.recentActivities.set([
+      { id: 1, type: 'Event Created', description: 'Summer Sales Challenge event was created', timestamp: '2 hours ago', user: 'John Doe' },
+      { id: 2, type: 'Product Added', description: 'New product "Wireless Headphones" added', timestamp: '4 hours ago', user: 'Jane Smith' },
+      { id: 3, type: 'Points Awarded', description: '500 points awarded to 15 users', timestamp: '6 hours ago', user: 'Admin' },
+      { id: 4, type: 'Redemption Approved', description: 'Product redemption approved', timestamp: '1 day ago', user: 'Admin' },
+      { id: 5, type: 'User Registered', description: '3 new employees joined', timestamp: '2 days ago', user: 'System' },
+    ]);
+    this.chartData.set({
+      labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+      pointsAwarded: [3200, 4100, 3800, 5200, 4800, 5500],
+      redemptions: [1200, 1500, 1800, 2100, 2400, 2200],
+    });
+  }
+
+  private formatNumber(num: number): string {
+    if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
+    if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
+    return num.toString();
   }
 
   navigateToPage(route: string): void {
@@ -118,20 +172,42 @@ export class AdminDashboardComponent implements OnInit {
       eventDate: '',
       pointsPool: 0
     };
-    this.showEventModal = true;
+    this.showEventModal.set(true);
   }
 
   closeEventModal(): void {
-    this.showEventModal = false;
+    this.showEventModal.set(false);
   }
 
   createEvent(): void {
-    // TODO: Call API to create event
-    console.log('Creating event:', this.newEvent);
-    alert(`✓ Event "${this.newEvent.name}" created successfully!`);
-    this.closeEventModal();
-    // Optionally navigate to events page
-    // this.router.navigate(['/admin/events']);
+    const event = this.newEvent;
+    if (!event.name || !event.eventDate) {
+      this.toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const eventData: CreateEventDto = {
+      name: event.name,
+      description: event.description,
+      eventDate: new Date(event.eventDate).toISOString(),
+      totalPointsPool: event.pointsPool
+    };
+
+    this.eventService.createEvent(eventData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toast.success(`Event "${event.name}" created successfully!`);
+          this.closeEventModal();
+          this.loadDashboardData();
+        } else {
+          this.toast.error(response.message || 'Failed to create event');
+        }
+      },
+      error: (error) => {
+        console.error('Error creating event:', error);
+        this.toast.error('Failed to create event. Please try again.');
+      }
+    });
   }
 
   openProductModal(): void {
@@ -143,20 +219,43 @@ export class AdminDashboardComponent implements OnInit {
       stock: 0,
       imageUrl: ''
     };
-    this.showProductModal = true;
+    this.showProductModal.set(true);
   }
 
   closeProductModal(): void {
-    this.showProductModal = false;
+    this.showProductModal.set(false);
   }
 
   createProduct(): void {
-    // TODO: Call API to create product
-    console.log('Creating product:', this.newProduct);
-    alert(`✓ Product "${this.newProduct.name}" created successfully!`);
-    this.closeProductModal();
-    // Optionally navigate to products page
-    // this.router.navigate(['/admin/products']);
+    const product = this.newProduct;
+    if (!product.name || product.pointsPrice <= 0) {
+      this.toast.error('Please fill in all required fields');
+      return;
+    }
+
+    const productData: CreateProductDto = {
+      name: product.name,
+      description: product.description,
+      pointsPrice: product.pointsPrice,
+      stockQuantity: product.stock,
+      imageUrl: product.imageUrl || 'https://via.placeholder.com/150'
+    };
+
+    this.productService.createProduct(productData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toast.success(`Product "${product.name}" created successfully!`);
+          this.closeProductModal();
+          this.loadDashboardData();
+        } else {
+          this.toast.error(response.message || 'Failed to create product');
+        }
+      },
+      error: (error) => {
+        console.error('Error creating product:', error);
+        this.toast.error('Failed to create product. Please try again.');
+      }
+    });
   }
 
   getActivityTypeClass(type: string): 'success' | 'warning' | 'info' | 'danger' | 'secondary' {

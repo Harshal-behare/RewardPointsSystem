@@ -54,10 +54,16 @@ namespace RewardPointsSystem.Application.DTOs
     public class DashboardStats
     {
         public int TotalUsers { get; set; }
+        public int TotalActiveUsers { get; set; }
+        public int TotalEvents { get; set; }
         public int ActiveEvents { get; set; }
-        public int PendingRedemptions { get; set; }
-        public int TotalPointsAwarded { get; set; }
+        public int TotalProducts { get; set; }
+        public int ActiveProducts { get; set; }
+        public int TotalPointsDistributed { get; set; }
         public int TotalPointsRedeemed { get; set; }
+        public int PendingRedemptions { get; set; }
+        public int TotalRedemptions { get; set; }
+        public int TotalPointsAwarded { get; set; }
         public Dictionary<string, int> UserEventParticipation { get; set; }
         public Dictionary<string, int> UserPointsEarned { get; set; }
     }

@@ -27,6 +27,7 @@ namespace RewardPointsSystem.Application.Interfaces
         IRepository<Product> Products { get; }
         IRepository<ProductPricing> Pricing { get; }
         IRepository<InventoryItem> Inventory { get; }
+        IRepository<ProductCategory> ProductCategories { get; }
 
         // Operation repositories
         IRepository<Redemption> Redemptions { get; }

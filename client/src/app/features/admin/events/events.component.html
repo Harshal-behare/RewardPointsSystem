@@ -5,10 +5,6 @@
       <span class="action-icon">➕</span>
       <span>Create New Event</span>
     </button>
-    <button class="quick-action-btn secondary" (click)="exportEvents()">
-      <span class="action-icon">📥</span>
-      <span>Export Events</span>
-    </button>
     <button class="quick-action-btn secondary" (click)="refreshData()">
       <span class="action-icon">🔄</span>
       <span>Refresh</span>
@@ -32,30 +28,26 @@
       <div class="filter-tabs">
         <button
           class="filter-tab"
-          [class.active]="selectedFilter === 'all'"
-          (click)="onFilterChange('all')"
-        >
+          [class.active]="selectedFilter() === 'all'"
+          (click)="onFilterChange('all')">
           All Events
         </button>
         <button
           class="filter-tab"
-          [class.active]="selectedFilter === 'Upcoming'"
-          (click)="onFilterChange('Upcoming')"
-        >
+          [class.active]="selectedFilter() === 'Upcoming'"
+          (click)="onFilterChange('Upcoming')">
           Upcoming
         </button>
         <button
           class="filter-tab"
-          [class.active]="selectedFilter === 'Active'"
-          (click)="onFilterChange('Active')"
-        >
+          [class.active]="selectedFilter() === 'Active'"
+          (click)="onFilterChange('Active')">
           Active
         </button>
         <button
           class="filter-tab"
-          [class.active]="selectedFilter === 'Completed'"
-          (click)="onFilterChange('Completed')"
-        >
+          [class.active]="selectedFilter() === 'Completed'"
+          (click)="onFilterChange('Completed')">
           Completed
         </button>
       </div>
@@ -86,7 +78,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let event of filteredEvents">
+          <tr *ngFor="let event of filteredEvents()">
             <td>
               <div class="event-name">
                 <strong>{{ event.name }}</strong>
@@ -126,10 +118,10 @@
 </div>
 
 <!-- Event Modal -->
-<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>{{ modalMode === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
+      <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
       <button class="close-btn" (click)="closeModal()">✕</button>
     </div>
 
@@ -228,19 +220,19 @@
         Cancel
       </app-button>
       <app-button (clicked)="saveEvent()">
-        {{ modalMode === 'create' ? 'Create Event' : 'Save Changes' }}
+        {{ modalMode() === 'create' ? 'Create Event' : 'Save Changes' }}
       </app-button>
     </div>
   </div>
 </div>
 
 <!-- Participants Modal -->
-<div class="modal-overlay" *ngIf="showParticipantsModal" (click)="closeParticipantsModal()">
+<div class="modal-overlay" *ngIf="showParticipantsModal()" (click)="closeParticipantsModal()">
   <div class="modal-content participants-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <div>
-        <h3>{{ selectedEventForParticipants?.name }} - Participants</h3>
-        <p class="participants-count">Total Participants: {{ filteredParticipants.length }}</p>
+        <h3>{{ selectedEventForParticipants()?.name }} - Participants</h3>
+        <p class="participants-count">Total Participants: {{ filteredParticipants().length }}</p>
       </div>
       <button class="close-btn" (click)="closeParticipantsModal()">✕</button>
     </div>
@@ -251,8 +243,8 @@
         <input
           type="text"
           class="search-input"
-          [(ngModel)]="participantSearchQuery"
-          (ngModelChange)="filterParticipants()"
+          [ngModel]="participantSearchQuery()"
+          (ngModelChange)="participantSearchQuery.set($event); filterParticipants()"
           placeholder="🔍 Search by name or email..."
         />
       </div>
@@ -272,7 +264,7 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let participant of filteredParticipants" 
+            <tr *ngFor="let participant of filteredParticipants()" 
                 [class.disabled-row]="participant.status === 'Winner'">
               <td>
                 <strong>{{ participant.userName }}</strong>
@@ -306,7 +298,7 @@
                 </button>
               </td>
             </tr>
-            <tr *ngIf="filteredParticipants.length === 0">
+            <tr *ngIf="filteredParticipants().length === 0">
               <td colspan="5" style="text-align: center; padding: 32px; color: #7A7A7A;">
                 No participants found
               </td>
@@ -319,7 +311,7 @@
 </div>
 
 <!-- Winner Selection Modal -->
-<div class="modal-overlay" *ngIf="showWinnerModal" (click)="closeWinnerModal()">
+<div class="modal-overlay" *ngIf="showWinnerModal()" (click)="closeWinnerModal()">
   <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h3>🏆 Select Winner</h3>
@@ -328,9 +320,9 @@
 
     <div class="modal-body">
       <div class="winner-info">
-        <p><strong>Participant:</strong> {{ selectedParticipant?.userName }}</p>
-        <p><strong>Email:</strong> {{ selectedParticipant?.userEmail }}</p>
-        <p><strong>Event:</strong> {{ selectedEventForParticipants?.name }}</p>
+        <p><strong>Participant:</strong> {{ selectedParticipant()?.userName }}</p>
+        <p><strong>Email:</strong> {{ selectedParticipant()?.userEmail }}</p>
+        <p><strong>Event:</strong> {{ selectedEventForParticipants()?.name }}</p>
       </div>
 
       <div class="form-row">
@@ -339,7 +331,8 @@
           <input
             id="winnerRank"
             type="number"
-            [(ngModel)]="winnerRank"
+            [ngModel]="winnerRank()"
+            (ngModelChange)="winnerRank.set($event)"
             name="winnerRank"
             placeholder="Enter rank (1, 2, 3...)"
             min="1"
@@ -353,19 +346,20 @@
           <input
             id="pointsToAward"
             type="number"
-            [(ngModel)]="pointsToAward"
+            [ngModel]="pointsToAward()"
+            (ngModelChange)="pointsToAward.set($event)"
             name="pointsToAward"
             placeholder="Enter points"
             min="1"
-            [max]="selectedEventForParticipants?.pointsPool || 0"
+            [max]="selectedEventForParticipants()?.pointsPool || 0"
             required
           />
-          <span class="input-hint">Available pool: {{ selectedEventForParticipants?.pointsPool || 0 }} points</span>
+          <span class="input-hint">Available pool: {{ selectedEventForParticipants()?.pointsPool || 0 }} points</span>
         </div>
       </div>
 
-      <div *ngIf="winnerValidationError" class="error-message-box">
-        {{ winnerValidationError }}
+      <div *ngIf="winnerValidationError()" class="error-message-box">
+        {{ winnerValidationError() }}
       </div>
     </div>
 

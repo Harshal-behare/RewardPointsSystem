@@ -57,8 +57,10 @@ namespace RewardPointsSystem.Application.Services.Products
                 .OrderByDescending(p => p.EffectiveFrom)
                 .FirstOrDefault();
 
+            // Return 0 if no pricing found instead of throwing exception
+            // This allows products to be displayed even without active pricing
             if (currentPricing == null)
-                throw new InvalidOperationException($"No active pricing found for product {productId}");
+                return 0;
 
             return currentPricing.PointsCost;
         }

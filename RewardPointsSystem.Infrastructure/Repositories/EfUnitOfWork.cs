@@ -27,6 +27,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private IRepository<Product> _products;
         private IRepository<ProductPricing> _productPricings;
         private IRepository<InventoryItem> _inventoryItems;
+        private IRepository<ProductCategory> _productCategories;
         private IRepository<Redemption> _redemptions;
 
         public EfUnitOfWork(RewardPointsDbContext context)
@@ -51,6 +52,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         public IRepository<Product> Products => _products ??= new EfRepository<Product>(_context);
         public IRepository<ProductPricing> Pricing => _productPricings ??= new EfRepository<ProductPricing>(_context);
         public IRepository<InventoryItem> Inventory => _inventoryItems ??= new EfRepository<InventoryItem>(_context);
+        public IRepository<ProductCategory> ProductCategories => _productCategories ??= new EfRepository<ProductCategory>(_context);
 
         // Operation repositories
         public IRepository<Redemption> Redemptions => _redemptions ??= new EfRepository<Redemption>(_context);

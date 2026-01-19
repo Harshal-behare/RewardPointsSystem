@@ -46,15 +46,18 @@
         <!-- Profile Dropdown -->
         <div class="profile-dropdown" (click)="toggleProfileDropdown()">
           <div class="profile-avatar">
-            <img src="https://i.pravatar.cc/150?img=1" alt="User Avatar" />
+            <span class="avatar-initials">{{ userInitials }}</span>
           </div>
           <div class="profile-info">
-            <span class="profile-name">John Doe</span>
+            <span class="profile-name">{{ userName }}</span>
             <span class="profile-role">Employee</span>
           </div>
           <span class="dropdown-arrow">▼</span>
 
           <div class="dropdown-menu" *ngIf="showProfileDropdown">
+            <a *ngIf="isAdmin" (click)="switchToAdmin()" class="dropdown-item admin-switch">
+              <span>👨‍💼</span> Switch to Admin
+            </a>
             <a [routerLink]="['/employee/profile']" class="dropdown-item">
               <span>👤</span> My Profile
             </a>

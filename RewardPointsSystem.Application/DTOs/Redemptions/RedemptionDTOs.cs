@@ -19,6 +19,8 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     {
         public Guid Id { get; set; }
         public Guid UserId { get; set; }
+        public string UserName { get; set; }
+        public string UserEmail { get; set; }
         public Guid ProductId { get; set; }
         public string ProductName { get; set; }
         public int PointsSpent { get; set; }
@@ -78,5 +80,13 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     {
         public Guid RedemptionId { get; set; }
         public string CancellationReason { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for rejecting a redemption
+    /// </summary>
+    public class RejectRedemptionDto
+    {
+        public string RejectionReason { get; set; }
     }
 }

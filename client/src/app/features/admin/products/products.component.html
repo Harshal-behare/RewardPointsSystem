@@ -5,14 +5,6 @@
       <span class="action-icon">➕</span>
       <span>Add New Product</span>
     </button>
-    <button class="quick-action-btn secondary" (click)="importProducts()">
-      <span class="action-icon">📤</span>
-      <span>Import Products</span>
-    </button>
-    <button class="quick-action-btn secondary" (click)="exportProducts()">
-      <span class="action-icon">📥</span>
-      <span>Export Products</span>
-    </button>
     <button class="quick-action-btn secondary" (click)="refreshData()">
       <span class="action-icon">🔄</span>
       <span>Refresh</span>
@@ -28,7 +20,7 @@
       </div>
       <div class="header-actions">
         <button class="view-toggle" (click)="toggleViewMode()">
-          {{ viewMode === 'grid' ? '📋 Table View' : '🔲 Grid View' }}
+          {{ viewMode() === 'grid' ? '📋 Table View' : '🔲 Grid View' }}
         </button>
         <app-button (clicked)="openCreateModal()">
           ➕ Add Product
@@ -41,17 +33,15 @@
       <div class="filter-tabs">
         <button
           class="filter-tab"
-          [class.active]="selectedCategory === 'all'"
-          (click)="onCategoryChange('all')"
-        >
+          [class.active]="selectedCategory() === 'all'"
+          (click)="onCategoryChange('all')">
           All Products
         </button>
         <button
-          *ngFor="let category of categories.slice(1)"
+          *ngFor="let category of categories().slice(1)"
           class="filter-tab"
-          [class.active]="selectedCategory === category"
-          (click)="onCategoryChange(category)"
-        >
+          [class.active]="selectedCategory() === category"
+          (click)="onCategoryChange(category)">
           {{ category }}
         </button>
       </div>
@@ -60,8 +50,8 @@
         <input
           type="text"
           placeholder="Search products..."
-          [(ngModel)]="searchQuery"
-          (input)="onSearchChange()"
+          [ngModel]="searchQuery()"
+          (ngModelChange)="searchQuery.set($event); onSearchChange()"
           class="search-input"
         />
         <span class="search-icon">🔍</span>
@@ -69,8 +59,8 @@
     </div>
 
     <!-- Grid View -->
-    <div *ngIf="viewMode === 'grid'" class="products-grid">
-      <div class="product-card" *ngFor="let product of filteredProducts">
+    <div *ngIf="viewMode() === 'grid'" class="products-grid">
+      <div class="product-card" *ngFor="let product of filteredProducts()">
         <div class="product-image">
           <img [src]="product.imageUrl" [alt]="product.name" />
           <app-badge 
@@ -109,7 +99,7 @@
     </div>
 
     <!-- Table View -->
-    <div *ngIf="viewMode === 'table'" class="table-container">
+    <div *ngIf="viewMode() === 'table'" class="table-container">
       <table class="products-table">
         <thead>
           <tr>
@@ -122,7 +112,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let product of filteredProducts">
+          <tr *ngFor="let product of filteredProducts()">
             <td>
               <div class="table-product">
                 <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" />
@@ -166,10 +156,10 @@
 </div>
 
 <!-- Product Modal -->
-<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
-      <h3>{{ modalMode === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
+      <h3>{{ modalMode() === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
       <button class="close-btn" (click)="closeModal()">✕</button>
     </div>
 
@@ -201,14 +191,15 @@
         <div class="form-row">
           <div class="form-group">
             <label for="category">Category *</label>
-            <input
+            <select
               id="category"
-              type="text"
               [(ngModel)]="selectedProduct.category"
               name="category"
-              placeholder="e.g., Electronics"
               required
-            />
+            >
+              <option value="">Select a category</option>
+              <option *ngFor="let cat of dbCategories()" [value]="cat.name">{{ cat.name }}</option>
+            </select>
           </div>
 
           <div class="form-group">
@@ -269,7 +260,7 @@
         Cancel
       </app-button>
       <app-button (clicked)="saveProduct()">
-        {{ modalMode === 'create' ? 'Add Product' : 'Save Changes' }}
+        {{ modalMode() === 'create' ? 'Add Product' : 'Save Changes' }}
       </app-button>
     </div>
   </div>

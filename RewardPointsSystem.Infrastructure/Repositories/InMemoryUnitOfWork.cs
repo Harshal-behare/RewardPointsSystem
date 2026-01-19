@@ -21,6 +21,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private readonly Lazy<IRepository<Product>> _products;
         private readonly Lazy<IRepository<ProductPricing>> _productPricings;
         private readonly Lazy<IRepository<InventoryItem>> _inventoryItems;
+        private readonly Lazy<IRepository<ProductCategory>> _productCategories;
         private readonly Lazy<IRepository<Redemption>> _redemptions;
 
         private bool _disposed = false;
@@ -38,6 +39,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
             _products = new Lazy<IRepository<Product>>(() => new InMemoryRepository<Product>());
             _productPricings = new Lazy<IRepository<ProductPricing>>(() => new InMemoryRepository<ProductPricing>());
             _inventoryItems = new Lazy<IRepository<InventoryItem>>(() => new InMemoryRepository<InventoryItem>());
+            _productCategories = new Lazy<IRepository<ProductCategory>>(() => new InMemoryRepository<ProductCategory>());
             _redemptions = new Lazy<IRepository<Redemption>>(() => new InMemoryRepository<Redemption>());
         }
 
@@ -58,6 +60,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         public IRepository<Product> Products => _products.Value;
         public IRepository<ProductPricing> Pricing => _productPricings.Value;
         public IRepository<InventoryItem> Inventory => _inventoryItems.Value;
+        public IRepository<ProductCategory> ProductCategories => _productCategories.Value;
 
         // Operation repositories
         public IRepository<Redemption> Redemptions => _redemptions.Value;
