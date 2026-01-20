@@ -111,6 +111,11 @@
 
     <div class="modal-body">
       <form>
+        <!-- Validation Errors -->
+        <div class="error-list" *ngIf="modalValidationErrors.length > 0">
+          <div class="error" *ngFor="let error of modalValidationErrors">{{ error }}</div>
+        </div>
+        
         <div class="form-row">
           <div class="form-group">
             <label for="firstName">First Name *</label>
@@ -121,7 +126,10 @@
               name="firstName"
               placeholder="Enter first name"
               required
+              maxlength="100"
+              pattern="^[a-zA-Z ]+$"
             />
+            <small class="form-hint">Only letters and spaces allowed (1-100 characters)</small>
           </div>
 
           <div class="form-group">
@@ -133,7 +141,10 @@
               name="lastName"
               placeholder="Enter last name"
               required
+              maxlength="100"
+              pattern="^[a-zA-Z ]+$"
             />
+            <small class="form-hint">Only letters and spaces allowed (1-100 characters)</small>
           </div>
         </div>
 
@@ -144,9 +155,11 @@
             type="email"
             [(ngModel)]="selectedUser.email"
             name="email"
-            placeholder="user@company.com"
+            placeholder="user@agdata.com"
             required
+            maxlength="255"
           />
+          <small class="form-hint">Must be a valid email address (max 255 characters)</small>
         </div>
 
         <div class="form-row">
@@ -186,8 +199,9 @@
             placeholder="Enter initial password"
             name="password"
             required
+            minlength="8"
           />
-          <small class="form-help">User will be prompted to change password on first login</small>
+          <small class="form-help">Min 8 characters, must include: uppercase, lowercase, number, and special character</small>
         </div>
 
         <div class="info-box" *ngIf="modalMode() === 'edit'">

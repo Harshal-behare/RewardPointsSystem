@@ -7,18 +7,25 @@ using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Domain.Entities.Events
 {
+    /// <summary>
+    /// Event status: Draft (admin only), Upcoming (employees can register), Completed (event finished)
+    /// </summary>
     public enum EventStatus
     {
-        Draft,
-        Published,
-        RegistrationOpen,
-        RegistrationClosed,
-        InProgress,
-        Completed,
-        Cancelled,
-        // Legacy statuses for backward compatibility
-        Upcoming = Published,
-        Active = InProgress
+        /// <summary>
+        /// Event is in draft state - only visible to admin, not to employees
+        /// </summary>
+        Draft = 0,
+        
+        /// <summary>
+        /// Event is upcoming - visible to employees who can register
+        /// </summary>
+        Upcoming = 1,
+        
+        /// <summary>
+        /// Event is completed - no more registrations, points can be awarded
+        /// </summary>
+        Completed = 2
     }
 
     /// <summary>
@@ -131,7 +138,7 @@ namespace RewardPointsSystem.Domain.Entities.Events
         }
 
         /// <summary>
-        /// Updates event details (not allowed for Completed or Cancelled events)
+        /// Updates event details (not allowed for Completed events)
         /// </summary>
         public void UpdateDetails(
             string name,
@@ -143,8 +150,8 @@ namespace RewardPointsSystem.Domain.Entities.Events
             string? virtualLink = null,
             string? bannerImageUrl = null)
         {
-            if (Status == EventStatus.Completed || Status == EventStatus.Cancelled)
-                throw new InvalidEventStateException(Id, $"Cannot update {Status} events.");
+            if (Status == EventStatus.Completed)
+                throw new InvalidEventStateException(Id, "Cannot update completed events.");
 
             Name = ValidateName(name);
             EventDate = eventDate; // Allow any date for updates
@@ -157,92 +164,53 @@ namespace RewardPointsSystem.Domain.Entities.Events
         }
 
         /// <summary>
-        /// Publishes the event (Draft → Published)
+        /// Publishes the event (Draft → Upcoming) - makes it visible to employees
         /// </summary>
         public void Publish()
         {
             if (Status != EventStatus.Draft)
-                throw new InvalidEventStateException(Id, $"Cannot publish event from {Status} status.");
+                throw new InvalidEventStateException(Id, $"Cannot publish event from {Status} status. Only Draft events can be published.");
 
-            Status = EventStatus.Published;
+            Status = EventStatus.Upcoming;
         }
 
         /// <summary>
-        /// Opens registration (Published/RegistrationClosed → RegistrationOpen)
+        /// Marks event as upcoming (alias for Publish)
         /// </summary>
-        public void OpenRegistration()
+        public void MakeUpcoming()
         {
-            if (Status != EventStatus.Published && Status != EventStatus.RegistrationClosed)
-                throw new InvalidEventStateException(Id, $"Cannot open registration from {Status} status.");
-
-            if (EventDate <= DateTime.UtcNow)
-                throw new InvalidEventStateException(Id, "Cannot open registration for past events.");
-
-            Status = EventStatus.RegistrationOpen;
+            Publish();
         }
 
         /// <summary>
-        /// Closes registration (RegistrationOpen → RegistrationClosed)
-        /// </summary>
-        public void CloseRegistration()
-        {
-            if (Status != EventStatus.RegistrationOpen)
-                throw new InvalidEventStateException(Id, $"Cannot close registration from {Status} status.");
-
-            Status = EventStatus.RegistrationClosed;
-        }
-
-        /// <summary>
-        /// Starts the event (RegistrationClosed/Published → InProgress)
-        /// </summary>
-        public void Start()
-        {
-            if (Status != EventStatus.RegistrationClosed && Status != EventStatus.Published)
-                throw new InvalidEventStateException(Id, $"Cannot start event from {Status} status.");
-
-            Status = EventStatus.InProgress;
-        }
-
-        /// <summary>
-        /// Completes the event (InProgress → Completed)
+        /// Completes the event (Upcoming → Completed)
         /// </summary>
         public void Complete()
         {
-            if (Status != EventStatus.InProgress)
-                throw new InvalidEventStateException(Id, $"Cannot complete event from {Status} status.");
+            if (Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(Id, $"Cannot complete event from {Status} status. Only Upcoming events can be completed.");
 
             Status = EventStatus.Completed;
             CompletedAt = DateTime.UtcNow;
         }
 
         /// <summary>
-        /// Cancels the event (any status except Completed → Cancelled)
+        /// Reverts event back to Draft (Upcoming → Draft)
         /// </summary>
-        public void Cancel()
+        public void RevertToDraft()
         {
-            if (Status == EventStatus.Completed)
-                throw new InvalidEventStateException(Id, "Cannot cancel a completed event.");
+            if (Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(Id, $"Cannot revert to draft from {Status} status.");
 
-            if (Status == EventStatus.Cancelled)
-                throw new InvalidEventStateException(Id, "Event is already cancelled.");
-
-            Status = EventStatus.Cancelled;
+            Status = EventStatus.Draft;
         }
 
         /// <summary>
-        /// Marks event as deleted (soft delete by cancelling)
-        /// </summary>
-        public void Delete()
-        {
-            Cancel();
-        }
-
-        /// <summary>
-        /// Checks if registration is currently open
+        /// Checks if registration is currently open (only for Upcoming events)
         /// </summary>
         public bool IsRegistrationOpen()
         {
-            return Status == EventStatus.RegistrationOpen &&
+            return Status == EventStatus.Upcoming &&
                    EventDate > DateTime.UtcNow &&
                    (!MaxParticipants.HasValue || _participants.Count < MaxParticipants.Value);
         }

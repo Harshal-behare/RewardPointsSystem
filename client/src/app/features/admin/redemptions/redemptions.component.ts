@@ -22,6 +22,7 @@ interface RedemptionRequest {
   deliveredAt?: Date;
   deliveryAddress?: string;
   notes?: string;
+  rejectionReason?: string;  // Add rejection reason field
 }
 
 interface Stats {
@@ -90,9 +91,18 @@ export class AdminRedemptionsComponent implements OnInit {
   loadRedemptions(): void {
     this.redemptionService.getRedemptions().subscribe({
       next: (response) => {
+        console.log('Redemptions response:', response);  // Debug log
         if (response.success && response.data) {
-          const data = Array.isArray(response.data) ? response.data : 
-                      (response.data as any).items || [];
+          // Handle both array and paged response formats
+          let data: any[] = [];
+          if (Array.isArray(response.data)) {
+            data = response.data;
+          } else if ((response.data as any).items) {
+            data = (response.data as any).items;
+          } else if ((response.data as any).Items) {
+            data = (response.data as any).Items;
+          }
+          
           this.redemptionRequests.set(data.map((r: any) => this.mapRedemptionToDisplay(r)));
           this.calculateStats();
           this.filterRequests();
@@ -114,6 +124,15 @@ export class AdminRedemptionsComponent implements OnInit {
   }
 
   private mapRedemptionToDisplay(redemption: any): RedemptionRequest {
+    // Determine if this is a rejected redemption (Cancelled with rejectionReason)
+    let status = this.mapRedemptionStatus(redemption.status);
+    const rejectionReason = redemption.rejectionReason || redemption.cancellationReason;
+    
+    // If status is Cancelled but has a rejection reason, treat it as Rejected
+    if (status === 'Cancelled' && rejectionReason) {
+      status = 'Rejected';
+    }
+    
     return {
       id: redemption.id || redemption.redemptionId,
       userId: redemption.userId,
@@ -122,27 +141,35 @@ export class AdminRedemptionsComponent implements OnInit {
       productId: redemption.productId,
       productName: redemption.productName || 'Unknown Product',
       pointsSpent: redemption.pointsSpent || redemption.pointsCost || 0,
-      status: this.mapRedemptionStatus(redemption.status),
+      status: status,
       requestedAt: new Date(redemption.requestedAt || redemption.createdAt),
       approvedAt: redemption.approvedAt ? new Date(redemption.approvedAt) : undefined,
       deliveredAt: redemption.deliveredAt ? new Date(redemption.deliveredAt) : undefined,
       deliveryAddress: redemption.deliveryAddress || redemption.shippingAddress,
-      notes: redemption.notes || redemption.adminNotes
+      notes: redemption.notes || redemption.adminNotes,
+      rejectionReason: rejectionReason
     };
   }
 
   private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' {
     if (typeof status === 'number') {
+      // Backend enum: Pending=0, Approved=1, Delivered=2, Cancelled=3
       const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' } = {
         0: 'Pending',
         1: 'Approved',
-        2: 'Rejected',
-        3: 'Delivered',
-        4: 'Cancelled'
+        2: 'Delivered',
+        3: 'Cancelled'
       };
       return statusMap[status] || 'Pending';
     }
-    return (status as 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled') || 'Pending';
+    // String mapping - treat Cancelled with RejectionReason as Rejected
+    const statusStr = (status || '').toLowerCase();
+    if (statusStr === 'pending') return 'Pending';
+    if (statusStr === 'approved') return 'Approved';
+    if (statusStr === 'delivered') return 'Delivered';
+    if (statusStr === 'cancelled') return 'Cancelled';
+    if (statusStr === 'rejected') return 'Rejected';
+    return 'Pending';
   }
 
   private loadFallbackData(): void {
@@ -195,7 +222,7 @@ export class AdminRedemptionsComponent implements OnInit {
       total: requests.length,
       pending: requests.filter(r => r.status === 'Pending').length,
       approved: requests.filter(r => r.status === 'Approved' || r.status === 'Delivered').length,
-      rejected: requests.filter(r => r.status === 'Rejected').length
+      rejected: requests.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length
     });
   }
 
@@ -213,6 +240,10 @@ export class AdminRedemptionsComponent implements OnInit {
     } else if (filter === 'Approved') {
       this.filteredRequests.set(requests.filter(r => 
         r.status === 'Approved' || r.status === 'Delivered'
+      ));
+    } else if (filter === 'Rejected') {
+      this.filteredRequests.set(requests.filter(r => 
+        r.status === 'Rejected' || r.status === 'Cancelled'
       ));
     } else {
       this.filteredRequests.set(requests.filter(r => r.status === filter));
@@ -274,7 +305,8 @@ export class AdminRedemptionsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error approving redemption:', error);
-          this.toast.error('Failed to approve redemption');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     }
@@ -337,7 +369,11 @@ export class AdminRedemptionsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error rejecting redemption:', error);
-          this.rejectionError.set('Failed to reject redemption');
+          // Show backend validation errors in the modal
+          const messages = error?.error?.errors 
+            ? Object.values(error.error.errors).flat().join(' ')
+            : error?.error?.message || error?.message || 'Failed to reject redemption';
+          this.rejectionError.set(messages as string);
         }
       });
     }

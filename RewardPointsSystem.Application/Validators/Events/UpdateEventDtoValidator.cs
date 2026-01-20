@@ -22,11 +22,8 @@ namespace RewardPointsSystem.Application.Validators.Events
                     .MaximumLength(1000).WithMessage("Description cannot exceed 1000 characters");
             });
 
-            When(x => x.EventDate.HasValue, () =>
-            {
-                RuleFor(x => x.EventDate)
-                    .GreaterThan(DateTime.UtcNow).WithMessage("Event date must be in the future");
-            });
+            // Allow any date for updates - the business logic in EventService handles state restrictions
+            // Removing future date validation to allow updating past events
 
             When(x => x.TotalPointsPool.HasValue && x.TotalPointsPool > 0, () =>
             {

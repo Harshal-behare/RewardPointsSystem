@@ -1,6 +1,6 @@
 <div class="login-page">
   <div class="login-card">
-    <h1 class="brand">AGDATA</h1>
+    <img src="assets/Agdata_logo.png" alt="AGDATA Logo" style="height: 100px; width: 300px;" class="brand-logo"/>
 
     <div class="login-box">
       <form [formGroup]="form" (ngSubmit)="onSubmit()">
@@ -8,9 +8,12 @@
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input id="email" type="email" formControlName="email" placeholder="" />
+          <input id="email" type="email" formControlName="email" placeholder="" maxlength="255" />
           <div class="error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
-            Valid email required
+            <span *ngIf="form.get('email')?.errors?.['required']">Email is required</span>
+            <span *ngIf="form.get('email')?.errors?.['email']">Invalid email format</span>
+            <span *ngIf="form.get('email')?.errors?.['maxlength']">Email cannot exceed 255 characters</span>
+            <span *ngIf="form.get('email')?.errors?.['agdataEmail']">Only @agdata.com email can login</span>
           </div>
         </div>
 
@@ -18,11 +21,18 @@
           <label for="password">Password</label>
           <input id="password" type="password" formControlName="password" placeholder="" />
           <div class="error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
-            Password is required
+            <span *ngIf="form.get('password')?.errors?.['required']">Password is required</span>
+            <span *ngIf="form.get('password')?.errors?.['minlength']">Password must be at least 6 characters</span>
           </div>
         </div>
 
-        <div class="error" *ngIf="errorMsg">{{ errorMsg }}</div>
+        <!-- Show all validation errors from backend -->
+        <div class="error-list" *ngIf="validationErrors.length > 0">
+          <div class="error" *ngFor="let error of validationErrors">{{ error }}</div>
+        </div>
+
+        <!-- Fallback single error message -->
+        <div class="error" *ngIf="errorMsg && validationErrors.length === 0">{{ errorMsg }}</div>
 
         <button class="login-btn" type="submit" [disabled]="loading">
           {{ loading ? 'Signing in...' : 'Login' }}

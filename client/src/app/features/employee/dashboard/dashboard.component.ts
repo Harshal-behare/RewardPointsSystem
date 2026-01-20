@@ -21,7 +21,7 @@ interface Event {
   location: string;
   points: number;
   image: string;
-  status: 'Upcoming' | 'Active' | 'Completed';
+  status: 'Upcoming' | 'Completed';  // Employees only see Upcoming and Completed (not Draft)
   registered: boolean;
 }
 
@@ -123,14 +123,19 @@ export class EmployeeDashboardComponent implements OnInit {
         if (response.success && response.data) {
           const transactions = Array.isArray(response.data) ? response.data : 
                               (response.data as any).items || [];
-          this.recentTransactions.set(transactions.map((t: PointsTransactionDto) => ({
-            id: t.id,
-            type: t.transactionType === 'Credit' ? 'earned' as const : 'redeemed' as const,
-            description: t.description,
-            points: t.transactionType === 'Credit' ? t.points : -t.points,
-            date: new Date(t.createdAt).toISOString().split('T')[0],
-            status: 'Completed'
-          })));
+          this.recentTransactions.set(transactions.map((t: PointsTransactionDto) => {
+            const points = t.userPoints ?? t.points ?? 0;
+            const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
+            const isCredit = t.transactionType === 'Credit';
+            return {
+              id: t.id,
+              type: isCredit ? 'earned' as const : 'redeemed' as const,
+              description: t.description,
+              points: isCredit ? points : -points,
+              date: new Date(dateStr).toISOString().split('T')[0],
+              status: 'Completed'
+            };
+          }));
         }
       },
       error: (error) => {
@@ -138,14 +143,14 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
-    // Load upcoming events
+    // Load upcoming events - only show Upcoming events to employees (not Draft or Completed)
     this.eventService.getAllEvents().subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const events = Array.isArray(response.data) ? response.data : 
                         (response.data as any).items || [];
           const upcomingEvents = events
-            .filter((e: EventDto) => e.status === 'Published' || e.status === 'Draft')
+            .filter((e: EventDto) => e.status === 'Upcoming')
             .slice(0, 3)
             .map((e: EventDto) => ({
               id: e.id,
@@ -154,10 +159,13 @@ export class EmployeeDashboardComponent implements OnInit {
               location: 'Event Location',
               points: e.totalPointsPool,
               image: 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400',
-              status: e.status === 'Published' ? 'Upcoming' as const : e.status === 'Draft' ? 'Active' as const : 'Completed' as const,
+              status: 'Upcoming' as const,
               registered: false
             }));
           this.upcomingEvents.set(upcomingEvents);
+          
+          // Check registration status for each event
+          this.checkEventRegistrations();
         }
       },
       error: (error) => {
@@ -194,6 +202,31 @@ export class EmployeeDashboardComponent implements OnInit {
     });
   }
 
+  private checkEventRegistrations(): void {
+    if (!this.currentUserId) return;
+    
+    const events = this.upcomingEvents();
+    events.forEach(event => {
+      this.eventService.getEventParticipants(event.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const isRegistered = response.data.some((p: any) => p.userId === this.currentUserId);
+            if (isRegistered) {
+              // Update the event's registered status
+              const updatedEvents = this.upcomingEvents().map(e => 
+                e.id === event.id ? { ...e, registered: true } : e
+              );
+              this.upcomingEvents.set(updatedEvents);
+            }
+          }
+        },
+        error: (error) => {
+          console.error(`Error checking registration for event ${event.id}:`, error);
+        }
+      });
+    });
+  }
+
   navigateToEvents(): void {
     this.router.navigate(['/employee/events']);
   }
@@ -207,7 +240,29 @@ export class EmployeeDashboardComponent implements OnInit {
   }
 
   registerForEvent(event: Event): void {
-    this.router.navigate(['/employee/events']);
+    if (event.registered) {
+      this.toast.info('You are already registered for this event');
+      return;
+    }
+    
+    this.eventService.registerParticipant(event.id, { eventId: event.id, userId: this.currentUserId }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          // Update the event locally
+          const updatedEvents = this.upcomingEvents().map(e =>
+            e.id === event.id ? { ...e, registered: true } : e
+          );
+          this.upcomingEvents.set(updatedEvents);
+          this.toast.success(`Successfully registered for ${event.name}!`);
+        } else {
+          this.toast.error(response.message || 'Failed to register for event');
+        }
+      },
+      error: (error) => {
+        console.error('Error registering for event:', error);
+        this.toast.error('Failed to register for event');
+      }
+    });
   }
 
   redeemProduct(product: Product): void {

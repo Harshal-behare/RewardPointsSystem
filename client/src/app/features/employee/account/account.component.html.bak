@@ -1,84 +1,72 @@
-﻿<div class="employee-account">
+<div class="employee-account">
   <!-- Page Header -->
   <div class="page-header">
-    <h1 class="page-title"> My Account</h1>
+    <h1 class="page-title">💰 My Account</h1>
     <p class="page-subtitle">View your points and redemption history</p>
   </div>
 
-  <!-- Loading State -->
-  <div *ngIf="isLoading()" class="loading-container">
-    <div class="spinner"></div>
-    <p>Loading your account data...</p>
-  </div>
-
   <!-- Summary Cards -->
-  <div *ngIf="!isLoading()" class="summary-section">
+  <div class="summary-section">
     <div class="summary-card earned">
-      <div class="summary-icon"></div>
+      <div class="summary-icon">📈</div>
       <div class="summary-info">
         <span class="summary-label">Total Earned</span>
-        <span class="summary-value">{{ totalEarned() }}</span>
+        <span class="summary-value">{{ totalEarned }}</span>
       </div>
     </div>
 
     <div class="summary-card balance">
-      <div class="summary-icon"></div>
+      <div class="summary-icon">💰</div>
       <div class="summary-info">
         <span class="summary-label">Current Balance</span>
-        <span class="summary-value">{{ currentBalance() }}</span>
+        <span class="summary-value">{{ currentBalance }}</span>
       </div>
     </div>
 
     <div class="summary-card redeemed">
-      <div class="summary-icon"></div>
+      <div class="summary-icon">🎁</div>
       <div class="summary-info">
         <span class="summary-label">Total Redeemed</span>
-        <span class="summary-value">{{ totalRedeemed() }}</span>
+        <span class="summary-value">{{ totalRedeemed }}</span>
       </div>
     </div>
   </div>
 
   <!-- Tabs -->
-  <div *ngIf="!isLoading()" class="tabs-container">
+  <div class="tabs-container">
     <div class="tabs-header">
       <button
         class="tab-btn"
         [class.active]="activeTab === 'points'"
         (click)="switchTab('points')"
       >
-         Points History
+        📊 Points History
       </button>
       <button
         class="tab-btn"
         [class.active]="activeTab === 'redemptions'"
         (click)="switchTab('redemptions')"
       >
-         Redemption History
+        🛍️ Redemption History
       </button>
     </div>
 
     <!-- Points History Tab -->
     <div *ngIf="activeTab === 'points'" class="tab-content">
-      <!-- Empty State for Points -->
-      <div *ngIf="pointsHistory().length === 0" class="empty-state">
-        <span class="empty-icon"></span>
-        <h3>No transactions yet</h3>
-        <p>Your points transactions will appear here once you earn or redeem points.</p>
-      </div>
-
-      <div *ngIf="pointsHistory().length > 0" class="table-container">
+      <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
               <th>Date</th>
               <th>Description</th>
               <th>Event</th>
+              <th>Rank</th>
               <th>Points</th>
               <th>Status</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let transaction of pointsHistory()">
+            <tr *ngFor="let transaction of pointsHistory">
               <td>{{ transaction.date }}</td>
               <td>
                 <div class="transaction-cell">
@@ -91,6 +79,12 @@
                   {{ transaction.eventName }}
                 </span>
                 <span *ngIf="!transaction.eventName" class="text-muted">-</span>
+              </td>
+              <td>
+                <span *ngIf="transaction.rank" class="rank-badge">
+                  🏆 #{{ transaction.rank }}
+                </span>
+                <span *ngIf="!transaction.rank" class="text-muted">-</span>
               </td>
               <td>
                 <span
@@ -114,14 +108,7 @@
 
     <!-- Redemption History Tab -->
     <div *ngIf="activeTab === 'redemptions'" class="tab-content">
-      <!-- Empty State for Redemptions -->
-      <div *ngIf="redemptionHistory().length === 0" class="empty-state">
-        <span class="empty-icon"></span>
-        <h3>No redemptions yet</h3>
-        <p>Your product redemptions will appear here once you redeem your points.</p>
-      </div>
-
-      <div *ngIf="redemptionHistory().length > 0" class="table-container">
+      <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
@@ -130,11 +117,11 @@
               <th>Points</th>
               <th>Status</th>
               <th>Tracking</th>
-              <th>Actions</th>
+              <th>Delivery Address</th>
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let redemption of redemptionHistory()">
+            <tr *ngFor="let redemption of redemptionHistory">
               <td>{{ redemption.date }}</td>
               <td>
                 <span class="product-name">{{ redemption.productName }}</span>
@@ -154,14 +141,7 @@
                 <span *ngIf="!redemption.trackingNumber" class="text-muted">-</span>
               </td>
               <td>
-                <button 
-                  *ngIf="redemption.status === 'pending'"
-                  class="cancel-btn"
-                  (click)="cancelRedemption(redemption)"
-                >
-                  Cancel
-                </button>
-                <span *ngIf="redemption.status !== 'pending'" class="text-muted">-</span>
+                <span class="address-text">{{ redemption.deliveryAddress }}</span>
               </td>
             </tr>
           </tbody>

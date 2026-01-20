@@ -209,7 +209,8 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating event:', error);
-        this.toast.error('Failed to create event. Please try again.');
+        // Show backend validation errors
+        this.toast.showValidationErrors(error);
       }
     });
   }
@@ -257,7 +258,8 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating product:', error);
-        this.toast.error('Failed to create product. Please try again.');
+        // Show backend validation errors
+        this.toast.showValidationErrors(error);
       }
     });
   }

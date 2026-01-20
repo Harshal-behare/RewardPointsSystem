@@ -169,3 +169,39 @@ a {
   transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Global Validation Styles */
+.error-list {
+  background-color: #FFF5F5;
+  border: 1px solid #FC8181;
+  border-radius: var(--radius-input);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+}
+
+.error-list .error {
+  color: #C53030;
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-xs);
+}
+
+.error-list .error::before {
+  content: '⚠️ ';
+}
+
+.error-list .error:last-child {
+  margin-bottom: 0;
+}
+
+.form-hint {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.error {
+  color: #C53030;
+  font-size: var(--font-size-sm);
+  margin-top: var(--spacing-xs);
+}
+

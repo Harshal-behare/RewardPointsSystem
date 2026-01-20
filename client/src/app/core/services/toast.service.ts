@@ -1,4 +1,5 @@
 import { Injectable, signal } from '@angular/core';
+import { extractValidationErrors } from '../models/api-response.model';
 
 export interface Toast {
   id: number;
@@ -38,7 +39,7 @@ export class ToastService {
   }
 
   error(message: string, duration?: number) {
-    this.show(message, 'error', duration);
+    this.show(message, 'error', duration ?? 5000); // Errors shown longer by default
   }
 
   info(message: string, duration?: number) {
@@ -47,6 +48,24 @@ export class ToastService {
 
   warning(message: string, duration?: number) {
     this.show(message, 'warning', duration);
+  }
+
+  /**
+   * Shows validation errors from API response
+   * Extracts and displays all validation messages
+   */
+  showValidationErrors(error: any, duration?: number) {
+    const messages = extractValidationErrors(error);
+    messages.forEach(msg => this.error(msg, duration ?? 5000));
+  }
+
+  /**
+   * Shows a single error message extracted from API response
+   */
+  showApiError(error: any, fallbackMessage: string = 'An error occurred', duration?: number) {
+    const messages = extractValidationErrors(error);
+    const message = messages.length > 0 ? messages[0] : fallbackMessage;
+    this.error(message, duration ?? 5000);
   }
 
   remove(id: number) {

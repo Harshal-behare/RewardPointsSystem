@@ -630,3 +630,59 @@
 .participants-table-container::-webkit-scrollbar-thumb:hover {
   background: #229954;
 }
+
+// Remaining Points styling
+.remaining-points {
+  font-weight: 600;
+  color: #27AE60;
+  
+  &.low-points {
+    color: #E74C3C;
+    animation: pulse 2s infinite;
+  }
+}
+
+.remaining-pool-info {
+  margin: 4px 0;
+  font-size: 14px;
+  color: #7A7A7A;
+  
+  .low-points {
+    color: #E74C3C;
+    font-weight: 600;
+  }
+}
+
+// Awarded participant row
+.awarded-row {
+  background-color: rgba(39, 174, 96, 0.08) !important;
+  
+  td {
+    color: #7A7A7A;
+  }
+}
+
+// Disabled award button
+.disabled-btn {
+  background-color: #E8EBED !important;
+  color: #7A7A7A !important;
+  cursor: not-allowed !important;
+  opacity: 0.7;
+  
+  &:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 1;
+  }
+}

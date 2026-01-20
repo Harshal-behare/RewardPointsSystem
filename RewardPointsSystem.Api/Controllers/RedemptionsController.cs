@@ -98,7 +98,8 @@ namespace RewardPointsSystem.Api.Controllers
                             Status = r.Status.ToString(),
                             RequestedAt = r.RequestedAt,
                             ApprovedAt = r.ApprovedAt,
-                            DeliveredAt = r.DeliveredAt
+                            DeliveredAt = r.DeliveredAt,
+                            RejectionReason = r.RejectionReason
                         };
                     });
 
@@ -213,7 +214,8 @@ namespace RewardPointsSystem.Api.Controllers
                     ProductName = redemption.Product?.Name,
                     PointsSpent = redemption.PointsSpent,
                     Status = redemption.Status.ToString(),
-                    RequestedAt = redemption.RequestedAt
+                    RequestedAt = redemption.RequestedAt,
+                    RejectionReason = redemption.RejectionReason
                 };
 
                 return Created(redemptionDto, "Redemption request created successfully");
@@ -399,7 +401,8 @@ namespace RewardPointsSystem.Api.Controllers
                         Status = r.Status.ToString(),
                         RequestedAt = r.RequestedAt,
                         ApprovedAt = r.ApprovedAt,
-                        DeliveredAt = r.DeliveredAt
+                        DeliveredAt = r.DeliveredAt,
+                        RejectionReason = r.RejectionReason
                     });
 
                 var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);
@@ -434,7 +437,8 @@ namespace RewardPointsSystem.Api.Controllers
                         ProductName = r.Product?.Name,
                         PointsSpent = r.PointsSpent,
                         Status = r.Status.ToString(),
-                        RequestedAt = r.RequestedAt
+                        RequestedAt = r.RequestedAt,
+                        RejectionReason = r.RejectionReason
                     });
 
                 return Success(pendingRedemptions);
@@ -476,7 +480,8 @@ namespace RewardPointsSystem.Api.Controllers
                         Status = r.Status.ToString(),
                         RequestedAt = r.RequestedAt,
                         ApprovedAt = r.ApprovedAt,
-                        DeliveredAt = r.DeliveredAt
+                        DeliveredAt = r.DeliveredAt,
+                        RejectionReason = r.RejectionReason
                     });
 
                 var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);

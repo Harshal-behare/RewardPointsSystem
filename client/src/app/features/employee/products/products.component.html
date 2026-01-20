@@ -91,8 +91,27 @@
         <div class="summary-details">
           <h3 class="summary-title">{{ selectedProduct()!.name }}</h3>
           <p class="summary-category">{{ selectedProduct()!.category }}</p>
-          <p class="summary-points">{{ selectedProduct()!.points }} points</p>
+          <p class="summary-points">{{ selectedProduct()!.points }} points each</p>
+          <p class="summary-stock">{{ selectedProduct()!.stock }} in stock</p>
         </div>
+      </div>
+
+      <!-- Validation Errors -->
+      <div class="error-list" *ngIf="redemptionValidationErrors().length > 0">
+        <div class="error" *ngFor="let error of redemptionValidationErrors()">{{ error }}</div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Quantity *</label>
+        <input
+          type="number"
+          [ngModel]="redemptionQuantity()"
+          (ngModelChange)="redemptionQuantity.set($event)"
+          min="1"
+          max="10"
+          class="form-input"
+        />
+        <small class="form-hint">Max 10 items per redemption</small>
       </div>
 
       <div class="form-group">
@@ -112,12 +131,12 @@
           <span class="current-points">{{ userPoints() }}</span>
         </div>
         <div class="summary-row">
-          <span>Product Cost:</span>
-          <span class="product-cost">-{{ selectedProduct()!.points }}</span>
+          <span>Product Cost ({{ redemptionQuantity() }} x {{ selectedProduct()!.points }}):</span>
+          <span class="product-cost">-{{ selectedProduct()!.points * redemptionQuantity() }}</span>
         </div>
         <div class="summary-row total">
           <span>Remaining Points:</span>
-          <span class="remaining-points">{{ userPoints() - selectedProduct()!.points }}</span>
+          <span class="remaining-points">{{ userPoints() - (selectedProduct()!.points * redemptionQuantity()) }}</span>
         </div>
       </div>
     </div>
@@ -126,7 +145,7 @@
       <button class="modal-btn cancel-btn" (click)="closeRedeemModal()">Cancel</button>
       <button
         class="modal-btn confirm-btn"
-        [disabled]="!deliveryAddress().trim() || userPoints() < selectedProduct()!.points"
+        [disabled]="!deliveryAddress().trim() || userPoints() < (selectedProduct()!.points * redemptionQuantity()) || redemptionQuantity() < 1 || redemptionQuantity() > 10"
         (click)="confirmRedeem()"
       >
         Confirm Redemption

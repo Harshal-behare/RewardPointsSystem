@@ -17,6 +17,7 @@ interface DisplayEvent {
   eventDate: string;
   status: string;
   pointsPool: number;
+  remainingPoints: number;  // Track remaining points from pool
   participantCount: number;
   maxParticipants?: number;
   imageUrl?: string;
@@ -50,10 +51,10 @@ interface EventParticipant {
 export class AdminEventsComponent implements OnInit {
   events = signal<DisplayEvent[]>([]);
   
-  // Filter and Search
+  // Filter and Search - Only 3 statuses: Draft, Upcoming, Completed
   filteredEvents = signal<DisplayEvent[]>([]);
   searchQuery = signal('');
-  selectedFilter = signal<'all' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Completed'>('all');
 
   // Event Modal
   showModal = signal(false);
@@ -63,7 +64,8 @@ export class AdminEventsComponent implements OnInit {
     description: '',
     eventDate: '',
     pointsPool: 0,
-    status: 'Upcoming',
+    remainingPoints: 0,
+    status: 'Draft',  // New events start as Draft
     imageUrl: '',
     maxParticipants: 0
   };
@@ -81,6 +83,9 @@ export class AdminEventsComponent implements OnInit {
   pointsToAward = signal(0);
   winnerRank = signal(1);
   winnerValidationError = signal('');
+  
+  // Event Modal Validation
+  eventModalValidationErrors: string[] = [];
 
   constructor(
     private router: Router,
@@ -121,13 +126,16 @@ export class AdminEventsComponent implements OnInit {
   }
 
   private mapEventToDisplay(event: any): DisplayEvent {
+    const totalPool = event.totalPointsPool || event.pointsPool || event.pointsReward || 0;
+    const remainingPoints = event.remainingPoints ?? totalPool;  // Use remaining if provided, else total
     return {
       id: event.id || event.eventId,
       name: event.name || event.title,
       description: event.description || '',
       eventDate: event.eventDate || event.startDate,
       status: this.mapEventStatus(event.status),
-      pointsPool: event.totalPointsPool || event.pointsPool || event.pointsReward || 0,
+      pointsPool: totalPool,
+      remainingPoints: remainingPoints,
       participantCount: event.participantsCount || event.participantCount || event.currentParticipants || 0,
       maxParticipants: event.maxParticipants,
       imageUrl: event.imageUrl
@@ -136,15 +144,19 @@ export class AdminEventsComponent implements OnInit {
 
   private mapEventStatus(status: string | number): string {
     if (typeof status === 'number') {
+      // Backend enum: Draft=0, Upcoming=1, Completed=2
       const statusMap: { [key: number]: string } = {
-        0: 'Upcoming',
-        1: 'Active',
-        2: 'Completed',
-        3: 'Cancelled'
+        0: 'Draft',
+        1: 'Upcoming',
+        2: 'Completed'
       };
-      return statusMap[status] || 'Upcoming';
+      return statusMap[status] || 'Draft';
     }
-    return status || 'Upcoming';
+    // Normalize string status to one of 3 valid values
+    const normalizedStatus = (status || '').toLowerCase();
+    if (normalizedStatus === 'upcoming' || normalizedStatus === 'published') return 'Upcoming';
+    if (normalizedStatus === 'completed') return 'Completed';
+    return 'Draft';
   }
 
   private loadFallbackData(): void {
@@ -156,6 +168,7 @@ export class AdminEventsComponent implements OnInit {
         eventDate: '2026-07-15',
         status: 'Upcoming',
         pointsPool: 5000,
+        remainingPoints: 5000,
         participantCount: 24
       },
       {
@@ -163,8 +176,9 @@ export class AdminEventsComponent implements OnInit {
         name: 'Customer Service Excellence',
         description: 'Achieve 95% satisfaction rating',
         eventDate: '2026-06-20',
-        status: 'Active',
+        status: 'Upcoming',
         pointsPool: 3000,
+        remainingPoints: 3000,
         participantCount: 18
       }
     ]);
@@ -191,7 +205,7 @@ export class AdminEventsComponent implements OnInit {
     this.filteredEvents.set(filtered);
   }
 
-  onFilterChange(filter: 'all' | 'Upcoming' | 'Active' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Completed'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -202,10 +216,9 @@ export class AdminEventsComponent implements OnInit {
 
   getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'secondary' {
     const variantMap: { [key: string]: 'success' | 'warning' | 'info' | 'secondary' } = {
-      'Active': 'success',
+      'Draft': 'secondary',
       'Upcoming': 'info',
-      'Completed': 'secondary',
-      'Cancelled': 'warning'
+      'Completed': 'success'
     };
     return variantMap[status] || 'secondary';
   }
@@ -217,6 +230,7 @@ export class AdminEventsComponent implements OnInit {
       'Attended': 'secondary',
       'NoShow': 'warning',
       'Cancelled': 'secondary',
+      'Awarded': 'success',  // Participants who have been awarded points
       'Winner': 'success'
     };
     return variantMap[status] || 'secondary';
@@ -229,8 +243,9 @@ export class AdminEventsComponent implements OnInit {
       name: '',
       description: '',
       eventDate: '',
-      status: 'Upcoming',
+      status: 'Draft',  // New events start as Draft
       pointsPool: 0,
+      remainingPoints: 0,
       maxParticipants: 0,
       imageUrl: ''
     };
@@ -247,6 +262,7 @@ export class AdminEventsComponent implements OnInit {
       eventDate: this.formatDateForInput(event.eventDate),
       status: event.status,
       pointsPool: event.pointsPool,
+      remainingPoints: event.remainingPoints,
       participantCount: event.participantCount,
       maxParticipants: event.maxParticipants,
       imageUrl: event.imageUrl
@@ -257,6 +273,7 @@ export class AdminEventsComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.selectedEvent = {};
+    this.eventModalValidationErrors = [];
   }
 
   // Helper to format date for input[type="date"] (YYYY-MM-DD)
@@ -279,7 +296,57 @@ export class AdminEventsComponent implements OnInit {
     return date.toISOString();
   }
 
+  // Client-side validation matching backend rules
+  validateEventModal(): boolean {
+    this.eventModalValidationErrors = [];
+    
+    // Event name validation
+    const name = (this.selectedEvent.name || '').trim();
+    if (!name) {
+      this.eventModalValidationErrors.push('Event name is required');
+    } else {
+      if (name.length < 3 || name.length > 200) {
+        this.eventModalValidationErrors.push('Event name must be between 3 and 200 characters');
+      }
+    }
+    
+    // Description validation
+    const description = (this.selectedEvent.description || '').trim();
+    if (description && description.length > 1000) {
+      this.eventModalValidationErrors.push('Description cannot exceed 1000 characters');
+    }
+    
+    // Event date validation (must be in the future for new events)
+    const eventDate = this.selectedEvent.eventDate;
+    if (!eventDate) {
+      this.eventModalValidationErrors.push('Event date is required');
+    } else {
+      const selectedDate = new Date(eventDate);
+      const now = new Date();
+      now.setHours(0, 0, 0, 0); // Compare dates only
+      if (this.modalMode() === 'create' && selectedDate <= now) {
+        this.eventModalValidationErrors.push('Event date must be in the future');
+      }
+    }
+    
+    // Points pool validation
+    const pointsPool = this.selectedEvent.pointsPool || 0;
+    if (pointsPool <= 0) {
+      this.eventModalValidationErrors.push('Points pool must be greater than 0');
+    }
+    if (pointsPool > 1000000) {
+      this.eventModalValidationErrors.push('Points pool cannot exceed 1,000,000');
+    }
+    
+    return this.eventModalValidationErrors.length === 0;
+  }
+
   saveEvent(): void {
+    // Client-side validation
+    if (!this.validateEventModal()) {
+      return;
+    }
+    
     if (this.modalMode() === 'create') {
       const createData: CreateEventDto = {
         name: this.selectedEvent.name || '',
@@ -300,7 +367,8 @@ export class AdminEventsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating event:', error);
-          this.toast.error('Failed to create event');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     } else {
@@ -323,7 +391,8 @@ export class AdminEventsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating event:', error);
-          this.toast.error('Failed to update event');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     }
@@ -342,7 +411,7 @@ export class AdminEventsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting event:', error);
-          this.toast.error('Failed to delete event');
+          this.toast.showApiError(error, 'Failed to delete event');
         }
       });
     }
@@ -366,9 +435,9 @@ export class AdminEventsComponent implements OnInit {
             userName: p.userName || p.fullName || 'Unknown',
             userEmail: p.userEmail || p.email || '',
             registeredAt: p.registeredAt || p.registrationDate,
-            status: p.status || 'Registered',
+            status: p.pointsAwarded ? 'Awarded' : (p.status || 'Registered'),  // Mark as Awarded if points given
             pointsAwarded: p.pointsAwarded,
-            eventRank: p.rank
+            eventRank: p.eventRank || p.rank
           }));
           this.participants.set(participantsList);
           this.filteredParticipants.set([...participantsList]);
@@ -404,7 +473,9 @@ export class AdminEventsComponent implements OnInit {
 
   // Winner Selection Modal Methods
   openWinnerSelectionModal(participant: EventParticipant): void {
-    if (participant.status === 'Winner') {
+    // Don't allow opening modal for already awarded participants
+    if (participant.pointsAwarded || participant.status === 'Awarded') {
+      this.toast.warning('Points have already been awarded to this participant');
       return;
     }
     this.selectedParticipant.set(participant);
@@ -423,34 +494,57 @@ export class AdminEventsComponent implements OnInit {
   }
 
   confirmWinnerSelection(): void {
-    // Validate points
+    // Validate points - Client-side validation matching backend rules
     this.winnerValidationError.set('');
     
-    if (!this.pointsToAward() || this.pointsToAward() <= 0) {
-      this.winnerValidationError.set('Please enter a valid points amount (greater than 0)');
+    const points = this.pointsToAward();
+    const rank = this.winnerRank();
+    
+    // Points validation
+    if (!points || points <= 0) {
+      this.winnerValidationError.set('Points must be greater than 0');
+      return;
+    }
+    
+    if (points > 100000) {
+      this.winnerValidationError.set('Points cannot exceed 100,000 per award');
       return;
     }
 
-    const maxPoints = this.selectedEventForParticipants()?.pointsPool || 0;
-    if (this.pointsToAward() > maxPoints) {
-      this.winnerValidationError.set(`Points cannot exceed available pool (${maxPoints} points)`);
+    const currentEvent = this.selectedEventForParticipants();
+    const remainingPoints = currentEvent?.remainingPoints ?? currentEvent?.pointsPool ?? 0;
+    
+    if (points > remainingPoints) {
+      this.winnerValidationError.set(`Points cannot exceed remaining pool (${remainingPoints} points available)`);
+      return;
+    }
+    
+    // Rank validation
+    if (!rank || rank < 1) {
+      this.winnerValidationError.set('Position must be at least 1');
+      return;
+    }
+    
+    if (rank > 100) {
+      this.winnerValidationError.set('Position cannot exceed 100');
       return;
     }
 
     // Call API to award points
     this.pointsService.awardPoints({
       userId: this.selectedParticipant()?.userId || '',
-      points: this.pointsToAward(),
-      reason: `Winner of event: ${this.selectedEventForParticipants()?.name} (Rank #${this.winnerRank()})`
+      points: points,
+      description: `Winner of event: ${currentEvent?.name} (Rank #${rank})`,
+      eventId: currentEvent?.id
     }).subscribe({
       next: (response) => {
         if (response.success) {
-          // Update participant status locally
+          // Update participant status locally to Awarded
           const currentParticipant = this.selectedParticipant();
           if (currentParticipant) {
             const updatedParticipant = {
               ...currentParticipant,
-              status: 'Winner' as const,
+              status: 'Awarded' as const,
               pointsAwarded: this.pointsToAward(),
               eventRank: this.winnerRank()
             };
@@ -472,15 +566,40 @@ export class AdminEventsComponent implements OnInit {
             }
           }
 
+          // Update the remaining points in the event
+          if (currentEvent) {
+            const updatedEvent = {
+              ...currentEvent,
+              remainingPoints: (currentEvent.remainingPoints ?? currentEvent.pointsPool) - this.pointsToAward()
+            };
+            this.selectedEventForParticipants.set(updatedEvent);
+            
+            // Also update in the events list
+            const eventsList = [...this.events()];
+            const eventIndex = eventsList.findIndex(e => e.id === currentEvent.id);
+            if (eventIndex !== -1) {
+              eventsList[eventIndex] = updatedEvent;
+              this.events.set(eventsList);
+              this.applyFilters();
+            }
+          }
+
           this.toast.success(`Successfully awarded ${this.pointsToAward()} points to ${this.selectedParticipant()?.userName} (Rank #${this.winnerRank()})!`);
           this.closeWinnerModal();
+          
+          // Reload events to get fresh data from server
+          this.loadEvents();
         } else {
           this.winnerValidationError.set(response.message || 'Failed to award points');
         }
       },
       error: (error) => {
         console.error('Error awarding points:', error);
-        this.winnerValidationError.set('Failed to award points');
+        // Show backend validation errors in the modal
+        const messages = error?.error?.errors 
+          ? Object.values(error.error.errors).flat().join(' ')
+          : error?.error?.message || error?.message || 'Failed to award points';
+        this.winnerValidationError.set(messages as string);
       }
     });
   }

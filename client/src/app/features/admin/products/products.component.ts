@@ -35,6 +35,52 @@ interface DisplayProduct {
   styleUrls: ['./products.component.scss']
 })
 export class AdminProductsComponent implements OnInit {
+    // Validation errors for modal
+    modalValidationErrors: string[] = [];
+
+    // Client-side validators matching backend rules
+    validateProductModal(): boolean {
+      this.modalValidationErrors = [];
+      
+      // Product name: 2-200 chars
+      const name = (this.selectedProduct.name || '').trim();
+      if (!name) {
+        this.modalValidationErrors.push('Product name is required');
+      } else {
+        if (name.length < 2 || name.length > 200) {
+          this.modalValidationErrors.push('Product name must be between 2 and 200 characters');
+        }
+      }
+      
+      // Description: max 1000 chars
+      const description = (this.selectedProduct.description || '').trim();
+      if (description && description.length > 1000) {
+        this.modalValidationErrors.push('Description cannot exceed 1000 characters');
+      }
+      
+      // Points price: > 0
+      if (!this.selectedProduct.pointsPrice || this.selectedProduct.pointsPrice <= 0) {
+        this.modalValidationErrors.push('Points price must be greater than 0');
+      }
+      
+      // Stock: >= 0
+      if (this.selectedProduct.stock !== undefined && this.selectedProduct.stock < 0) {
+        this.modalValidationErrors.push('Stock quantity cannot be negative');
+      }
+      
+      // Image URL validation (if provided)
+      const imageUrl = (this.selectedProduct.imageUrl || '').trim();
+      if (imageUrl) {
+        if (imageUrl.length > 500) {
+          this.modalValidationErrors.push('Image URL cannot exceed 500 characters');
+        }
+        if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+          this.modalValidationErrors.push('Image URL must start with http:// or https://');
+        }
+      }
+      
+      return this.modalValidationErrors.length === 0;
+    }
   products = signal<DisplayProduct[]>([]);
   isLoading = signal(true);
 
@@ -218,6 +264,10 @@ export class AdminProductsComponent implements OnInit {
   }
 
   saveProduct(): void {
+    // Client-side validation
+    if (!this.validateProductModal()) {
+      return;
+    }
     // CategoryId is now directly bound from dropdown, no need for name lookup
     if (this.modalMode() === 'create') {
       const createData: CreateProductDto = {
@@ -228,7 +278,6 @@ export class AdminProductsComponent implements OnInit {
         stockQuantity: this.selectedProduct.stock || 0,
         imageUrl: this.selectedProduct.imageUrl || 'https://via.placeholder.com/150'
       };
-
       this.productService.createProduct(createData).subscribe({
         next: (response) => {
           if (response.success) {
@@ -241,7 +290,8 @@ export class AdminProductsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating product:', error);
-          this.toast.error('Failed to create product');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     } else {
@@ -254,7 +304,6 @@ export class AdminProductsComponent implements OnInit {
         imageUrl: this.selectedProduct.imageUrl,
         isActive: this.selectedProduct.status === 'Active'
       };
-
       this.productService.updateProduct(this.selectedProduct.id!, updateData).subscribe({
         next: (response) => {
           if (response.success) {
@@ -267,7 +316,8 @@ export class AdminProductsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating product:', error);
-          this.toast.error('Failed to update product');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     }
@@ -286,7 +336,7 @@ export class AdminProductsComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting product:', error);
-          this.toast.error('Failed to delete product');
+          this.toast.showApiError(error, 'Failed to delete product');
         }
       });
     }

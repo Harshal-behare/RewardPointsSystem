@@ -28,6 +28,7 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
         public DateTime RequestedAt { get; set; }
         public DateTime? ApprovedAt { get; set; }
         public DateTime? DeliveredAt { get; set; }
+        public string RejectionReason { get; set; }  // Added for rejected/cancelled redemptions
     }
 
     /// <summary>

@@ -35,7 +35,7 @@ namespace RewardPointsSystem.Application.Services.Admin
             var products = await _unitOfWork.Products.GetAllAsync();
 
             var activeUsers = users.Where(u => u.IsActive);
-            var activeEvents = events.Where(e => e.Status == EventStatus.Active);
+            var activeEvents = events.Where(e => e.Status == EventStatus.Upcoming);
             var completedEvents = events.Where(e => e.Status == EventStatus.Completed);
             var activeProducts = products.Where(p => p.IsActive);
 

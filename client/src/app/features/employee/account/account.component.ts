@@ -1,8 +1,12 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
+import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
+import { AuthService } from '../../../auth/auth.service';
+import { ToastService } from '../../../core/services/toast.service';
 
 interface PointTransaction {
-  id: number;
+  id: string;
   date: string;
   description: string;
   points: number;
@@ -13,11 +17,11 @@ interface PointTransaction {
 }
 
 interface RedemptionRecord {
-  id: number;
+  id: string;
   date: string;
   productName: string;
   points: number;
-  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected';
+  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled';
   trackingNumber?: string;
   deliveryAddress: string;
 }
@@ -32,159 +36,187 @@ interface RedemptionRecord {
 export class EmployeeAccountComponent implements OnInit {
   activeTab: 'points' | 'redemptions' = 'points';
   
-  pointsHistory: PointTransaction[] = [];
-  redemptionHistory: RedemptionRecord[] = [];
+  pointsHistory = signal<PointTransaction[]>([]);
+  redemptionHistory = signal<RedemptionRecord[]>([]);
 
   // Summary stats
-  totalEarned: number = 2450;
-  totalRedeemed: number = 600;
-  currentBalance: number = 1850;
+  totalEarned = signal<number>(0);
+  totalRedeemed = signal<number>(0);
+  currentBalance = signal<number>(0);
+
+  // Loading states
+  isLoadingPoints = signal<boolean>(true);
+  isLoadingRedemptions = signal<boolean>(true);
+  isLoadingAccount = signal<boolean>(true);
+
+  // Current user
+  currentUserId: string = '';
+
+  constructor(
+    private pointsService: PointsService,
+    private redemptionService: RedemptionService,
+    private authService: AuthService,
+    private toast: ToastService
+  ) {
+    // Extract user ID from JWT token
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                            payload.sub || 
+                            payload.userId || '';
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
+    }
+  }
 
   ngOnInit(): void {
+    if (!this.currentUserId) {
+      this.toast.error('User not authenticated');
+      return;
+    }
+    this.loadAccountSummary();
     this.loadPointsHistory();
     this.loadRedemptionHistory();
   }
 
-  loadPointsHistory(): void {
-    this.pointsHistory = [
-      {
-        id: 1,
-        date: '2024-01-28',
-        description: 'Attended Q4 Sales Meeting',
-        points: 250,
-        type: 'earned',
-        status: 'Completed',
-        eventName: 'Q4 Sales Meeting'
+  loadAccountSummary(): void {
+    this.isLoadingAccount.set(true);
+    this.pointsService.getPointsAccount(this.currentUserId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.totalEarned.set(response.data.totalEarned);
+          this.totalRedeemed.set(response.data.totalRedeemed);
+          this.currentBalance.set(response.data.currentBalance);
+        }
+        this.isLoadingAccount.set(false);
       },
-      {
-        id: 2,
-        date: '2024-01-25',
-        description: 'Redeemed: Wireless Mouse',
-        points: -150,
-        type: 'redeemed',
-        status: 'Approved'
-      },
-      {
-        id: 3,
-        date: '2024-01-22',
-        description: 'Completed Training Module: Leadership Basics',
-        points: 100,
-        type: 'earned',
-        status: 'Completed'
-      },
-      {
-        id: 4,
-        date: '2024-01-20',
-        description: 'Participated in Team Building Event',
-        points: 350,
-        type: 'earned',
-        status: 'Completed',
-        eventName: 'Team Building Workshop'
-      },
-      {
-        id: 5,
-        date: '2024-01-15',
-        description: 'Won Innovation Challenge',
-        points: 500,
-        type: 'earned',
-        status: 'Completed',
-        eventName: 'Innovation Challenge Finals',
-        rank: 1
-      },
-      {
-        id: 6,
-        date: '2024-01-10',
-        description: 'Redeemed: Coffee Maker',
-        points: -350,
-        type: 'redeemed',
-        status: 'Delivered'
-      },
-      {
-        id: 7,
-        date: '2024-01-05',
-        description: 'Attended Product Launch Event',
-        points: 400,
-        type: 'earned',
-        status: 'Completed',
-        eventName: 'Product Launch 2024'
-      },
-      {
-        id: 8,
-        date: '2023-12-28',
-        description: 'Year-End Bonus Points',
-        points: 300,
-        type: 'earned',
-        status: 'Completed'
-      },
-      {
-        id: 9,
-        date: '2023-12-20',
-        description: 'Redeemed: Fitness Tracker',
-        points: -200,
-        type: 'redeemed',
-        status: 'Delivered'
-      },
-      {
-        id: 10,
-        date: '2023-12-15',
-        description: 'Completed Safety Training',
-        points: 150,
-        type: 'earned',
-        status: 'Completed'
+      error: (error) => {
+        console.error('Error loading account summary:', error);
+        this.toast.error('Failed to load account summary');
+        this.isLoadingAccount.set(false);
       }
-    ];
+    });
+  }
+
+  loadPointsHistory(): void {
+    this.isLoadingPoints.set(true);
+    this.pointsService.getUserTransactions(this.currentUserId, 1, 20).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const transactions = Array.isArray(response.data) ? response.data : 
+                              (response.data as any).items || [];
+          
+          const mappedTransactions: PointTransaction[] = transactions.map((t: PointsTransactionDto) => {
+            const points = t.userPoints ?? t.points ?? 0;
+            const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
+            const isCredit = t.transactionType === 'Credit';
+            return {
+              id: t.id,
+              date: new Date(dateStr).toISOString().split('T')[0],
+              description: t.description || (isCredit ? 'Points Earned' : 'Points Redeemed'),
+              points: isCredit ? points : -points,
+              type: isCredit ? 'earned' as const : 'redeemed' as const,
+              status: 'Completed',
+              eventName: t.eventName
+            };
+          });
+
+          this.pointsHistory.set(mappedTransactions);
+        }
+        this.isLoadingPoints.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading points history:', error);
+        this.toast.error('Failed to load points history');
+        this.isLoadingPoints.set(false);
+      }
+    });
   }
 
   loadRedemptionHistory(): void {
-    this.redemptionHistory = [
-      {
-        id: 1,
-        date: '2024-01-28',
-        productName: 'Wireless Mouse - Logitech MX Master 3',
-        points: 150,
-        status: 'shipped',
-        trackingNumber: 'TRK123456789',
-        deliveryAddress: '123 Main St, Apt 4B, New York, NY 10001'
+    this.isLoadingRedemptions.set(true);
+    this.redemptionService.getMyRedemptions().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const redemptions = Array.isArray(response.data) ? response.data : 
+                             (response.data as any).items || [];
+          
+          const mappedRedemptions: RedemptionRecord[] = redemptions.map((r: RedemptionDto) => ({
+            id: r.id,
+            date: new Date(r.requestedAt).toISOString().split('T')[0],
+            productName: r.productName || 'Product',
+            points: r.pointsSpent,
+            status: this.mapRedemptionStatus(r.status),
+            trackingNumber: r.deliveryNotes,
+            deliveryAddress: ''
+          }));
+
+          this.redemptionHistory.set(mappedRedemptions);
+        }
+        this.isLoadingRedemptions.set(false);
       },
-      {
-        id: 2,
-        date: '2024-01-25',
-        productName: 'Premium Coffee Maker',
-        points: 350,
-        status: 'delivered',
-        trackingNumber: 'TRK987654321',
-        deliveryAddress: '123 Main St, Apt 4B, New York, NY 10001'
-      },
-      {
-        id: 3,
-        date: '2024-01-20',
-        productName: '$50 Amazon Gift Card',
-        points: 400,
-        status: 'approved',
-        deliveryAddress: 'Email: john.doe@company.com'
-      },
-      {
-        id: 4,
-        date: '2024-01-15',
-        productName: 'Fitness Tracker Band',
-        points: 250,
-        status: 'delivered',
-        trackingNumber: 'TRK456789123',
-        deliveryAddress: '123 Main St, Apt 4B, New York, NY 10001'
-      },
-      {
-        id: 5,
-        date: '2024-01-10',
-        productName: 'Wireless Bluetooth Speaker',
-        points: 300,
-        status: 'pending',
-        deliveryAddress: '123 Main St, Apt 4B, New York, NY 10001'
+      error: (error) => {
+        console.error('Error loading redemption history:', error);
+        this.toast.error('Failed to load redemption history');
+        this.isLoadingRedemptions.set(false);
       }
-    ];
+    });
+  }
+
+  private mapRedemptionStatus(status: string | number): 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' {
+    // Handle numeric status values from backend enum
+    if (typeof status === 'number') {
+      const numericMap: { [key: number]: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' } = {
+        0: 'pending',    // RedemptionStatus.Pending
+        1: 'approved',   // RedemptionStatus.Approved
+        2: 'delivered',  // RedemptionStatus.Delivered
+        3: 'cancelled'   // RedemptionStatus.Cancelled
+      };
+      return numericMap[status] || 'pending';
+    }
+
+    // Handle string status values
+    const statusMap: { [key: string]: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' } = {
+      'Pending': 'pending',
+      'Approved': 'approved',
+      'Shipped': 'shipped',
+      'Delivered': 'delivered',
+      'Rejected': 'rejected',
+      'Cancelled': 'cancelled'
+    };
+    return statusMap[status] || 'pending';
   }
 
   switchTab(tab: 'points' | 'redemptions'): void {
     this.activeTab = tab;
+  }
+
+  cancelRedemption(redemption: RedemptionRecord): void {
+    if (redemption.status !== 'pending') {
+      this.toast.warning('Only pending redemptions can be cancelled');
+      return;
+    }
+
+    if (confirm('Are you sure you want to cancel this redemption?')) {
+      this.redemptionService.cancelRedemption(redemption.id, { cancellationReason: 'Cancelled by user' }).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.toast.success('Redemption cancelled successfully');
+            this.loadRedemptionHistory();
+            this.loadAccountSummary(); // Refresh points as they should be returned
+          } else {
+            this.toast.error(response.message || 'Failed to cancel redemption');
+          }
+        },
+        error: (error) => {
+          console.error('Error cancelling redemption:', error);
+          this.toast.error('Failed to cancel redemption');
+        }
+      });
+    }
   }
 
   getStatusClass(status: string): string {
@@ -196,7 +228,8 @@ export class EmployeeAccountComponent implements OnInit {
       'approved': 'status-approved',
       'shipped': 'status-shipped',
       'delivered': 'status-delivered',
-      'rejected': 'status-rejected'
+      'rejected': 'status-rejected',
+      'cancelled': 'status-cancelled'
     };
     return statusMap[status] || '';
   }
@@ -208,5 +241,9 @@ export class EmployeeAccountComponent implements OnInit {
       'expired': '⏰'
     };
     return icons[type] || '📝';
+  }
+
+  isLoading(): boolean {
+    return this.isLoadingPoints() || this.isLoadingRedemptions() || this.isLoadingAccount();
   }
 }

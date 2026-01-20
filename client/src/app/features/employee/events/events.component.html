@@ -26,13 +26,6 @@
       </button>
       <button
         class="filter-tab"
-        [class.active]="selectedFilter() === 'Active'"
-        (click)="onFilterChange('Active')"
-      >
-        Active
-      </button>
-      <button
-        class="filter-tab"
         [class.active]="selectedFilter() === 'Completed'"
         (click)="onFilterChange('Completed')"
       >
@@ -96,6 +89,7 @@
               View Details
             </button>
 
+            <!-- Show Register button if NOT registered and event is Upcoming -->
             <button
               *ngIf="!event.registered && event.status === 'Upcoming'"
               class="action-btn register-btn"
@@ -105,15 +99,8 @@
               {{ isEventFull(event) ? 'Event Full' : 'Register' }}
             </button>
 
-            <button
-              *ngIf="event.registered && event.status === 'Upcoming'"
-              class="action-btn unregister-btn"
-              (click)="unregisterFromEvent(event)"
-            >
-              Unregister
-            </button>
-
-            <span *ngIf="event.registered && event.status !== 'Upcoming'" class="registered-badge">
+            <!-- Show Registered badge if registered (cannot unregister once registered) -->
+            <span *ngIf="event.registered" class="registered-badge">
               ✓ Registered
             </span>
           </div>
@@ -187,13 +174,9 @@
         {{ isEventFull(selectedEvent()!) ? 'Event Full' : 'Register Now' }}
       </button>
 
-      <button
-        *ngIf="selectedEvent()!.registered && selectedEvent()!.status === 'Upcoming'"
-        class="modal-btn unregister-btn"
-        (click)="unregisterFromEvent(selectedEvent()!); closeDetailsModal()"
-      >
-        Unregister
-      </button>
+      <span *ngIf="selectedEvent()!.registered" class="registered-badge modal-registered">
+        ✓ Already Registered
+      </span>
     </div>
   </div>
 </div>

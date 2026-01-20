@@ -46,14 +46,23 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var account = await _accountService.GetAccountAsync(userId);
                 var user = await _userService.GetUserByIdAsync(userId);
+                if (user == null)
+                    return NotFoundError($"User with ID {userId} not found");
+                
+                var account = await _accountService.GetAccountAsync(userId);
+                
+                // Auto-create account if it doesn't exist for this user
+                if (account == null)
+                {
+                    account = await _accountService.CreateAccountAsync(userId);
+                }
                 
                 var accountDto = new PointsAccountResponseDto
                 {
                     UserId = account.UserId,
-                    UserName = user != null ? $"{user.FirstName} {user.LastName}" : null,
-                    UserEmail = user?.Email,
+                    UserName = $"{user.FirstName} {user.LastName}",
+                    UserEmail = user.Email,
                     CurrentBalance = account.CurrentBalance,
                     TotalEarned = account.TotalEarned,
                     TotalRedeemed = account.TotalRedeemed,

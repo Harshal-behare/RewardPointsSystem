@@ -13,6 +13,7 @@ namespace RewardPointsSystem.Application.Services.Events
     /// <summary>
     /// Service: EventService
     /// Responsibility: Manage event lifecycle only
+    /// Status flow: Draft → Upcoming → Completed
     /// Architecture Compliant - SRP
     /// </summary>
     public class EventService : IEventService
@@ -81,8 +82,8 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            if (eventEntity.Status == EventStatus.Completed || eventEntity.Status == EventStatus.Cancelled)
-                throw new InvalidEventStateException(id, "Cannot modify completed or cancelled events");
+            if (eventEntity.Status == EventStatus.Completed)
+                throw new InvalidEventStateException(id, "Cannot modify completed events");
 
             var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
             var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
@@ -97,26 +98,34 @@ namespace RewardPointsSystem.Application.Services.Events
 
         public async Task<IEnumerable<Event>> GetUpcomingEventsAsync()
         {
-            var events = await _unitOfWork.Events.GetAllAsync();
-            return events.Where(e => e.Status == EventStatus.Upcoming);
-        }
-
-        public async Task<IEnumerable<Event>> GetActiveEventsAsync()
-        {
-            var events = await _unitOfWork.Events.GetAllAsync();
-            return events.Where(e => e.Status == EventStatus.Active);
+            // Include participants so we can count them
+            var events = await _unitOfWork.Events.FindWithIncludesAsync(
+                e => e.Status == EventStatus.Upcoming,
+                e => e.Participants);
+            return events;
         }
 
         public async Task<IEnumerable<Event>> GetAllEventsAsync()
         {
-            return await _unitOfWork.Events.GetAllAsync();
+            // Include participants so we can count them
+            var events = await _unitOfWork.Events.FindWithIncludesAsync(
+                e => true,  // All events
+                e => e.Participants);
+            return events;
         }
 
         public async Task<Event> GetEventByIdAsync(Guid id)
         {
-            return await _unitOfWork.Events.GetByIdAsync(id);
+            // Include participants for single event
+            var events = await _unitOfWork.Events.FindWithIncludesAsync(
+                e => e.Id == id,
+                e => e.Participants);
+            return events.FirstOrDefault();
         }
 
+        /// <summary>
+        /// Publish event: Draft → Upcoming (makes event visible to employees)
+        /// </summary>
         public async Task PublishEventAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
@@ -131,44 +140,36 @@ namespace RewardPointsSystem.Application.Services.Events
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task ActivateEventAsync(Guid id)
-        {
-            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
-            if (eventEntity == null)
-                throw new EventNotFoundException(id);
-
-            if (eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidEventStateException(id, $"Only upcoming events can be activated. Current status: {eventEntity.Status}");
-
-            eventEntity.Start();
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-
+        /// <summary>
+        /// Complete event: Upcoming → Completed (event is finished, ready to award points)
+        /// </summary>
         public async Task CompleteEventAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            if (eventEntity.Status != EventStatus.Active)
-                throw new InvalidEventStateException(id, $"Only active events can be completed. Current status: {eventEntity.Status}");
+            if (eventEntity.Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(id, $"Only upcoming events can be completed. Current status: {eventEntity.Status}");
 
             eventEntity.Complete();
 
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task CancelEventAsync(Guid id)
+        /// <summary>
+        /// Revert to draft: Upcoming → Draft (hide event from employees)
+        /// </summary>
+        public async Task RevertToDraftAsync(Guid id)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            if (eventEntity.Status == EventStatus.Completed)
-                throw new InvalidEventStateException(id, "Cannot cancel completed events");
+            if (eventEntity.Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(id, $"Only upcoming events can be reverted to draft. Current status: {eventEntity.Status}");
 
-            eventEntity.Cancel();
+            eventEntity.RevertToDraft();
 
             await _unitOfWork.SaveChangesAsync();
         }
@@ -179,8 +180,8 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            eventEntity.Delete();
-
+            // Delete event - we'll just remove it from the database
+            await _unitOfWork.Events.DeleteAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
         }
     }

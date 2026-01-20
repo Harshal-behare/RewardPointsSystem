@@ -62,20 +62,25 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         /// <summary>
         /// Credits points to the account (for earning points)
         /// </summary>
-        public void CreditPoints(int points, Guid creditedBy)
+        public void CreditPoints(int points, Guid? creditedBy = null)
         {
             ValidatePointsAmount(points);
 
             CurrentBalance += points;
             TotalEarned += points;
             LastUpdatedAt = DateTime.UtcNow;
-            UpdatedBy = creditedBy;
+            
+            // Only set UpdatedBy if a valid user ID is provided
+            if (creditedBy.HasValue && creditedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = creditedBy.Value;
+            }
         }
 
         /// <summary>
         /// Debits points from the account (for redemption)
         /// </summary>
-        public void DebitPoints(int points, Guid debitedBy)
+        public void DebitPoints(int points, Guid? debitedBy = null)
         {
             ValidatePointsAmount(points);
 
@@ -90,7 +95,12 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
             CurrentBalance -= points;
             TotalRedeemed += points;
             LastUpdatedAt = DateTime.UtcNow;
-            UpdatedBy = debitedBy;
+            
+            // Only set UpdatedBy if a valid user ID is provided
+            if (debitedBy.HasValue && debitedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = debitedBy.Value;
+            }
         }
 
         /// <summary>
@@ -105,7 +115,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         /// <summary>
         /// Reverses a credit operation (used for corrections)
         /// </summary>
-        public void ReverseCreditPoints(int points, Guid reversedBy)
+        public void ReverseCreditPoints(int points, Guid? reversedBy = null)
         {
             ValidatePointsAmount(points);
 
@@ -124,13 +134,17 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
             CurrentBalance -= points;
             TotalEarned -= points;
             LastUpdatedAt = DateTime.UtcNow;
-            UpdatedBy = reversedBy;
+            
+            if (reversedBy.HasValue && reversedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = reversedBy.Value;
+            }
         }
 
         /// <summary>
         /// Reverses a debit operation (used for refunds)
         /// </summary>
-        public void ReverseDebitPoints(int points, Guid reversedBy)
+        public void ReverseDebitPoints(int points, Guid? reversedBy = null)
         {
             ValidatePointsAmount(points);
 
@@ -143,7 +157,11 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
             CurrentBalance += points;
             TotalRedeemed -= points;
             LastUpdatedAt = DateTime.UtcNow;
-            UpdatedBy = reversedBy;
+            
+            if (reversedBy.HasValue && reversedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = reversedBy.Value;
+            }
         }
 
         private static void ValidatePointsAmount(int points)

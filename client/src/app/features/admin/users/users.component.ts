@@ -44,6 +44,9 @@ export class AdminUsersComponent implements OnInit {
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
   selectedUser: Partial<DisplayUser> = {};
+  
+  // Validation errors for modal
+  modalValidationErrors: string[] = [];
 
   constructor(
     private router: Router,
@@ -146,9 +149,86 @@ export class AdminUsersComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.selectedUser = {};
+    this.modalValidationErrors = [];
+  }
+
+  // Client-side validation matching backend rules
+  validateUserModal(): boolean {
+    this.modalValidationErrors = [];
+    
+    // First name validation
+    const firstName = (this.selectedUser.firstName || '').trim();
+    if (!firstName) {
+      this.modalValidationErrors.push('First name is required');
+    } else {
+      if (!/^[a-zA-Z ]+$/.test(firstName)) {
+        this.modalValidationErrors.push('First name can only contain letters and spaces');
+      }
+      if (firstName.length < 1 || firstName.length > 100) {
+        this.modalValidationErrors.push('First name must be between 1 and 100 characters');
+      }
+    }
+    
+    // Last name validation
+    const lastName = (this.selectedUser.lastName || '').trim();
+    if (!lastName) {
+      this.modalValidationErrors.push('Last name is required');
+    } else {
+      if (!/^[a-zA-Z ]+$/.test(lastName)) {
+        this.modalValidationErrors.push('Last name can only contain letters and spaces');
+      }
+      if (lastName.length < 1 || lastName.length > 100) {
+        this.modalValidationErrors.push('Last name must be between 1 and 100 characters');
+      }
+    }
+    
+    // Email validation
+    const email = (this.selectedUser.email || '').trim();
+    if (!email) {
+      this.modalValidationErrors.push('Email is required');
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        this.modalValidationErrors.push('Invalid email format');
+      }
+      if (email.length > 255) {
+        this.modalValidationErrors.push('Email cannot exceed 255 characters');
+      }
+    }
+    
+    // Password validation (only for create mode)
+    if (this.modalMode() === 'create') {
+      const password = this.selectedUser.password || '';
+      if (!password) {
+        this.modalValidationErrors.push('Password is required');
+      } else {
+        if (password.length < 8) {
+          this.modalValidationErrors.push('Password must be at least 8 characters');
+        }
+        if (!/[A-Z]/.test(password)) {
+          this.modalValidationErrors.push('Password must contain at least one uppercase letter');
+        }
+        if (!/[a-z]/.test(password)) {
+          this.modalValidationErrors.push('Password must contain at least one lowercase letter');
+        }
+        if (!/[0-9]/.test(password)) {
+          this.modalValidationErrors.push('Password must contain at least one number');
+        }
+        if (!/[\W_]/.test(password)) {
+          this.modalValidationErrors.push('Password must contain at least one special character');
+        }
+      }
+    }
+    
+    return this.modalValidationErrors.length === 0;
   }
 
   saveUser(): void {
+    // Client-side validation
+    if (!this.validateUserModal()) {
+      return;
+    }
+    
     if (this.modalMode() === 'create') {
       const createData: CreateUserDto = {
         email: this.selectedUser.email || '',
@@ -170,7 +250,8 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error creating user:', error);
-          this.toast.error('Failed to create user');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     } else {
@@ -193,7 +274,8 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error updating user:', error);
-          this.toast.error('Failed to update user');
+          // Show backend validation errors
+          this.toast.showValidationErrors(error);
         }
       });
     }
@@ -221,7 +303,7 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error toggling user status:', error);
-          this.toast.error(`Failed to ${action} user`);
+          this.toast.showApiError(error, `Failed to ${action} user`);
         }
       });
     }
@@ -240,7 +322,7 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error deleting user:', error);
-          this.toast.error('Failed to delete user');
+          this.toast.showApiError(error, 'Failed to delete user');
         }
       });
     }

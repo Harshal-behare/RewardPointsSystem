@@ -165,6 +165,11 @@
 
     <div class="modal-body">
       <form>
+        <!-- Validation Errors -->
+        <div class="error-list" *ngIf="modalValidationErrors.length > 0">
+          <div class="error" *ngFor="let error of modalValidationErrors">{{ error }}</div>
+        </div>
+        
         <div class="form-group">
           <label for="productName">Product Name *</label>
           <input
@@ -174,9 +179,11 @@
             name="name"
             placeholder="Enter product name"
             required
+            minlength="2"
+            maxlength="200"
           />
+          <small class="form-hint">2-200 characters required</small>
         </div>
-
         <div class="form-group">
           <label for="productDescription">Description</label>
           <textarea
@@ -185,9 +192,10 @@
             name="description"
             placeholder="Enter product description"
             rows="3"
+            maxlength="1000"
           ></textarea>
+          <small class="form-hint">Max 1000 characters</small>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label for="category">Category *</label>
@@ -201,7 +209,6 @@
               <option *ngFor="let cat of dbCategories()" [value]="cat.id">{{ cat.name }}</option>
             </select>
           </div>
-
           <div class="form-group">
             <label for="pointsPrice">Points Price *</label>
             <input
@@ -211,10 +218,11 @@
               name="pointsPrice"
               placeholder="0"
               required
+              min="1"
             />
+            <small class="form-hint">Must be greater than 0</small>
           </div>
         </div>
-
         <div class="form-row">
           <div class="form-group">
             <label for="stock">Stock Quantity *</label>
@@ -225,9 +233,10 @@
               name="stock"
               placeholder="0"
               required
+              min="0"
             />
+            <small class="form-hint">Cannot be negative</small>
           </div>
-
           <div class="form-group">
             <label for="status">Status *</label>
             <select
@@ -241,16 +250,17 @@
             </select>
           </div>
         </div>
-
         <div class="form-group">
           <label for="imageUrl">Image URL</label>
           <input
             id="imageUrl"
-            type="text"
+            type="url"
             [(ngModel)]="selectedProduct.imageUrl"
             name="imageUrl"
             placeholder="https://example.com/image.jpg"
+            maxlength="500"
           />
+          <small class="form-hint">Must be a valid URL (http:// or https://), max 500 characters</small>
         </div>
       </form>
     </div>

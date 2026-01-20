@@ -34,6 +34,8 @@ export class EmployeeProductsComponent implements OnInit {
   selectedProduct = signal<Product | null>(null);
   showRedeemModal = signal<boolean>(false);
   deliveryAddress = signal<string>('');
+  redemptionQuantity = signal<number>(1);
+  redemptionValidationErrors = signal<string[]>([]);
   isLoading = signal<boolean>(true);
   currentUserId: string = '';
 
@@ -156,29 +158,60 @@ export class EmployeeProductsComponent implements OnInit {
     this.selectedProduct.set(product);
     this.showRedeemModal.set(true);
     this.deliveryAddress.set('');
+    this.redemptionQuantity.set(1);
+    this.redemptionValidationErrors.set([]);
   }
 
   closeRedeemModal(): void {
     this.showRedeemModal.set(false);
     this.selectedProduct.set(null);
     this.deliveryAddress.set('');
+    this.redemptionQuantity.set(1);
+    this.redemptionValidationErrors.set([]);
+  }
+
+  // Client-side validation for redemption
+  validateRedemption(): boolean {
+    const errors: string[] = [];
+    const product = this.selectedProduct();
+    const address = this.deliveryAddress().trim();
+    const quantity = this.redemptionQuantity();
+    
+    // Address validation
+    if (!address) {
+      errors.push('Delivery address is required');
+    }
+    
+    // Quantity validation
+    if (quantity < 1) {
+      errors.push('Quantity must be at least 1');
+    }
+    if (quantity > 10) {
+      errors.push('Quantity cannot exceed 10 items per redemption');
+    }
+    
+    // Points validation
+    if (product && this.userPoints() < product.points * quantity) {
+      errors.push('Insufficient points for this redemption');
+    }
+    
+    // Stock validation
+    if (product && product.stock < quantity) {
+      errors.push('Not enough stock available');
+    }
+    
+    this.redemptionValidationErrors.set(errors);
+    return errors.length === 0;
   }
 
   confirmRedeem(): void {
+    // Client-side validation
+    if (!this.validateRedemption()) {
+      return;
+    }
+    
     const product = this.selectedProduct();
-    const address = this.deliveryAddress();
-
     if (!product) return;
-
-    if (!address.trim()) {
-      this.toast.warning('Please enter a delivery address');
-      return;
-    }
-
-    if (this.userPoints() < product.points) {
-      this.toast.error('Insufficient points!');
-      return;
-    }
 
     if (!this.currentUserId) {
       this.toast.error('User not authenticated');
@@ -188,7 +221,7 @@ export class EmployeeProductsComponent implements OnInit {
     const redemptionData: CreateRedemptionDto = {
       userId: this.currentUserId,
       productId: product.id,
-      quantity: 1
+      quantity: this.redemptionQuantity()
     };
 
     this.redemptionService.createRedemption(redemptionData).subscribe({
@@ -204,7 +237,8 @@ export class EmployeeProductsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error redeeming product:', error);
-        this.toast.error('Failed to redeem product. Please try again.');
+        // Show backend validation errors (e.g., insufficient points, out of stock, quantity limits)
+        this.toast.showValidationErrors(error);
       }
     });
   }

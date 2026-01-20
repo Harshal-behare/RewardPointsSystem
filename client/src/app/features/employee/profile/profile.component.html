@@ -1,4 +1,11 @@
 <div class="employee-profile">
+  <!-- Loading State -->
+  @if (isLoading()) {
+    <div class="loading-container">
+      <div class="spinner"></div>
+      <p>Loading profile...</p>
+    </div>
+  } @else {
   <!-- Page Header -->
   <div class="page-header">
     <h1 class="page-title">👤 My Profile</h1>
@@ -11,41 +18,49 @@
       <div class="profile-avatar-section">
         <div class="avatar-container">
           <img
-            [src]="previewUrl || profile.avatarUrl"
+            [src]="previewUrl || profile().avatarUrl"
             alt="Profile Avatar"
             class="profile-avatar"
           />
-          <div *ngIf="isEditMode" class="avatar-overlay">
-            <label for="avatar-upload" class="upload-label">
-              📷 Change Photo
-            </label>
-            <input
-              type="file"
-              id="avatar-upload"
-              accept="image/*"
-              (change)="onFileSelected($event)"
-              style="display: none"
-            />
-          </div>
+          @if (isEditMode) {
+            <div class="avatar-overlay">
+              <label for="avatar-upload" class="upload-label">
+                📷 Change Photo
+              </label>
+              <input
+                type="file"
+                id="avatar-upload"
+                accept="image/*"
+                (change)="onFileSelected($event)"
+                style="display: none"
+              />
+            </div>
+          }
         </div>
 
-        <h2 class="profile-name">{{ profile.name }}</h2>
-        <p class="profile-position">{{ profile.position }}</p>
-        <p class="profile-department">{{ profile.department }} Department</p>
+        <h2 class="profile-name">{{ getFullName() }}</h2>
+        <p class="profile-position">{{ profile().position }}</p>
+        @if (profile().department) {
+          <p class="profile-department">{{ profile().department }} Department</p>
+        }
 
         <div class="profile-meta">
-          <div class="meta-item">
-            <span class="meta-icon">📅</span>
-            <span class="meta-text">Joined {{ profile.joinDate }}</span>
-          </div>
+          @if (profile().joinDate) {
+            <div class="meta-item">
+              <span class="meta-icon">📅</span>
+              <span class="meta-text">Joined {{ profile().joinDate }}</span>
+            </div>
+          }
         </div>
       </div>
 
-      <div class="profile-actions" *ngIf="!isEditMode">
-        <button class="action-btn primary" (click)="enableEditMode()">
-          ✏️ Edit Profile
-        </button>
-      </div>
+      @if (!isEditMode) {
+        <div class="profile-actions">
+          <button class="action-btn primary" (click)="enableEditMode()">
+            ✏️ Edit Profile
+          </button>
+        </div>
+      }
     </div>
 
     <!-- Right Column - Forms -->
@@ -54,26 +69,43 @@
       <div class="form-section">
         <div class="section-header">
           <h3 class="section-title">Personal Information</h3>
-          <div *ngIf="isEditMode" class="section-actions">
-            <button class="btn-secondary" (click)="cancelEdit()">Cancel</button>
-            <button class="btn-primary" (click)="saveProfile()">Save Changes</button>
-          </div>
+          @if (isEditMode) {
+            <div class="section-actions">
+              <button class="btn-secondary" (click)="cancelEdit()" [disabled]="isSaving()">Cancel</button>
+              <button class="btn-primary" (click)="saveProfile()" [disabled]="isSaving()">
+                {{ isSaving() ? 'Saving...' : 'Save Changes' }}
+              </button>
+            </div>
+          }
         </div>
 
         <div class="form-content">
           <div class="form-row">
             <div class="form-group">
-              <label class="form-label">Full Name *</label>
+              <label class="form-label">First Name *</label>
               <input
                 type="text"
-                [(ngModel)]="editedProfile.name"
+                [(ngModel)]="editedProfile.firstName"
                 [disabled]="!isEditMode"
                 class="form-input"
-                placeholder="Enter your full name"
+                placeholder="Enter your first name"
               />
             </div>
 
             <div class="form-group">
+              <label class="form-label">Last Name *</label>
+              <input
+                type="text"
+                [(ngModel)]="editedProfile.lastName"
+                [disabled]="!isEditMode"
+                class="form-input"
+                placeholder="Enter your last name"
+              />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
               <label class="form-label">Email Address *</label>
               <input
                 type="email"
@@ -98,27 +130,29 @@
             </div>
 
             <div class="form-group">
-              <label class="form-label">Department</label>
+              <label class="form-label">Department <span class="readonly-hint" title="Contact your administrator to update this field">🔒</span></label>
               <input
                 type="text"
                 [(ngModel)]="editedProfile.department"
                 disabled
-                class="form-input"
-                placeholder="Department"
+                class="form-input readonly-field"
+                placeholder="Not assigned"
               />
+              <small class="field-hint">Contact admin to change</small>
             </div>
           </div>
 
           <div class="form-row">
             <div class="form-group full-width">
-              <label class="form-label">Position</label>
+              <label class="form-label">Position <span class="readonly-hint" title="Contact your administrator to update this field">🔒</span></label>
               <input
                 type="text"
                 [(ngModel)]="editedProfile.position"
                 disabled
-                class="form-input"
-                placeholder="Position"
+                class="form-input readonly-field"
+                placeholder="Not assigned"
               />
+              <small class="field-hint">Contact admin to change</small>
             </div>
           </div>
         </div>
@@ -152,14 +186,16 @@
                 class="form-input"
                 placeholder="Enter new password"
               />
-              <div *ngIf="newPassword" class="password-strength">
-                <div class="strength-bar" [attr.data-strength]="getPasswordStrength()">
-                  <div class="strength-fill"></div>
+              @if (newPassword) {
+                <div class="password-strength">
+                  <div class="strength-bar" [attr.data-strength]="getPasswordStrength()">
+                    <div class="strength-fill"></div>
+                  </div>
+                  <span class="strength-text" [attr.data-strength]="getPasswordStrength()">
+                    {{ getPasswordStrength() | titlecase }}
+                  </span>
                 </div>
-                <span class="strength-text" [attr.data-strength]="getPasswordStrength()">
-                  {{ getPasswordStrength() | titlecase }}
-                </span>
-              </div>
+              }
             </div>
 
             <div class="form-group">
@@ -170,20 +206,15 @@
                 class="form-input"
                 placeholder="Confirm new password"
               />
-              <div *ngIf="confirmPassword" class="password-match">
-                <span
-                  *ngIf="newPassword === confirmPassword"
-                  class="match-success"
-                >
-                  ✓ Passwords match
-                </span>
-                <span
-                  *ngIf="newPassword !== confirmPassword"
-                  class="match-error"
-                >
-                  ✗ Passwords do not match
-                </span>
-              </div>
+              @if (confirmPassword) {
+                <div class="password-match">
+                  @if (newPassword === confirmPassword) {
+                    <span class="match-success">✓ Passwords match</span>
+                  } @else {
+                    <span class="match-error">✗ Passwords do not match</span>
+                  }
+                </div>
+              }
             </div>
           </div>
 
@@ -215,4 +246,5 @@
       </div>
     </div>
   </div>
+  }
 </div>

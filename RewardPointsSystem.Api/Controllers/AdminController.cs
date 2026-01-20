@@ -200,7 +200,7 @@ namespace RewardPointsSystem.Api.Controllers
                     CompletedEvents = yearEvents.Count(e => 
                         e.Status == RewardPointsSystem.Domain.Entities.Events.EventStatus.Completed),
                     UpcomingEvents = yearEvents.Count(e => 
-                        e.Status == RewardPointsSystem.Domain.Entities.Events.EventStatus.Published),
+                        e.Status == RewardPointsSystem.Domain.Entities.Events.EventStatus.Upcoming),
                     TotalParticipants = yearEvents.Sum(e => e.Participants.Count),
                     TotalPointsDistributed = yearEvents.Sum(e => 
                         e.TotalPointsPool - e.GetAvailablePointsPool())

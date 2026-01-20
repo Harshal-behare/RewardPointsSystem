@@ -1,7 +1,9 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
+import { UserService, UserDto, UpdateUserDto } from '../../../core/services/user.service';
+import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface UserProfileResponse {
@@ -13,7 +15,9 @@ interface UserProfileResponse {
 }
 
 interface UserProfile {
-  name: string;
+  id: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone: string;
   department: string;
@@ -30,17 +34,20 @@ interface UserProfile {
   styleUrl: './profile.component.scss'
 })
 export class EmployeeProfileComponent implements OnInit {
-  isLoading = true;
+  isLoading = signal(true);
+  isSaving = signal(false);
   
-  profile: UserProfile = {
-    name: '',
+  profile = signal<UserProfile>({
+    id: '',
+    firstName: '',
+    lastName: '',
     email: '',
     phone: '',
     department: '',
     position: '',
     avatarUrl: 'https://i.pravatar.cc/200?img=1',
     joinDate: ''
-  };
+  });
 
   // Password change
   currentPassword: string = '';
@@ -49,29 +56,51 @@ export class EmployeeProfileComponent implements OnInit {
 
   // Edit mode
   isEditMode: boolean = false;
-  editedProfile: UserProfile = { ...this.profile };
+  editedProfile: UserProfile = { ...this.profile() };
 
   // Avatar upload
   selectedFile: File | null = null;
   previewUrl: string | null = null;
 
+  // Current user ID
+  currentUserId: string = '';
+
   constructor(
     private api: ApiService,
+    private userService: UserService,
+    private authService: AuthService,
     private toast: ToastService
-  ) {}
+  ) {
+    // Extract user ID from JWT token
+    const token = this.authService.getToken();
+    if (token) {
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                            payload.sub || 
+                            payload.userId || '';
+      } catch (e) {
+        console.error('Error parsing token:', e);
+      }
+    }
+  }
 
   ngOnInit(): void {
     this.loadProfile();
   }
 
   loadProfile(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
+    
+    // First get basic auth info
     this.api.get<UserProfileResponse>('Auth/me').subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const user = response.data;
-          this.profile = {
-            name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+          const newProfile: UserProfile = {
+            id: user.userId || this.currentUserId,
+            firstName: user.firstName || '',
+            lastName: user.lastName || '',
             email: user.email || '',
             phone: '',
             department: '',
@@ -79,34 +108,69 @@ export class EmployeeProfileComponent implements OnInit {
             avatarUrl: 'https://i.pravatar.cc/200?img=1',
             joinDate: ''
           };
-          this.editedProfile = { ...this.profile };
+          this.profile.set(newProfile);
+          this.editedProfile = { ...newProfile };
+          
+          // Now try to get more detailed user info
+          if (this.currentUserId) {
+            this.loadUserDetails();
+          }
         }
-        this.isLoading = false;
+        this.isLoading.set(false);
       },
       error: (error) => {
         console.error('Error loading profile:', error);
         this.toast.error('Failed to load profile data');
-        this.isLoading = false;
+        this.isLoading.set(false);
+      }
+    });
+  }
+
+  loadUserDetails(): void {
+    this.userService.getUserById(this.currentUserId).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const user = response.data;
+          const updatedProfile: UserProfile = {
+            ...this.profile(),
+            id: user.id,
+            firstName: user.firstName,
+            lastName: user.lastName,
+            email: user.email,
+            joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ''
+          };
+          this.profile.set(updatedProfile);
+          this.editedProfile = { ...updatedProfile };
+        }
+      },
+      error: (error) => {
+        console.error('Error loading user details:', error);
+        // Don't show error - auth/me data is sufficient
       }
     });
   }
 
   enableEditMode(): void {
     this.isEditMode = true;
-    this.editedProfile = { ...this.profile };
+    this.editedProfile = { ...this.profile() };
   }
 
   cancelEdit(): void {
     this.isEditMode = false;
-    this.editedProfile = { ...this.profile };
+    this.editedProfile = { ...this.profile() };
     this.previewUrl = null;
     this.selectedFile = null;
   }
 
   saveProfile(): void {
     // Validate
-    if (!this.editedProfile.name.trim()) {
-      this.toast.error('Name is required');
+    if (!this.editedProfile.firstName.trim()) {
+      this.toast.error('First name is required');
+      return;
+    }
+
+    if (!this.editedProfile.lastName.trim()) {
+      this.toast.error('Last name is required');
       return;
     }
 
@@ -115,18 +179,43 @@ export class EmployeeProfileComponent implements OnInit {
       return;
     }
 
-    // For now, just save locally - API update will be added later
-    this.profile = { ...this.editedProfile };
-    
-    if (this.previewUrl) {
-      this.profile.avatarUrl = this.previewUrl;
-    }
+    // Prepare update data
+    const updateData: UpdateUserDto = {
+      firstName: this.editedProfile.firstName.trim(),
+      lastName: this.editedProfile.lastName.trim(),
+      email: this.editedProfile.email.trim()
+    };
 
-    this.isEditMode = false;
-    this.previewUrl = null;
-    this.selectedFile = null;
-    
-    this.toast.success('Profile updated locally. Backend update coming soon.');
+    this.isSaving.set(true);
+
+    this.userService.updateUser(this.currentUserId, updateData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.profile.set({ ...this.editedProfile });
+          
+          if (this.previewUrl) {
+            const updated = this.profile();
+            updated.avatarUrl = this.previewUrl;
+            this.profile.set(updated);
+          }
+
+          this.isEditMode = false;
+          this.previewUrl = null;
+          this.selectedFile = null;
+          
+          this.toast.success('Profile updated successfully!');
+        } else {
+          this.toast.error(response.message || 'Failed to update profile');
+        }
+        this.isSaving.set(false);
+      },
+      error: (error) => {
+        console.error('Error updating profile:', error);
+        // Show backend validation errors
+        this.toast.showValidationErrors(error);
+        this.isSaving.set(false);
+      }
+    });
   }
 
   onFileSelected(event: Event): void {
@@ -160,14 +249,33 @@ export class EmployeeProfileComponent implements OnInit {
       return;
     }
 
-    // Change password
-    console.log('Password changed successfully');
-    this.toast.info('Password change feature coming soon');
-    
-    // Reset fields
-    this.currentPassword = '';
-    this.newPassword = '';
-    this.confirmPassword = '';
+    // Call password change API
+    this.api.post('Auth/change-password', {
+      currentPassword: this.currentPassword,
+      newPassword: this.newPassword
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          this.toast.success('Password changed successfully!');
+          // Reset fields
+          this.currentPassword = '';
+          this.newPassword = '';
+          this.confirmPassword = '';
+        } else {
+          this.toast.error(response.message || 'Failed to change password');
+        }
+      },
+      error: (error) => {
+        console.error('Error changing password:', error);
+        // Show backend validation errors (like password requirements)
+        this.toast.showValidationErrors(error);
+      }
+    });
+  }
+
+  getFullName(): string {
+    const p = this.profile();
+    return `${p.firstName} ${p.lastName}`.trim();
   }
 
   getPasswordStrength(): string {

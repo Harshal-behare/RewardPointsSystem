@@ -1,4 +1,5 @@
-import { Injectable } from '@angular/core';
+import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { tap, map, catchError } from 'rxjs/operators';
 import { Observable, of, throwError } from 'rxjs';
@@ -34,8 +35,14 @@ interface LoginResponse {
 export class AuthService {
   private readonly accessKey = 'rp_access_token';
   private readonly refreshKey = 'rp_refresh_token';
+  private isBrowser: boolean;
 
-  constructor(private http: HttpClient) {}
+  constructor(
+    private http: HttpClient,
+    @Inject(PLATFORM_ID) platformId: Object
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+  }
   login(payload: LoginRequest): Observable<LoginResponse> {
     return this.http.post<any>(`${environment.apiUrl}/api/v1/Auth/login`, payload)
       .pipe(
@@ -74,7 +81,7 @@ export class AuthService {
           return normalized;
         }),
         tap(res => {
-          if (res && res.data && res.data.accessToken) {
+          if (this.isBrowser && res && res.data && res.data.accessToken) {
             localStorage.setItem(this.accessKey, res.data.accessToken);
             if (res.data.refreshToken) {
               localStorage.setItem(this.refreshKey, res.data.refreshToken);
@@ -86,8 +93,10 @@ export class AuthService {
   }
 
   private clearLocal(): void {
-    localStorage.removeItem(this.accessKey);
-    localStorage.removeItem(this.refreshKey);
+    if (this.isBrowser) {
+      localStorage.removeItem(this.accessKey);
+      localStorage.removeItem(this.refreshKey);
+    }
   }
 
   /**
@@ -115,10 +124,12 @@ export class AuthService {
   }
 
   getToken(): string | null {
+    if (!this.isBrowser) return null;
     return localStorage.getItem(this.accessKey);
   }
 
   isAuthenticated(): boolean {
+    if (!this.isBrowser) return false;
     return !!this.getToken();
   }
 }

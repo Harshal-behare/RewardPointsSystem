@@ -13,6 +13,7 @@ namespace RewardPointsSystem.Application.Interfaces
     public interface IUserPointsTransactionService
     {
         Task RecordEarnedUserPointsAsync(Guid userId, int points, Guid eventId, string description);
+        Task RecordAdminAwardAsync(Guid userId, int points, string description);
         Task RecordRedeemedUserPointsAsync(Guid userId, int points, Guid redemptionId, string description);
         Task<IEnumerable<UserPointsTransaction>> GetUserTransactionsAsync(Guid userId);
         Task<IEnumerable<UserPointsTransaction>> GetAllTransactionsAsync();

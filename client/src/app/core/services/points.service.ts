@@ -17,12 +17,14 @@ export interface PointsAccountDto {
 export interface PointsTransactionDto {
   id: string;
   userId: string;
-  transactionType: 'Credit' | 'Debit';
-  points: number;
+  transactionType: string;  // 'Credit' | 'Debit'
+  userPoints: number;       // Backend sends userPoints
+  points?: number;          // Alias for compatibility
   description: string;
   eventName?: string;
-  createdAt: string;
-  balanceAfter: number;
+  timestamp: string;        // Backend sends timestamp
+  createdAt?: string;       // Alias for compatibility
+  balanceAfter?: number;
 }
 
 export interface LeaderboardEntryDto {
@@ -38,7 +40,6 @@ export interface AwardPointsDto {
   userId: string;
   points: number;
   description?: string;
-  reason?: string;
   eventId?: string;
 }
 

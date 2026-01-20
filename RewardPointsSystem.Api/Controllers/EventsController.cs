@@ -29,17 +29,16 @@ namespace RewardPointsSystem.Api.Controllers
 
         /// <summary>
         /// Maps backend EventStatus to frontend-friendly status string
+        /// Only 3 statuses: Draft, Upcoming, Completed
         /// </summary>
         private string MapEventStatusToFrontend(EventStatus status)
         {
             return status switch
             {
                 EventStatus.Draft => "Draft",
-                EventStatus.Published or EventStatus.Upcoming or EventStatus.RegistrationOpen or EventStatus.RegistrationClosed => "Upcoming",
-                EventStatus.InProgress or EventStatus.Active => "Active",
+                EventStatus.Upcoming => "Upcoming",
                 EventStatus.Completed => "Completed",
-                EventStatus.Cancelled => "Cancelled",
-                _ => "Upcoming"
+                _ => "Draft"
             };
         }
 
@@ -62,6 +61,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Status = MapEventStatusToFrontend(e.Status),
                     TotalPointsPool = e.TotalPointsPool,
                     RemainingPoints = e.GetAvailablePointsPool(),
+                    ParticipantsCount = e.Participants?.Count ?? 0,
                     CreatedAt = e.CreatedAt
                 });
 
@@ -97,6 +97,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
+                    ParticipantsCount = ev.Participants?.Count ?? 0,
                     CreatedAt = ev.CreatedAt
                 };
 
@@ -131,6 +132,7 @@ namespace RewardPointsSystem.Api.Controllers
                     Status = MapEventStatusToFrontend(ev.Status),
                     TotalPointsPool = ev.TotalPointsPool,
                     RemainingPoints = ev.GetAvailablePointsPool(),
+                    ParticipantsCount = 0,
                     CreatedAt = ev.CreatedAt
                 };
 
@@ -227,6 +229,7 @@ namespace RewardPointsSystem.Api.Controllers
 
         /// <summary>
         /// Change event status (Admin only)
+        /// Valid statuses: Draft, Upcoming, Completed
         /// </summary>
         /// <param name="id">Event ID</param>
         /// <param name="dto">Status change data</param>
@@ -247,25 +250,29 @@ namespace RewardPointsSystem.Api.Controllers
                     return NotFoundError($"Event with ID {id} not found");
 
                 // Apply the status change based on the target status
-                // Accept both backend and frontend status names
+                // Only 3 valid statuses: Draft, Upcoming, Completed
                 switch (dto.Status?.ToLower())
                 {
-                    case "published":
-                    case "upcoming":
-                        await _eventService.PublishEventAsync(id);
+                    case "draft":
+                        // Can only revert to draft from Upcoming
+                        if (existingEvent.Status == EventStatus.Upcoming)
+                        {
+                            await _eventService.RevertToDraftAsync(id);
+                        }
+                        else if (existingEvent.Status != EventStatus.Draft)
+                        {
+                            return Error($"Cannot change to Draft from {existingEvent.Status} status", 400);
+                        }
                         break;
-                    case "active":
-                    case "inprogress":
-                        await _eventService.ActivateEventAsync(id);
+                    case "upcoming":
+                    case "published":
+                        await _eventService.PublishEventAsync(id);
                         break;
                     case "completed":
                         await _eventService.CompleteEventAsync(id);
                         break;
-                    case "cancelled":
-                        await _eventService.CancelEventAsync(id);
-                        break;
                     default:
-                        return Error($"Invalid status: {dto.Status}. Valid values are: Upcoming, Active, Completed, Cancelled", 400);
+                        return Error($"Invalid status: {dto.Status}. Valid values are: Draft, Upcoming, Completed", 400);
                 }
 
                 var ev = await _eventService.GetEventByIdAsync(id);

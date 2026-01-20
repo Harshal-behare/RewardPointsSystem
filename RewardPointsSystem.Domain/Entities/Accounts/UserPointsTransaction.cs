@@ -13,7 +13,8 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
     public enum TransactionOrigin
     {
         Event,
-        Redemption
+        Redemption,
+        AdminAward
     }
 
     /// <summary>

@@ -10,7 +10,7 @@ interface DisplayEvent {
   name: string;
   description: string;
   eventDate: string;
-  status: 'Upcoming' | 'Active' | 'Completed' | 'Cancelled';
+  status: 'Upcoming' | 'Completed';  // Employees only see Upcoming and Completed (not Draft)
   pointsPool: number;
   participantCount: number;
   maxParticipants?: number;
@@ -28,7 +28,7 @@ interface DisplayEvent {
 export class EmployeeEventsComponent implements OnInit {
   events = signal<DisplayEvent[]>([]);
   filteredEvents = signal<DisplayEvent[]>([]);
-  selectedFilter = signal<'all' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Upcoming' | 'Completed'>('all');  // Only 2 filters for employees
   searchQuery = signal('');
   selectedEvent = signal<DisplayEvent | null>(null);
   showDetailsModal = signal(false);
@@ -46,7 +46,11 @@ export class EmployeeEventsComponent implements OnInit {
     if (token) {
       try {
         const payload = JSON.parse(atob(token.split('.')[1]));
-        const userId = payload.sub || payload.userId || payload.nameid;
+        // Try multiple claim formats for user ID
+        const userId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
+                      payload.sub || 
+                      payload.userId || 
+                      payload.nameid || '';
         if (userId) {
           this.currentUserId.set(userId);
         }
@@ -96,12 +100,11 @@ export class EmployeeEventsComponent implements OnInit {
     };
   }
 
-  private normalizeStatus(status: string): 'Upcoming' | 'Active' | 'Completed' | 'Cancelled' {
+  private normalizeStatus(status: string): 'Upcoming' | 'Completed' {
     const statusLower = (status || '').toLowerCase();
     if (statusLower === 'upcoming' || statusLower === 'published') return 'Upcoming';
-    if (statusLower === 'active' || statusLower === 'inprogress') return 'Active';
     if (statusLower === 'completed') return 'Completed';
-    if (statusLower === 'cancelled') return 'Cancelled';
+    // Default to Upcoming for any other status (shouldn't happen as employees only see Upcoming/Completed)
     return 'Upcoming';
   }
 
@@ -151,7 +154,7 @@ export class EmployeeEventsComponent implements OnInit {
     this.filteredEvents.set(filtered);
   }
 
-  onFilterChange(filter: 'all' | 'Upcoming' | 'Active' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Upcoming' | 'Completed'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -183,30 +186,13 @@ export class EmployeeEventsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error registering for event:', error);
-        this.toast.error('Failed to register for event');
+        // Show backend validation errors
+        this.toast.showValidationErrors(error);
       }
     });
   }
 
-  unregisterFromEvent(event: DisplayEvent): void {
-    const userId = this.currentUserId();
-    if (!userId) {
-      this.toast.error('User not logged in');
-      return;
-    }
-
-    if (confirm(`Are you sure you want to unregister from "${event.name}"?`)) {
-      // Note: We need to add an unregister endpoint in the backend
-      this.toast.warning('Unregister functionality coming soon');
-      
-      // For now, just update locally
-      const updatedEvents = this.events().map(e =>
-        e.id === event.id ? { ...e, registered: false, participantCount: Math.max(0, e.participantCount - 1) } : e
-      );
-      this.events.set(updatedEvents);
-      this.applyFilters();
-    }
-  }
+  // Note: Unregister functionality has been removed - once registered, employees cannot unregister
 
   openDetailsModal(event: DisplayEvent): void {
     this.selectedEvent.set(event);
@@ -221,9 +207,7 @@ export class EmployeeEventsComponent implements OnInit {
   getStatusBadgeClass(status: string): string {
     const classes: { [key: string]: string } = {
       'Upcoming': 'badge-upcoming',
-      'Active': 'badge-ongoing',
-      'Completed': 'badge-completed',
-      'Cancelled': 'badge-cancelled'
+      'Completed': 'badge-completed'
     };
     return classes[status] || '';
   }

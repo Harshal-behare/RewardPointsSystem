@@ -4,6 +4,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Events;
+using RewardPointsSystem.Domain.Entities.Accounts;
+using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Application.DTOs;
 
 namespace RewardPointsSystem.Application.Services.Events
@@ -23,12 +25,81 @@ namespace RewardPointsSystem.Application.Services.Events
             if (points <= 0)
                 throw new ArgumentException("Points must be greater than zero", nameof(points));
 
-            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
-            if (account == null)
-                throw new InvalidOperationException($"User points account not found for user {userId}");
+            // Verify user exists
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            if (user == null)
+                throw new UserNotFoundException(userId);
 
-            account.CreditPoints(points, Guid.Empty);
-            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            if (!user.IsActive)
+                throw new InactiveUserException(userId);
+
+            // If event ID is provided, update the participant record to mark points as awarded
+            if (eventId.HasValue)
+            {
+                var participant = await _unitOfWork.EventParticipants.SingleOrDefaultAsync(
+                    ep => ep.EventId == eventId.Value && ep.UserId == userId);
+                    
+                if (participant != null)
+                {
+                    // Check if already awarded
+                    if (participant.PointsAwarded.HasValue)
+                        throw new InvalidOperationException($"Points already awarded to this user for this event");
+                    
+                    // Check remaining pool
+                    var eventEntity = await _unitOfWork.Events.GetByIdAsync(eventId.Value);
+                    if (eventEntity != null)
+                    {
+                        var totalAwarded = await GetTotalPointsAwardedAsync(eventId.Value);
+                        if (totalAwarded + points > eventEntity.TotalPointsPool)
+                            throw new InvalidOperationException($"Not enough points remaining in pool");
+                    }
+                    
+                    // Auto check-in if only registered
+                    if (participant.AttendanceStatus == AttendanceStatus.Registered)
+                    {
+                        participant.CheckIn();
+                    }
+                    
+                    // Award points to participant record
+                    participant.AwardPoints(points, 1, eventEntity?.CreatedBy ?? Guid.Empty);
+                    await _unitOfWork.EventParticipants.UpdateAsync(participant);
+                }
+            }
+
+            // Get or create points account
+            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            bool isNewAccount = false;
+            if (account == null)
+            {
+                // Auto-create points account if it doesn't exist
+                account = UserPointsAccount.CreateForUser(userId);
+                await _unitOfWork.UserPointsAccounts.AddAsync(account);
+                isNewAccount = true;
+            }
+
+            // Credit points to account (pass null as no specific admin user tracked)
+            account.CreditPoints(points, null);
+            
+            // Only call UpdateAsync if the account already existed
+            if (!isNewAccount)
+            {
+                await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            }
+
+            // Create transaction record for admin award
+            var sourceId = eventId ?? Guid.NewGuid(); // Use eventId if provided, otherwise generate new ID for admin award
+            var transactionOrigin = eventId.HasValue ? TransactionOrigin.Event : TransactionOrigin.AdminAward;
+            var transactionDescription = string.IsNullOrWhiteSpace(description) ? "Points awarded by admin" : description;
+            
+            var transaction = UserPointsTransaction.CreateEarned(
+                userId,
+                points,
+                transactionOrigin,
+                sourceId,
+                account.CurrentBalance,
+                transactionDescription);
+
+            await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
         }
 

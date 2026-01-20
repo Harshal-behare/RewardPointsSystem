@@ -43,8 +43,8 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 if (eventObj == null)
                     throw new ArgumentException($"Event with ID {eventId} not found");
 
-                if (eventObj.Status != EventStatus.Active && eventObj.Status != EventStatus.Completed)
-                    throw new InvalidOperationException($"Event must be Active or Completed to award points. Current status: {eventObj.Status}");
+                if (eventObj.Status != EventStatus.Completed)
+                    throw new InvalidOperationException($"Event must be Completed to award points. Current status: {eventObj.Status}");
 
                 // 2. Verify participation (EventParticipationService)
                 var isRegistered = await _participationService.IsUserRegisteredAsync(eventId, userId);
