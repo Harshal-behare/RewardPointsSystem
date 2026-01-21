@@ -103,8 +103,8 @@ namespace RewardPointsSystem.Api.Controllers
                         };
                     });
 
-                var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);
-                return Ok(response);
+                var pagedResponse = PagedResponse<RedemptionResponseDto>.Create(pagedRedemptions, page, pageSize, totalCount);
+                return PagedSuccess(pagedResponse);
             }
             catch (Exception ex)
             {
@@ -289,7 +289,12 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                await _redemptionOrchestrator.MarkAsDeliveredAsync(id);
+                // Get admin user ID from JWT claims
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var adminUserId))
+                    return UnauthorizedError("Admin user not authenticated");
+
+                await _redemptionOrchestrator.DeliverRedemptionAsync(id, adminUserId, dto?.DeliveryNotes);
                 return Success<object>(null, "Redemption marked as delivered");
             }
             catch (KeyNotFoundException)
@@ -386,27 +391,33 @@ namespace RewardPointsSystem.Api.Controllers
                 var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
                 var userRedemptions = redemptions.Where(r => r.UserId == userId);
                 
+                // Get all products for lookup
+                var allProducts = await _unitOfWork.Products.GetAllAsync();
+                
                 var totalCount = userRedemptions.Count();
                 var pagedRedemptions = userRedemptions
                     .OrderByDescending(r => r.RequestedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(r => new RedemptionResponseDto
-                    {
-                        Id = r.Id,
-                        UserId = r.UserId,
-                        ProductId = r.ProductId,
-                        ProductName = r.Product?.Name,
-                        PointsSpent = r.PointsSpent,
-                        Status = r.Status.ToString(),
-                        RequestedAt = r.RequestedAt,
-                        ApprovedAt = r.ApprovedAt,
-                        DeliveredAt = r.DeliveredAt,
-                        RejectionReason = r.RejectionReason
+                    .Select(r => {
+                        var product = allProducts.FirstOrDefault(p => p.Id == r.ProductId);
+                        return new RedemptionResponseDto
+                        {
+                            Id = r.Id,
+                            UserId = r.UserId,
+                            ProductId = r.ProductId,
+                            ProductName = product?.Name ?? "Unknown Product",
+                            PointsSpent = r.PointsSpent,
+                            Status = r.Status.ToString(),
+                            RequestedAt = r.RequestedAt,
+                            ApprovedAt = r.ApprovedAt,
+                            DeliveredAt = r.DeliveredAt,
+                            RejectionReason = r.RejectionReason
+                        };
                     });
 
-                var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);
-                return Ok(response);
+                var pagedResponse = PagedResponse<RedemptionResponseDto>.Create(pagedRedemptions, page, pageSize, totalCount);
+                return PagedSuccess(pagedResponse);
             }
             catch (Exception ex)
             {
@@ -427,18 +438,29 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
+                
+                // Get all users and products for lookup
+                var allUsers = await _unitOfWork.Users.GetAllAsync();
+                var allProducts = await _unitOfWork.Products.GetAllAsync();
+                
                 var pendingRedemptions = redemptions
                     .Where(r => r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Pending)
-                    .Select(r => new RedemptionResponseDto
-                    {
-                        Id = r.Id,
-                        UserId = r.UserId,
-                        ProductId = r.ProductId,
-                        ProductName = r.Product?.Name,
-                        PointsSpent = r.PointsSpent,
-                        Status = r.Status.ToString(),
-                        RequestedAt = r.RequestedAt,
-                        RejectionReason = r.RejectionReason
+                    .Select(r => {
+                        var user = allUsers.FirstOrDefault(u => u.Id == r.UserId);
+                        var product = allProducts.FirstOrDefault(p => p.Id == r.ProductId);
+                        return new RedemptionResponseDto
+                        {
+                            Id = r.Id,
+                            UserId = r.UserId,
+                            UserName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User",
+                            UserEmail = user?.Email ?? "",
+                            ProductId = r.ProductId,
+                            ProductName = product?.Name ?? "Unknown Product",
+                            PointsSpent = r.PointsSpent,
+                            Status = r.Status.ToString(),
+                            RequestedAt = r.RequestedAt,
+                            RejectionReason = r.RejectionReason
+                        };
                     });
 
                 return Success(pendingRedemptions);
@@ -465,27 +487,37 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
                 
+                // Get all users and products for lookup
+                var allUsers = await _unitOfWork.Users.GetAllAsync();
+                var allProducts = await _unitOfWork.Products.GetAllAsync();
+                
                 var totalCount = redemptions.Count();
                 var pagedRedemptions = redemptions
                     .OrderByDescending(r => r.RequestedAt)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(r => new RedemptionResponseDto
-                    {
-                        Id = r.Id,
-                        UserId = r.UserId,
-                        ProductId = r.ProductId,
-                        ProductName = r.Product?.Name,
-                        PointsSpent = r.PointsSpent,
-                        Status = r.Status.ToString(),
-                        RequestedAt = r.RequestedAt,
-                        ApprovedAt = r.ApprovedAt,
-                        DeliveredAt = r.DeliveredAt,
-                        RejectionReason = r.RejectionReason
+                    .Select(r => {
+                        var user = allUsers.FirstOrDefault(u => u.Id == r.UserId);
+                        var product = allProducts.FirstOrDefault(p => p.Id == r.ProductId);
+                        return new RedemptionResponseDto
+                        {
+                            Id = r.Id,
+                            UserId = r.UserId,
+                            UserName = user != null ? $"{user.FirstName} {user.LastName}" : "Unknown User",
+                            UserEmail = user?.Email ?? "",
+                            ProductId = r.ProductId,
+                            ProductName = product?.Name ?? "Unknown Product",
+                            PointsSpent = r.PointsSpent,
+                            Status = r.Status.ToString(),
+                            RequestedAt = r.RequestedAt,
+                            ApprovedAt = r.ApprovedAt,
+                            DeliveredAt = r.DeliveredAt,
+                            RejectionReason = r.RejectionReason
+                        };
                     });
 
-                var response = PagedSuccess(pagedRedemptions, totalCount, page, pageSize);
-                return Ok(response);
+                var pagedResponse = PagedResponse<RedemptionResponseDto>.Create(pagedRedemptions, page, pageSize, totalCount);
+                return PagedSuccess(pagedResponse);
             }
             catch (Exception ex)
             {

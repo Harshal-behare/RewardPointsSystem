@@ -124,7 +124,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task DeliverRedemptionAsync(Guid redemptionId, string notes)
+        public async Task DeliverRedemptionAsync(Guid redemptionId, Guid processedBy, string? notes = null)
         {
             var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
             if (redemption == null)
@@ -133,14 +133,14 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption.Status != RedemptionStatus.Approved)
                 throw new InvalidOperationException($"Only approved redemptions can be delivered. Current status: {redemption.Status}");
 
-            redemption.MarkAsDelivered(Guid.Empty, notes);
+            redemption.MarkAsDelivered(processedBy, notes);
 
             await _unitOfWork.SaveChangesAsync();
         }
 
-        public async Task MarkAsDeliveredAsync(Guid redemptionId)
+        public async Task MarkAsDeliveredAsync(Guid redemptionId, Guid processedBy)
         {
-            await DeliverRedemptionAsync(redemptionId, "Delivered");
+            await DeliverRedemptionAsync(redemptionId, processedBy, "Delivered");
         }
 
         public async Task CancelRedemptionAsync(Guid redemptionId, string reason)
