@@ -17,6 +17,7 @@ namespace RewardPointsSystem.Api.Controllers
         private readonly IUserPointsTransactionService _transactionService;
         private readonly IPointsAwardingService _awardingService;
         private readonly IUserService _userService;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<PointsController> _logger;
 
         public PointsController(
@@ -24,12 +25,14 @@ namespace RewardPointsSystem.Api.Controllers
             IUserPointsTransactionService transactionService,
             IPointsAwardingService awardingService,
             IUserService userService,
+            IUnitOfWork unitOfWork,
             ILogger<PointsController> logger)
         {
             _accountService = accountService;
             _transactionService = transactionService;
             _awardingService = awardingService;
             _userService = userService;
+            _unitOfWork = unitOfWork;
             _logger = logger;
         }
 
@@ -98,21 +101,46 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 var transactions = await _transactionService.GetUserTransactionsAsync(userId);
                 
+                // Get events and event participants for enriching transaction data
+                var allEvents = await _unitOfWork.Events.GetAllAsync();
+                var allEventParticipants = await _unitOfWork.EventParticipants.GetAllAsync();
+                var userParticipants = allEventParticipants.Where(ep => ep.UserId == userId).ToList();
+                
                 // Apply pagination
                 var totalCount = transactions.Count();
                 var pagedTransactions = transactions
+                    .OrderByDescending(t => t.Timestamp)
                     .Skip((page - 1) * pageSize)
                     .Take(pageSize)
-                    .Select(t => new TransactionResponseDto
-                    {
-                        Id = t.Id,
-                        UserId = t.UserId,
-                        TransactionType = t.TransactionType.ToString(),
-                        UserPoints = t.UserPoints,
-                        Description = t.Description,
-                        EventId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Event ? t.SourceId : (Guid?)null,
-                        RedemptionId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Redemption ? t.SourceId : (Guid?)null,
-                        Timestamp = t.Timestamp
+                    .Select(t => {
+                        var isEventTransaction = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Event;
+                        var eventId = isEventTransaction ? t.SourceId : (Guid?)null;
+                        string eventName = null;
+                        int? eventRank = null;
+                        
+                        if (isEventTransaction && eventId.HasValue)
+                        {
+                            var evt = allEvents.FirstOrDefault(e => e.Id == eventId.Value);
+                            eventName = evt?.Name;
+                            var participant = userParticipants.FirstOrDefault(p => p.EventId == eventId.Value);
+                            eventRank = participant?.EventRank;
+                        }
+                        
+                        return new TransactionResponseDto
+                        {
+                            Id = t.Id,
+                            UserId = t.UserId,
+                            TransactionType = t.TransactionType.ToString(),
+                            UserPoints = t.UserPoints,
+                            Description = t.Description,
+                            EventId = eventId,
+                            EventName = eventName,
+                            EventRank = eventRank,
+                            RedemptionId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Redemption ? t.SourceId : (Guid?)null,
+                            TransactionSource = t.TransactionSource.ToString(),
+                            BalanceAfter = t.BalanceAfter,
+                            Timestamp = t.Timestamp
+                        };
                     });
 
                 var response = PagedSuccess(pagedTransactions, totalCount, page, pageSize);

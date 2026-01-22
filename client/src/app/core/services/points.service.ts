@@ -22,9 +22,13 @@ export interface PointsTransactionDto {
   points?: number;          // Alias for compatibility
   description: string;
   eventName?: string;
+  eventId?: string;
+  eventRank?: number;
+  redemptionId?: string;
+  transactionSource?: string;  // 'Event', 'Redemption', 'AdminAward', 'Direct'
+  balanceAfter?: number;
   timestamp: string;        // Backend sends timestamp
   createdAt?: string;       // Alias for compatibility
-  balanceAfter?: number;
 }
 
 export interface LeaderboardEntryDto {

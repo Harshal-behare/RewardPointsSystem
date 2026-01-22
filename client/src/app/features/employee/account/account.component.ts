@@ -12,6 +12,7 @@ interface PointTransaction {
   points: number;
   type: 'earned' | 'redeemed' | 'expired';
   status: string;
+  source?: string;
   eventName?: string;
   rank?: number;
 }
@@ -21,9 +22,10 @@ interface RedemptionRecord {
   date: string;
   productName: string;
   points: number;
+  quantity: number;
   status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled';
   trackingNumber?: string;
-  deliveryAddress: string;
+  rejectionReason?: string;
 }
 
 @Component({
@@ -113,6 +115,17 @@ export class EmployeeAccountComponent implements OnInit {
             const points = t.userPoints ?? t.points ?? 0;
             const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
             const isCredit = t.transactionType === 'Credit';
+            
+            // Determine the source for display
+            let source = 'Direct';
+            if (t.transactionSource) {
+              source = t.transactionSource;
+            } else if (t.eventName || t.eventId) {
+              source = 'Event';
+            } else if (t.redemptionId) {
+              source = 'Redemption';
+            }
+            
             return {
               id: t.id,
               date: new Date(dateStr).toISOString().split('T')[0],
@@ -120,7 +133,9 @@ export class EmployeeAccountComponent implements OnInit {
               points: isCredit ? points : -points,
               type: isCredit ? 'earned' as const : 'redeemed' as const,
               status: 'Completed',
-              eventName: t.eventName
+              source: source,
+              eventName: t.eventName,
+              rank: t.eventRank
             };
           });
 
@@ -149,9 +164,10 @@ export class EmployeeAccountComponent implements OnInit {
             date: new Date(r.requestedAt).toISOString().split('T')[0],
             productName: r.productName || 'Product',
             points: r.pointsSpent,
+            quantity: r.quantity || 1,
             status: this.mapRedemptionStatus(r.status),
             trackingNumber: r.deliveryNotes,
-            deliveryAddress: ''
+            rejectionReason: r.rejectionReason
           }));
 
           this.redemptionHistory.set(mappedRedemptions);

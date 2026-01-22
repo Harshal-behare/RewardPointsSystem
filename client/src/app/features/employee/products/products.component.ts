@@ -33,7 +33,6 @@ export class EmployeeProductsComponent implements OnInit {
   userPoints = signal<number>(0);
   selectedProduct = signal<Product | null>(null);
   showRedeemModal = signal<boolean>(false);
-  deliveryAddress = signal<string>('');
   redemptionQuantity = signal<number>(1);
   redemptionValidationErrors = signal<string[]>([]);
   isLoading = signal<boolean>(true);
@@ -157,7 +156,6 @@ export class EmployeeProductsComponent implements OnInit {
   openRedeemModal(product: Product): void {
     this.selectedProduct.set(product);
     this.showRedeemModal.set(true);
-    this.deliveryAddress.set('');
     this.redemptionQuantity.set(1);
     this.redemptionValidationErrors.set([]);
   }
@@ -165,7 +163,6 @@ export class EmployeeProductsComponent implements OnInit {
   closeRedeemModal(): void {
     this.showRedeemModal.set(false);
     this.selectedProduct.set(null);
-    this.deliveryAddress.set('');
     this.redemptionQuantity.set(1);
     this.redemptionValidationErrors.set([]);
   }
@@ -174,13 +171,7 @@ export class EmployeeProductsComponent implements OnInit {
   validateRedemption(): boolean {
     const errors: string[] = [];
     const product = this.selectedProduct();
-    const address = this.deliveryAddress().trim();
     const quantity = this.redemptionQuantity();
-    
-    // Address validation
-    if (!address) {
-      errors.push('Delivery address is required');
-    }
     
     // Quantity validation
     if (quantity < 1) {

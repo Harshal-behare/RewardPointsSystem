@@ -72,7 +72,8 @@
             <tr>
               <th>Date</th>
               <th>Description</th>
-              <th>Event</th>
+              <th>Source</th>
+              <th>Event/Rank</th>
               <th>Points</th>
               <th>Status</th>
             </tr>
@@ -87,9 +88,15 @@
                 </div>
               </td>
               <td>
-                <span *ngIf="transaction.eventName" class="event-badge">
-                  {{ transaction.eventName }}
+                <span class="source-badge" [ngClass]="'source-' + (transaction.source?.toLowerCase() || 'direct')">
+                  {{ transaction.source || 'Direct' }}
                 </span>
+              </td>
+              <td>
+                <div *ngIf="transaction.eventName" class="event-info">
+                  <span class="event-badge">{{ transaction.eventName }}</span>
+                  <span *ngIf="transaction.rank" class="rank-badge">🏆 Rank #{{ transaction.rank }}</span>
+                </div>
                 <span *ngIf="!transaction.eventName" class="text-muted">-</span>
               </td>
               <td>
@@ -127,9 +134,10 @@
             <tr>
               <th>Date</th>
               <th>Product</th>
+              <th>Qty</th>
               <th>Points</th>
               <th>Status</th>
-              <th>Tracking</th>
+              <th>Notes</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -139,6 +147,7 @@
               <td>
                 <span class="product-name">{{ redemption.productName }}</span>
               </td>
+              <td>{{ redemption.quantity }}</td>
               <td>
                 <span class="points-value negative">-{{ redemption.points }}</span>
               </td>
@@ -151,7 +160,10 @@
                 <span *ngIf="redemption.trackingNumber" class="tracking-number">
                   {{ redemption.trackingNumber }}
                 </span>
-                <span *ngIf="!redemption.trackingNumber" class="text-muted">-</span>
+                <span *ngIf="redemption.rejectionReason" class="rejection-reason">
+                  {{ redemption.rejectionReason }}
+                </span>
+                <span *ngIf="!redemption.trackingNumber && !redemption.rejectionReason" class="text-muted">-</span>
               </td>
               <td>
                 <button 

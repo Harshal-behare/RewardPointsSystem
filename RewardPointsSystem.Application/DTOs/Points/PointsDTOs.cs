@@ -29,7 +29,10 @@ namespace RewardPointsSystem.Application.DTOs.Points
         public string Description { get; set; }
         public Guid? EventId { get; set; }
         public string EventName { get; set; }
+        public int? EventRank { get; set; }
         public Guid? RedemptionId { get; set; }
+        public string TransactionSource { get; set; }
+        public int BalanceAfter { get; set; }
         public DateTime Timestamp { get; set; }
     }
 

@@ -13,6 +13,7 @@ export interface RedemptionDto {
   productName?: string;
   productCategory?: string;
   pointsSpent: number;
+  quantity?: number;
   status: 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled';
   requestedAt: string;
   approvedAt?: string;

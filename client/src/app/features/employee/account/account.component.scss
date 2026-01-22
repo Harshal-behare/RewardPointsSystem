@@ -221,6 +221,51 @@
             box-shadow: 0 2px 4px rgba(255, 215, 0, 0.3);
           }
 
+          .event-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+          }
+
+          .source-badge {
+            display: inline-block;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+            &.source-event {
+              background-color: #d6eaf8;
+              color: #3498db;
+            }
+
+            &.source-redemption {
+              background-color: #fce4ec;
+              color: #c2185b;
+            }
+
+            &.source-adminaward {
+              background-color: #e8f5e9;
+              color: #2e7d32;
+            }
+
+            &.source-direct {
+              background-color: #fff3e0;
+              color: #ef6c00;
+            }
+          }
+
+          .rejection-reason {
+            font-size: 12px;
+            color: #c0392b;
+            font-style: italic;
+            background-color: #fdecea;
+            padding: 4px 8px;
+            border-radius: 4px;
+          }
+
           .points-value {
             font-size: 16px;
             font-weight: 700;

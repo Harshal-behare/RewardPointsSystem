@@ -114,17 +114,6 @@
         <small class="form-hint">Max 10 items per redemption</small>
       </div>
 
-      <div class="form-group">
-        <label class="form-label">Delivery Address *</label>
-        <textarea
-          [ngModel]="deliveryAddress()"
-          (ngModelChange)="deliveryAddress.set($event)"
-          placeholder="Enter your complete delivery address..."
-          class="form-textarea"
-          rows="4"
-        ></textarea>
-      </div>
-
       <div class="points-summary">
         <div class="summary-row">
           <span>Current Points:</span>
@@ -145,7 +134,7 @@
       <button class="modal-btn cancel-btn" (click)="closeRedeemModal()">Cancel</button>
       <button
         class="modal-btn confirm-btn"
-        [disabled]="!deliveryAddress().trim() || userPoints() < (selectedProduct()!.points * redemptionQuantity()) || redemptionQuantity() < 1 || redemptionQuantity() > 10"
+        [disabled]="userPoints() < (selectedProduct()!.points * redemptionQuantity()) || redemptionQuantity() < 1 || redemptionQuantity() > 10 || redemptionQuantity() > selectedProduct()!.stock"
         (click)="confirmRedeem()"
       >
         Confirm Redemption
