@@ -159,16 +159,31 @@ export class EmployeeAccountComponent implements OnInit {
           const redemptions = Array.isArray(response.data) ? response.data : 
                              (response.data as any).items || [];
           
-          const mappedRedemptions: RedemptionRecord[] = redemptions.map((r: RedemptionDto) => ({
-            id: r.id,
-            date: new Date(r.requestedAt).toISOString().split('T')[0],
-            productName: r.productName || 'Product',
-            points: r.pointsSpent,
-            quantity: r.quantity || 1,
-            status: this.mapRedemptionStatus(r.status),
-            trackingNumber: r.deliveryNotes,
-            rejectionReason: r.rejectionReason
-          }));
+          const mappedRedemptions: RedemptionRecord[] = redemptions.map((r: RedemptionDto) => {
+            // Determine the display status - if cancelled by employee vs rejected by admin
+            let displayStatus = this.mapRedemptionStatus(r.status);
+            
+            // If status is cancelled/rejected and has a reason, check if it was by employee
+            if ((displayStatus === 'cancelled' || displayStatus === 'rejected') && r.rejectionReason) {
+              // Check if employee cancelled or admin rejected
+              if (r.rejectionReason.toLowerCase().includes('cancelled by employee')) {
+                displayStatus = 'cancelled';
+              } else {
+                displayStatus = 'rejected';
+              }
+            }
+            
+            return {
+              id: r.id,
+              date: new Date(r.requestedAt).toISOString().split('T')[0],
+              productName: r.productName || 'Product',
+              points: r.pointsSpent,
+              quantity: r.quantity || 1,
+              status: displayStatus,
+              trackingNumber: r.deliveryNotes,
+              rejectionReason: r.rejectionReason
+            };
+          });
 
           this.redemptionHistory.set(mappedRedemptions);
         }
@@ -216,11 +231,11 @@ export class EmployeeAccountComponent implements OnInit {
       return;
     }
 
-    if (confirm('Are you sure you want to cancel this redemption?')) {
-      this.redemptionService.cancelRedemption(redemption.id, { cancellationReason: 'Cancelled by user' }).subscribe({
+    if (confirm('Are you sure you want to cancel this redemption? Your points will be refunded.')) {
+      this.redemptionService.cancelRedemption(redemption.id, { cancellationReason: 'Cancelled by employee' }).subscribe({
         next: (response) => {
           if (response.success) {
-            this.toast.success('Redemption cancelled successfully');
+            this.toast.success('Redemption cancelled successfully. Points have been refunded to your account.');
             this.loadRedemptionHistory();
             this.loadAccountSummary(); // Refresh points as they should be returned
           } else {

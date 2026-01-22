@@ -10,12 +10,7 @@ namespace RewardPointsSystem.Application.Validators.Redemptions
     {
         public ApproveRedemptionDtoValidator()
         {
-            RuleFor(x => x.RedemptionId)
-                .NotEmpty().WithMessage("Redemption ID is required");
-
-            RuleFor(x => x.ApprovedBy)
-                .NotEmpty().WithMessage("Approver ID is required");
-
+            // Notes is optional - controller gets RedemptionId from route and ApprovedBy from JWT claims
             RuleFor(x => x.Notes)
                 .MaximumLength(1000).WithMessage("Notes cannot exceed 1000 characters");
         }

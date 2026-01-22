@@ -349,7 +349,7 @@ export class AdminRedemptionsComponent implements OnInit {
             const updatedRequest = {
               ...request,
               status: 'Rejected' as const,
-              notes: reason
+              rejectionReason: reason
             };
             
             // Update the request in the list
@@ -362,7 +362,8 @@ export class AdminRedemptionsComponent implements OnInit {
             this.calculateStats();
             this.filterRequests();
             
-            this.toast.success('Redemption request has been rejected. The employee will be notified.');
+            this.closeRejectModal();
+            this.toast.success(`Redemption rejected. ${request.pointsSpent} points have been refunded to ${request.userName}'s account.`);
           } else {
             this.rejectionError.set(response.message || 'Failed to reject redemption');
           }
@@ -377,7 +378,6 @@ export class AdminRedemptionsComponent implements OnInit {
         }
       });
     }
-    this.closeRejectModal();
   }
 
   // Details Modal Methods

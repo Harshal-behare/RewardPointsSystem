@@ -61,9 +61,7 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     /// </summary>
     public class ApproveRedemptionDto
     {
-        public Guid RedemptionId { get; set; }
-        public Guid ApprovedBy { get; set; }
-        public string Notes { get; set; }
+        public string? Notes { get; set; }
     }
 
     /// <summary>
@@ -71,8 +69,7 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     /// </summary>
     public class DeliverRedemptionDto
     {
-        public Guid RedemptionId { get; set; }
-        public string DeliveryNotes { get; set; }
+        public string? DeliveryNotes { get; set; }
     }
 
     /// <summary>
@@ -80,8 +77,7 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     /// </summary>
     public class CancelRedemptionDto
     {
-        public Guid RedemptionId { get; set; }
-        public string CancellationReason { get; set; }
+        public string CancellationReason { get; set; } = string.Empty;
     }
 
     /// <summary>

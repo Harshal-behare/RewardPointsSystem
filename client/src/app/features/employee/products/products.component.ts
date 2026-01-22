@@ -218,8 +218,8 @@ export class EmployeeProductsComponent implements OnInit {
     this.redemptionService.createRedemption(redemptionData).subscribe({
       next: (response) => {
         if (response.success) {
-          this.toast.success('Product redeemed successfully! Check your email for confirmation.');
           this.closeRedeemModal();
+          this.toast.success('Redemption request submitted! Your request is pending admin approval. You will be notified once it is processed.');
           this.loadProducts();
           this.loadUserPoints();
         } else {
