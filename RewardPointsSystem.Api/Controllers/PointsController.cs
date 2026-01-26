@@ -143,8 +143,8 @@ namespace RewardPointsSystem.Api.Controllers
                         };
                     });
 
-                var response = PagedSuccess(pagedTransactions, totalCount, page, pageSize);
-                return Ok(response);
+                var pagedResponse = PagedResponse<TransactionResponseDto>.Create(pagedTransactions, page, pageSize, totalCount);
+                return PagedSuccess(pagedResponse);
             }
             catch (Exception ex)
             {

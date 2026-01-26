@@ -107,9 +107,19 @@ export class EmployeeAccountComponent implements OnInit {
     this.isLoadingPoints.set(true);
     this.pointsService.getUserTransactions(this.currentUserId, 1, 20).subscribe({
       next: (response) => {
+        console.log('Points history API response:', response);
+        
         if (response.success && response.data) {
-          const transactions = Array.isArray(response.data) ? response.data : 
-                              (response.data as any).items || [];
+          // Handle different response structures
+          let transactions: PointsTransactionDto[] = [];
+          
+          if (Array.isArray(response.data)) {
+            transactions = response.data;
+          } else if ((response.data as any).items && Array.isArray((response.data as any).items)) {
+            transactions = (response.data as any).items;
+          }
+          
+          console.log('Extracted transactions:', transactions);
           
           const mappedTransactions: PointTransaction[] = transactions.map((t: PointsTransactionDto) => {
             const points = t.userPoints ?? t.points ?? 0;
@@ -139,7 +149,10 @@ export class EmployeeAccountComponent implements OnInit {
             };
           });
 
+          console.log('Mapped transactions:', mappedTransactions);
           this.pointsHistory.set(mappedTransactions);
+        } else {
+          console.log('No data in response or response not successful');
         }
         this.isLoadingPoints.set(false);
       },
@@ -160,17 +173,20 @@ export class EmployeeAccountComponent implements OnInit {
                              (response.data as any).items || [];
           
           const mappedRedemptions: RedemptionRecord[] = redemptions.map((r: RedemptionDto) => {
-            // Determine the display status - if cancelled by employee vs rejected by admin
+            // Map the backend status to frontend status
             let displayStatus = this.mapRedemptionStatus(r.status);
             
-            // If status is cancelled/rejected and has a reason, check if it was by employee
-            if ((displayStatus === 'cancelled' || displayStatus === 'rejected') && r.rejectionReason) {
-              // Check if employee cancelled or admin rejected
-              if (r.rejectionReason.toLowerCase().includes('cancelled by employee')) {
-                displayStatus = 'cancelled';
-              } else {
+            // The backend has Cancelled status for both user cancellations and admin rejections
+            // We need to distinguish between them based on the rejection reason
+            if (displayStatus === 'cancelled' && r.rejectionReason) {
+              const reason = r.rejectionReason.toLowerCase();
+              // If the reason indicates admin rejection, show as rejected
+              // Otherwise keep as cancelled (user cancelled or other cancellation)
+              if (reason.includes('rejected') || reason.includes('by admin') || reason.includes('administrator')) {
                 displayStatus = 'rejected';
               }
+              // If reason contains 'cancel', 'user', or 'employee', keep as cancelled
+              // This covers: "Cancelled by user", "Cancelled by employee", "User cancelled", etc.
             }
             
             return {

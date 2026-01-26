@@ -41,6 +41,9 @@ interface Transaction {
   points: number;
   date: string;
   status: string;
+  source?: string;
+  eventName?: string;
+  eventRank?: number;
 }
 
 @Component({
@@ -117,23 +120,48 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
-    // Load recent transactions
-    this.pointsService.getUserTransactions(this.currentUserId, 1, 5).subscribe({
+    // Load recent transactions - top 3 only
+    this.pointsService.getUserTransactions(this.currentUserId, 1, 3).subscribe({
       next: (response) => {
+        console.log('Dashboard transactions API response:', response);
+        
         if (response.success && response.data) {
-          const transactions = Array.isArray(response.data) ? response.data : 
-                              (response.data as any).items || [];
-          this.recentTransactions.set(transactions.map((t: PointsTransactionDto) => {
+          // Handle different response structures
+          let transactions: PointsTransactionDto[] = [];
+          
+          if (Array.isArray(response.data)) {
+            transactions = response.data;
+          } else if ((response.data as any).items && Array.isArray((response.data as any).items)) {
+            transactions = (response.data as any).items;
+          }
+          
+          console.log('Dashboard extracted transactions:', transactions);
+          
+          this.recentTransactions.set(transactions.slice(0, 3).map((t: PointsTransactionDto) => {
             const points = t.userPoints ?? t.points ?? 0;
             const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
             const isCredit = t.transactionType === 'Credit';
+            
+            // Determine the source for display
+            let source = 'Direct';
+            if (t.transactionSource) {
+              source = t.transactionSource;
+            } else if (t.eventName || t.eventId) {
+              source = 'Event';
+            } else if (t.redemptionId) {
+              source = 'Redemption';
+            }
+            
             return {
               id: t.id,
               type: isCredit ? 'earned' as const : 'redeemed' as const,
-              description: t.description,
+              description: t.description || (isCredit ? 'Points Earned' : 'Points Redeemed'),
               points: isCredit ? points : -points,
               date: new Date(dateStr).toISOString().split('T')[0],
-              status: 'Completed'
+              status: 'Completed',
+              source: source,
+              eventName: t.eventName,
+              eventRank: t.eventRank
             };
           }));
         }

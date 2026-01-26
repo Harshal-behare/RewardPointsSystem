@@ -139,7 +139,16 @@
             </div>
             <div class="transaction-details">
               <span class="transaction-description">{{ transaction.description }}</span>
-              <span class="transaction-date">{{ transaction.date }}</span>
+              <div class="transaction-meta">
+                <span class="transaction-date">{{ transaction.date }}</span>
+                <span *ngIf="transaction.source" class="transaction-source" [ngClass]="'source-' + transaction.source.toLowerCase()">
+                  {{ transaction.source }}
+                </span>
+              </div>
+              <div *ngIf="transaction.eventName" class="transaction-event">
+                <span class="event-name">🎉 {{ transaction.eventName }}</span>
+                <span *ngIf="transaction.eventRank" class="event-rank">🏆 #{{ transaction.eventRank }}</span>
+              </div>
             </div>
             <div class="transaction-amount" [class.positive]="transaction.points > 0">
               {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}

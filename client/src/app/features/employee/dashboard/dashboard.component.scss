@@ -407,9 +407,58 @@
         margin-bottom: 2px;
       }
 
+      .transaction-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 2px;
+      }
+
       .transaction-date {
         font-size: 12px;
         color: #7f8c8d;
+      }
+
+      .transaction-source {
+        font-size: 10px;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-weight: 600;
+        text-transform: uppercase;
+
+        &.source-event {
+          background-color: #e8f5e9;
+          color: #2e7d32;
+        }
+
+        &.source-redemption {
+          background-color: #e3f2fd;
+          color: #1565c0;
+        }
+
+        &.source-adminaward, &.source-direct {
+          background-color: #fff3e0;
+          color: #e65100;
+        }
+      }
+
+      .transaction-event {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 4px;
+
+        .event-name {
+          font-size: 11px;
+          color: #27ae60;
+          font-weight: 500;
+        }
+
+        .event-rank {
+          font-size: 11px;
+          color: #f39c12;
+          font-weight: 600;
+        }
       }
     }
 

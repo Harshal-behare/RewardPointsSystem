@@ -317,6 +317,11 @@
               background-color: #f8d7da;
               color: #721c24;
             }
+
+            &.status-cancelled {
+              background-color: #ffeaa7;
+              color: #6c5ce7;
+            }
           }
 
           .product-name {
