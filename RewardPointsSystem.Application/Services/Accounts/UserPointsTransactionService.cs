@@ -41,6 +41,32 @@ namespace RewardPointsSystem.Application.Services.Accounts
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task RecordRedemptionRefundAsync(Guid userId, int userPoints, Guid redemptionId, string description)
+        {
+            if (userPoints <= 0)
+                throw new ArgumentException("User points must be greater than zero", nameof(userPoints));
+            if (string.IsNullOrWhiteSpace(description))
+                throw new ArgumentException("Description is required", nameof(description));
+
+            // Get current balance to calculate balance after
+            var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
+            if (account == null)
+                throw new InvalidOperationException($"User points account not found for user {userId}");
+
+            var balanceAfter = account.CurrentBalance + userPoints;
+
+            var transaction = UserPointsTransaction.CreateEarned(
+                userId,
+                userPoints,
+                TransactionOrigin.Redemption,
+                redemptionId,
+                balanceAfter,
+                description);
+
+            await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task RecordAdminAwardAsync(Guid userId, int userPoints, string description)
         {
             if (userPoints <= 0)

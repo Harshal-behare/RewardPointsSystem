@@ -130,12 +130,10 @@
             class="transaction-item"
             [class.earned]="transaction.type === 'earned'"
             [class.redeemed]="transaction.type === 'redeemed'"
-            [class.pending]="transaction.type === 'pending'"
           >
-            <div class="transaction-icon">
-              <span *ngIf="transaction.type === 'earned'">✅</span>
-              <span *ngIf="transaction.type === 'redeemed'">🎁</span>
-              <span *ngIf="transaction.type === 'pending'">⏳</span>
+            <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
+              <span *ngIf="transaction.type === 'earned'">📈</span>
+              <span *ngIf="transaction.type === 'redeemed'">🛒</span>
             </div>
             <div class="transaction-details">
               <span class="transaction-description">{{ transaction.description }}</span>
@@ -150,7 +148,9 @@
                 <span *ngIf="transaction.eventRank" class="event-rank">🏆 #{{ transaction.eventRank }}</span>
               </div>
             </div>
-            <div class="transaction-amount" [class.positive]="transaction.points > 0">
+            <div class="transaction-amount" 
+                 [class.positive]="transaction.points > 0"
+                 [class.negative]="transaction.points < 0">
               {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
             </div>
           </div>

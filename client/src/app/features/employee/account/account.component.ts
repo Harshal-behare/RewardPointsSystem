@@ -45,6 +45,7 @@ export class EmployeeAccountComponent implements OnInit {
   totalEarned = signal<number>(0);
   totalRedeemed = signal<number>(0);
   currentBalance = signal<number>(0);
+  pendingPoints = signal<number>(0);
 
   // Loading states
   isLoadingPoints = signal<boolean>(true);
@@ -105,7 +106,7 @@ export class EmployeeAccountComponent implements OnInit {
 
   loadPointsHistory(): void {
     this.isLoadingPoints.set(true);
-    this.pointsService.getUserTransactions(this.currentUserId, 1, 20).subscribe({
+    this.pointsService.getUserTransactions(this.currentUserId, 1, 50).subscribe({
       next: (response) => {
         console.log('Points history API response:', response);
         
@@ -121,10 +122,15 @@ export class EmployeeAccountComponent implements OnInit {
           
           console.log('Extracted transactions:', transactions);
           
-          const mappedTransactions: PointTransaction[] = transactions.map((t: PointsTransactionDto) => {
+          // Filter only EARNED transactions for Earning History
+          // Backend returns 'Earned' for TransactionType (not 'Credit')
+          const earnedTransactions = transactions.filter((t: PointsTransactionDto) => 
+            t.transactionType === 'Earned'
+          );
+          
+          const mappedTransactions: PointTransaction[] = earnedTransactions.map((t: PointsTransactionDto) => {
             const points = t.userPoints ?? t.points ?? 0;
             const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
-            const isCredit = t.transactionType === 'Credit';
             
             // Determine the source for display
             let source = 'Direct';
@@ -132,24 +138,29 @@ export class EmployeeAccountComponent implements OnInit {
               source = t.transactionSource;
             } else if (t.eventName || t.eventId) {
               source = 'Event';
-            } else if (t.redemptionId) {
-              source = 'Redemption';
             }
+            
+            // Parse description to extract event name and rank
+            const { description, eventName, rank } = this.parseTransactionDescription(
+              t.description || 'Points Earned', 
+              t.eventName, 
+              t.eventRank
+            );
             
             return {
               id: t.id,
               date: new Date(dateStr).toISOString().split('T')[0],
-              description: t.description || (isCredit ? 'Points Earned' : 'Points Redeemed'),
-              points: isCredit ? points : -points,
-              type: isCredit ? 'earned' as const : 'redeemed' as const,
+              description: description,
+              points: points,
+              type: 'earned' as const,
               status: 'Completed',
               source: source,
-              eventName: t.eventName,
-              rank: t.eventRank
+              eventName: eventName,
+              rank: rank
             };
           });
 
-          console.log('Mapped transactions:', mappedTransactions);
+          console.log('Mapped earning transactions:', mappedTransactions);
           this.pointsHistory.set(mappedTransactions);
         } else {
           console.log('No data in response or response not successful');
@@ -158,10 +169,74 @@ export class EmployeeAccountComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error loading points history:', error);
-        this.toast.error('Failed to load points history');
+        this.toast.error('Failed to load earning history');
         this.isLoadingPoints.set(false);
       }
     });
+  }
+
+  // Helper method to parse description and extract event name and rank
+  private parseTransactionDescription(
+    description: string, 
+    apiEventName?: string, 
+    apiEventRank?: number
+  ): { description: string; eventName?: string; rank?: number } {
+    if (!description) {
+      return { description: 'Points Earned', eventName: apiEventName, rank: apiEventRank };
+    }
+    
+    let eventName = apiEventName;
+    let rank = apiEventRank;
+    let cleanDesc = description;
+    
+    // Pattern: "Winner of event: EventName (Rank #1)" or similar
+    const winnerPattern = /Winner of event:\s*([^(]+)\s*\(Rank #(\d+)\)/i;
+    const winnerMatch = description.match(winnerPattern);
+    
+    if (winnerMatch) {
+      eventName = eventName || winnerMatch[1].trim();
+      rank = rank || parseInt(winnerMatch[2], 10);
+      cleanDesc = 'Event Winner';
+    }
+    
+    // Pattern: "Redemption cancellation refund - Redemption ID: xxx"
+    const refundPattern = /Redemption (cancellation|rejection) refund/i;
+    if (refundPattern.test(description)) {
+      cleanDesc = 'Points Refunded';
+    }
+    
+    // Clean up any remaining UUIDs and technical details
+    cleanDesc = cleanDesc.replace(/\s*-?\s*Redemption ID:\s*[a-f0-9-]+/gi, '');
+    cleanDesc = cleanDesc.replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+    cleanDesc = cleanDesc.replace(/\s+-\s*$/g, '').replace(/\s+/g, ' ').trim();
+    
+    // If description becomes empty or too short, provide a default
+    if (cleanDesc.length < 3) {
+      cleanDesc = 'Points Earned';
+    }
+    
+    return { description: cleanDesc, eventName, rank };
+  }
+
+  // Helper method to clean up descriptions by removing IDs and technical details
+  private cleanDescription(description: string): string {
+    if (!description) return 'Points Earned';
+    
+    // Remove Redemption ID patterns like "Redemption ID: a7eb3f21-99b6-4abc-af1d-b01d6477e553"
+    let cleaned = description.replace(/\s*-?\s*Redemption ID:\s*[a-f0-9-]+/gi, '');
+    
+    // Remove UUID patterns standalone
+    cleaned = cleaned.replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+    
+    // Clean up any double spaces or trailing dashes
+    cleaned = cleaned.replace(/\s+-\s*$/g, '').replace(/\s+/g, ' ').trim();
+    
+    // If description becomes empty or too short after cleaning, provide a default
+    if (cleaned.length < 3) {
+      cleaned = 'Points Earned';
+    }
+    
+    return cleaned;
   }
 
   loadRedemptionHistory(): void {
@@ -202,6 +277,12 @@ export class EmployeeAccountComponent implements OnInit {
           });
 
           this.redemptionHistory.set(mappedRedemptions);
+          
+          // Calculate pending points from redemptions that are still pending or approved (not delivered yet)
+          const pendingPointsValue = mappedRedemptions
+            .filter(r => r.status === 'pending' || r.status === 'approved')
+            .reduce((sum, r) => sum + r.points, 0);
+          this.pendingPoints.set(pendingPointsValue);
         }
         this.isLoadingRedemptions.set(false);
       },

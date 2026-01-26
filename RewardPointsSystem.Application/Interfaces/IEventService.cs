@@ -9,7 +9,7 @@ namespace RewardPointsSystem.Application.Interfaces
     /// <summary>
     /// Interface: IEventService
     /// Responsibility: Manage event lifecycle only
-    /// Status flow: Draft → Upcoming → Completed
+    /// Status flow: Draft → Upcoming → Active → Completed
     /// Architecture Compliant - SRP
     /// </summary>
     public interface IEventService
@@ -26,7 +26,12 @@ namespace RewardPointsSystem.Application.Interfaces
         Task PublishEventAsync(Guid id);
         
         /// <summary>
-        /// Complete event: Upcoming → Completed (event is finished, award points)
+        /// Activate event: Upcoming → Active (event is currently in progress)
+        /// </summary>
+        Task ActivateEventAsync(Guid id);
+        
+        /// <summary>
+        /// Complete event: Upcoming or Active → Completed (event is finished, award points)
         /// </summary>
         Task CompleteEventAsync(Guid id);
         

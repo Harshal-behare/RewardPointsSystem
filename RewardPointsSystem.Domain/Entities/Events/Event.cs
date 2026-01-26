@@ -8,7 +8,7 @@ using RewardPointsSystem.Domain.Exceptions;
 namespace RewardPointsSystem.Domain.Entities.Events
 {
     /// <summary>
-    /// Event status: Draft (admin only), Upcoming (employees can register), Completed (event finished)
+    /// Event status: Draft (admin only), Upcoming (employees can register), Active (event in progress), Completed (event finished)
     /// </summary>
     public enum EventStatus
     {
@@ -23,9 +23,14 @@ namespace RewardPointsSystem.Domain.Entities.Events
         Upcoming = 1,
         
         /// <summary>
+        /// Event is active - currently in progress
+        /// </summary>
+        Active = 2,
+        
+        /// <summary>
         /// Event is completed - no more registrations, points can be awarded
         /// </summary>
-        Completed = 2
+        Completed = 3
     }
 
     /// <summary>
@@ -183,12 +188,31 @@ namespace RewardPointsSystem.Domain.Entities.Events
         }
 
         /// <summary>
-        /// Completes the event (Upcoming → Completed)
+        /// Activates the event (Upcoming → Active) - event is currently in progress
+        /// </summary>
+        public void Activate()
+        {
+            if (Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(Id, $"Cannot activate event from {Status} status. Only Upcoming events can be activated.");
+
+            Status = EventStatus.Active;
+        }
+
+        /// <summary>
+        /// Marks event as active (alias for Activate)
+        /// </summary>
+        public void MakeActive()
+        {
+            Activate();
+        }
+
+        /// <summary>
+        /// Completes the event (Upcoming or Active → Completed)
         /// </summary>
         public void Complete()
         {
-            if (Status != EventStatus.Upcoming)
-                throw new InvalidEventStateException(Id, $"Cannot complete event from {Status} status. Only Upcoming events can be completed.");
+            if (Status != EventStatus.Upcoming && Status != EventStatus.Active)
+                throw new InvalidEventStateException(Id, $"Cannot complete event from {Status} status. Only Upcoming or Active events can be completed.");
 
             Status = EventStatus.Completed;
             CompletedAt = DateTime.UtcNow;
@@ -206,11 +230,11 @@ namespace RewardPointsSystem.Domain.Entities.Events
         }
 
         /// <summary>
-        /// Checks if registration is currently open (only for Upcoming events)
+        /// Checks if registration is currently open (only for Upcoming or Active events)
         /// </summary>
         public bool IsRegistrationOpen()
         {
-            return Status == EventStatus.Upcoming &&
+            return (Status == EventStatus.Upcoming || Status == EventStatus.Active) &&
                    EventDate > DateTime.UtcNow &&
                    (!MaxParticipants.HasValue || _participants.Count < MaxParticipants.Value);
         }

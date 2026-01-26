@@ -81,6 +81,18 @@
       }
     }
 
+    &.pending {
+      border-color: #F39C12;
+
+      .summary-icon {
+        color: #F39C12;
+      }
+
+      .summary-value {
+        color: #F39C12;
+      }
+    }
+
     .summary-icon {
       font-size: 48px;
       opacity: 0.8;
@@ -161,6 +173,15 @@
     width: 100%;
     border-collapse: collapse;
     font-size: 14px;
+    table-layout: fixed;
+
+    /* Column widths for Earning History */
+    .col-date { width: 110px; }
+    .col-description { width: auto; min-width: 200px; }
+    .col-source { width: 100px; }
+    .col-event { width: 150px; }
+    .col-rank { width: 100px; }
+    .col-points { width: 100px; text-align: right; }
 
     thead {
       background-color: #f8f9fa;
@@ -173,6 +194,10 @@
           color: #2c3e50;
           border-bottom: 2px solid #e1e8ed;
           white-space: nowrap;
+
+          &.col-points {
+            text-align: right;
+          }
         }
       }
     }
@@ -189,6 +214,16 @@
           padding: 14px 16px;
           border-bottom: 1px solid #ecf0f1;
           color: #2c3e50;
+          vertical-align: middle;
+
+          &.col-points {
+            text-align: right;
+          }
+
+          &.col-description {
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+          }
 
           .transaction-cell {
             display: flex;
@@ -319,8 +354,8 @@
             }
 
             &.status-cancelled {
-              background-color: #ffeaa7;
-              color: #6c5ce7;
+              background-color: #6c5ce7;
+              color: #ffffff;
             }
           }
 

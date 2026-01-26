@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
 import { EventService, EventDto } from '../../../core/services/event.service';
 import { ProductService, ProductDto } from '../../../core/services/product.service';
+import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -72,6 +73,7 @@ export class EmployeeDashboardComponent implements OnInit {
     private pointsService: PointsService,
     private eventService: EventService,
     private productService: ProductService,
+    private redemptionService: RedemptionService,
     private authService: AuthService,
     private toast: ToastService
   ) {
@@ -107,12 +109,13 @@ export class EmployeeDashboardComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           const account = response.data;
-          this.pointsBalance.set({
+          // Update points balance, pending will be updated by redemption call
+          this.pointsBalance.update(current => ({
+            ...current,
             total: account.totalEarned,
             available: account.currentBalance,
-            pending: 0, // Not available from API yet
             redeemed: account.totalRedeemed
-          });
+          }));
         }
       },
       error: (error) => {
@@ -120,8 +123,34 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
-    // Load recent transactions - top 3 only
-    this.pointsService.getUserTransactions(this.currentUserId, 1, 3).subscribe({
+    // Load user's redemptions to calculate pending points
+    this.redemptionService.getMyRedemptions().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const redemptions = Array.isArray(response.data) ? response.data : 
+                             (response.data as any).items || [];
+          
+          // Calculate pending points (Pending or Approved status = not yet delivered)
+          const pendingPointsValue = redemptions
+            .filter((r: RedemptionDto) => {
+              const status = (r.status || '').toLowerCase();
+              return status === 'pending' || status === 'approved';
+            })
+            .reduce((sum: number, r: RedemptionDto) => sum + r.pointsSpent, 0);
+          
+          this.pointsBalance.update(current => ({
+            ...current,
+            pending: pendingPointsValue
+          }));
+        }
+      },
+      error: (error) => {
+        console.error('Error loading redemptions for pending points:', error);
+      }
+    });
+
+    // Load recent transactions - top 5 only
+    this.pointsService.getUserTransactions(this.currentUserId, 1, 5).subscribe({
       next: (response) => {
         console.log('Dashboard transactions API response:', response);
         
@@ -137,10 +166,11 @@ export class EmployeeDashboardComponent implements OnInit {
           
           console.log('Dashboard extracted transactions:', transactions);
           
-          this.recentTransactions.set(transactions.slice(0, 3).map((t: PointsTransactionDto) => {
+          this.recentTransactions.set(transactions.slice(0, 5).map((t: PointsTransactionDto) => {
             const points = t.userPoints ?? t.points ?? 0;
             const dateStr = t.timestamp ?? t.createdAt ?? new Date().toISOString();
-            const isCredit = t.transactionType === 'Credit';
+            // Backend returns 'Earned' not 'Credit' for TransactionType
+            const isEarned = t.transactionType === 'Earned';
             
             // Determine the source for display
             let source = 'Direct';
@@ -152,11 +182,14 @@ export class EmployeeDashboardComponent implements OnInit {
               source = 'Redemption';
             }
             
+            // Clean up description - remove IDs and technical details
+            let cleanDescription = this.cleanDescription(t.description || (isEarned ? 'Points Earned' : 'Points Redeemed'));
+            
             return {
               id: t.id,
-              type: isCredit ? 'earned' as const : 'redeemed' as const,
-              description: t.description || (isCredit ? 'Points Earned' : 'Points Redeemed'),
-              points: isCredit ? points : -points,
+              type: isEarned ? 'earned' as const : 'redeemed' as const,
+              description: cleanDescription,
+              points: isEarned ? points : -points,
               date: new Date(dateStr).toISOString().split('T')[0],
               status: 'Completed',
               source: source,
@@ -300,5 +333,26 @@ export class EmployeeDashboardComponent implements OnInit {
     } else {
       this.toast.warning('Insufficient points!');
     }
+  }
+
+  // Helper method to clean up descriptions by removing IDs and technical details
+  private cleanDescription(description: string): string {
+    if (!description) return 'Points Transaction';
+    
+    // Remove Redemption ID patterns like "Redemption ID: a7eb3f21-99b6-4abc-af1d-b01d6477e553"
+    let cleaned = description.replace(/\s*-?\s*Redemption ID:\s*[a-f0-9-]+/gi, '');
+    
+    // Remove UUID patterns standalone
+    cleaned = cleaned.replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '');
+    
+    // Clean up any double spaces or trailing dashes
+    cleaned = cleaned.replace(/\s+-\s*$/g, '').replace(/\s+/g, ' ').trim();
+    
+    // If description becomes empty or too short after cleaning, provide a default
+    if (cleaned.length < 3) {
+      cleaned = 'Points Transaction';
+    }
+    
+    return cleaned;
   }
 }

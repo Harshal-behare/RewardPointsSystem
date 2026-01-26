@@ -141,7 +141,24 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         /// <summary>
-        /// Complete event: Upcoming → Completed (event is finished, ready to award points)
+        /// Activate event: Upcoming → Active (event is currently in progress)
+        /// </summary>
+        public async Task ActivateEventAsync(Guid id)
+        {
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
+            if (eventEntity == null)
+                throw new EventNotFoundException(id);
+
+            if (eventEntity.Status != EventStatus.Upcoming)
+                throw new InvalidEventStateException(id, $"Only upcoming events can be activated. Current status: {eventEntity.Status}");
+
+            eventEntity.Activate();
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Complete event: Upcoming or Active → Completed (event is finished, ready to award points)
         /// </summary>
         public async Task CompleteEventAsync(Guid id)
         {
@@ -149,8 +166,8 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            if (eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidEventStateException(id, $"Only upcoming events can be completed. Current status: {eventEntity.Status}");
+            if (eventEntity.Status != EventStatus.Upcoming && eventEntity.Status != EventStatus.Active)
+                throw new InvalidEventStateException(id, $"Only upcoming or active events can be completed. Current status: {eventEntity.Status}");
 
             eventEntity.Complete();
 

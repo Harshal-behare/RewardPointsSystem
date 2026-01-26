@@ -29,6 +29,14 @@
       </div>
     </div>
 
+    <div class="summary-card pending">
+      <div class="summary-icon"></div>
+      <div class="summary-info">
+        <span class="summary-label">Pending Points</span>
+        <span class="summary-value">{{ pendingPoints() }}</span>
+      </div>
+    </div>
+
     <div class="summary-card redeemed">
       <div class="summary-icon"></div>
       <div class="summary-info">
@@ -46,72 +54,57 @@
         [class.active]="activeTab === 'points'"
         (click)="switchTab('points')"
       >
-         Points History
+        📈 Earning History
       </button>
       <button
         class="tab-btn"
         [class.active]="activeTab === 'redemptions'"
         (click)="switchTab('redemptions')"
       >
-         Redemption History
+        🛒 Redemption History
       </button>
     </div>
 
-    <!-- Points History Tab -->
+    <!-- Earning History Tab -->
     <div *ngIf="activeTab === 'points'" class="tab-content">
-      <!-- Empty State for Points -->
+      <!-- Empty State for Earnings -->
       <div *ngIf="pointsHistory().length === 0" class="empty-state">
-        <span class="empty-icon"></span>
-        <h3>No transactions yet</h3>
-        <p>Your points transactions will appear here once you earn or redeem points.</p>
+        <span class="empty-icon">📊</span>
+        <h3>No earnings yet</h3>
+        <p>Your earned points will appear here once you participate in events or receive rewards.</p>
       </div>
 
       <div *ngIf="pointsHistory().length > 0" class="table-container">
         <table class="data-table">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Description</th>
-              <th>Source</th>
-              <th>Event/Rank</th>
-              <th>Points</th>
-              <th>Status</th>
+              <th class="col-date">Date</th>
+              <th class="col-description">Description</th>
+              <th class="col-source">Source</th>
+              <th class="col-event">Event</th>
+              <th class="col-rank">Rank</th>
+              <th class="col-points">Points</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let transaction of pointsHistory()">
-              <td>{{ transaction.date }}</td>
-              <td>
-                <div class="transaction-cell">
-                  <span class="transaction-icon">{{ getTransactionIcon(transaction.type) }}</span>
-                  <span>{{ transaction.description }}</span>
-                </div>
-              </td>
-              <td>
+              <td class="col-date">{{ transaction.date }}</td>
+              <td class="col-description">{{ transaction.description }}</td>
+              <td class="col-source">
                 <span class="source-badge" [ngClass]="'source-' + (transaction.source?.toLowerCase() || 'direct')">
                   {{ transaction.source || 'Direct' }}
                 </span>
               </td>
-              <td>
-                <div *ngIf="transaction.eventName" class="event-info">
-                  <span class="event-badge">{{ transaction.eventName }}</span>
-                  <span *ngIf="transaction.rank" class="rank-badge">🏆 Rank #{{ transaction.rank }}</span>
-                </div>
+              <td class="col-event">
+                <span *ngIf="transaction.eventName" class="event-badge">{{ transaction.eventName }}</span>
                 <span *ngIf="!transaction.eventName" class="text-muted">-</span>
               </td>
-              <td>
-                <span
-                  class="points-value"
-                  [class.positive]="transaction.points > 0"
-                  [class.negative]="transaction.points < 0"
-                >
-                  {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
-                </span>
+              <td class="col-rank">
+                <span *ngIf="transaction.rank" class="rank-badge">🏆 #{{ transaction.rank }}</span>
+                <span *ngIf="!transaction.rank" class="text-muted">-</span>
               </td>
-              <td>
-                <span class="status-badge" [ngClass]="getStatusClass(transaction.status)">
-                  {{ transaction.status }}
-                </span>
+              <td class="col-points">
+                <span class="points-value positive">+{{ transaction.points }}</span>
               </td>
             </tr>
           </tbody>

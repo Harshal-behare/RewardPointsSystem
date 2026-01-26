@@ -161,9 +161,9 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             // Refund user points
             await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
 
-            // Record refund transaction
-            await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
-                redemption.Id, $"Redemption cancellation refund - Redemption ID: {redemption.Id}");
+            // Record refund transaction with Redemption source (not Event)
+            await _transactionService.RecordRedemptionRefundAsync(redemption.UserId, redemption.PointsSpent,
+                redemption.Id, "Points refunded - Redemption cancelled");
 
             redemption.Cancel(reason ?? "User cancelled redemption");
             await _unitOfWork.SaveChangesAsync();
@@ -184,9 +184,9 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             // Refund user points
             await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
 
-            // Record refund transaction
-            await _transactionService.RecordEarnedUserPointsAsync(redemption.UserId, redemption.PointsSpent,
-                redemption.Id, $"Redemption rejection refund - Redemption ID: {redemption.Id}");
+            // Record refund transaction with Redemption source (not Event)
+            await _transactionService.RecordRedemptionRefundAsync(redemption.UserId, redemption.PointsSpent,
+                redemption.Id, "Points refunded - Redemption rejected");
 
             redemption.Cancel(reason ?? "Rejected by administrator");
             await _unitOfWork.SaveChangesAsync();
