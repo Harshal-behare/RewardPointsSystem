@@ -82,7 +82,7 @@ namespace RewardPointsSystem.Application.Services.Events
             if (eventEntity == null)
                 throw new EventNotFoundException(id);
 
-            if (eventEntity.Status == EventStatus.Completed)
+            if (eventEntity.Status == EventStatus.Completed && updates.Status?.ToLower() != "completed")
                 throw new InvalidEventStateException(id, "Cannot modify completed events");
 
             var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
@@ -91,6 +91,45 @@ namespace RewardPointsSystem.Application.Services.Events
             var pointsPool = updates.TotalPointsPool ?? eventEntity.TotalPointsPool;
 
             eventEntity.UpdateDetails(name, eventDate, pointsPool, description);
+
+            // Handle status change if provided
+            if (!string.IsNullOrWhiteSpace(updates.Status))
+            {
+                var targetStatus = updates.Status.ToLower();
+                var currentStatus = eventEntity.Status;
+
+                // Apply status transitions based on target status
+                switch (targetStatus)
+                {
+                    case "draft":
+                        if (currentStatus == EventStatus.Upcoming)
+                            eventEntity.RevertToDraft();
+                        break;
+                    case "upcoming":
+                    case "published":
+                        if (currentStatus == EventStatus.Draft)
+                            eventEntity.Publish();
+                        break;
+                    case "active":
+                        if (currentStatus == EventStatus.Upcoming)
+                            eventEntity.Activate();
+                        else if (currentStatus == EventStatus.Draft)
+                        {
+                            eventEntity.Publish();
+                            eventEntity.Activate();
+                        }
+                        break;
+                    case "completed":
+                        if (currentStatus == EventStatus.Active)
+                            eventEntity.Complete();
+                        else if (currentStatus == EventStatus.Upcoming)
+                        {
+                            eventEntity.Activate();
+                            eventEntity.Complete();
+                        }
+                        break;
+                }
+            }
 
             await _unitOfWork.SaveChangesAsync();
             return eventEntity;

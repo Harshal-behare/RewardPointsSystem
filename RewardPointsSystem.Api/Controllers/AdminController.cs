@@ -161,8 +161,6 @@ namespace RewardPointsSystem.Api.Controllers
                         r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Pending),
                     ApprovedRedemptions = periodRedemptions.Count(r => 
                         r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Approved),
-                    DeliveredRedemptions = periodRedemptions.Count(r => 
-                        r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Delivered),
                     CancelledRedemptions = periodRedemptions.Count(r => 
                         r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Cancelled),
                     TotalPointsSpent = periodRedemptions.Sum(r => r.PointsSpent)

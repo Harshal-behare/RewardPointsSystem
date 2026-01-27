@@ -312,6 +312,24 @@
             &.negative {
               color: #e74c3c;
             }
+
+            &.refunded {
+              color: #27ae60;
+              text-decoration: line-through;
+              text-decoration-color: rgba(39, 174, 96, 0.5);
+            }
+          }
+
+          .refund-badge {
+            display: inline-block;
+            margin-left: 8px;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #27ae60;
+            background-color: #d4edda;
+            vertical-align: middle;
           }
 
           .status-badge {

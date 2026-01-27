@@ -38,8 +38,6 @@ namespace RewardPointsSystem.Application.MappingProfiles
                 .ForMember(dest => dest.ApprovedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.ProcessedAt, opt => opt.Ignore())
                 .ForMember(dest => dest.ProcessedBy, opt => opt.Ignore())
-                .ForMember(dest => dest.DeliveredAt, opt => opt.Ignore())
-                .ForMember(dest => dest.DeliveryNotes, opt => opt.Ignore())
                 .ForMember(dest => dest.RejectionReason, opt => opt.Ignore())
                 .ForMember(dest => dest.User, opt => opt.Ignore())
                 .ForMember(dest => dest.Product, opt => opt.Ignore())

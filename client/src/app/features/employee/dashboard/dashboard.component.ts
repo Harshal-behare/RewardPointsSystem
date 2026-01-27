@@ -104,16 +104,17 @@ export class EmployeeDashboardComponent implements OnInit {
       return;
     }
 
-    // Load points balance
+    // Load points balance (including pending from database)
     this.pointsService.getPointsAccount(this.currentUserId).subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const account = response.data;
-          // Update points balance, pending will be updated by redemption call
+          // Update points balance with all values from API (including pending from DB)
           this.pointsBalance.update(current => ({
             ...current,
             total: account.totalEarned,
             available: account.currentBalance,
+            pending: account.pendingPoints || 0,
             redeemed: account.totalRedeemed
           }));
         }
@@ -123,31 +124,7 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
-    // Load user's redemptions to calculate pending points
-    this.redemptionService.getMyRedemptions().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const redemptions = Array.isArray(response.data) ? response.data : 
-                             (response.data as any).items || [];
-          
-          // Calculate pending points (Pending or Approved status = not yet delivered)
-          const pendingPointsValue = redemptions
-            .filter((r: RedemptionDto) => {
-              const status = (r.status || '').toLowerCase();
-              return status === 'pending' || status === 'approved';
-            })
-            .reduce((sum: number, r: RedemptionDto) => sum + r.pointsSpent, 0);
-          
-          this.pointsBalance.update(current => ({
-            ...current,
-            pending: pendingPointsValue
-          }));
-        }
-      },
-      error: (error) => {
-        console.error('Error loading redemptions for pending points:', error);
-      }
-    });
+    // Note: Pending points is now loaded from the account API (stored in database)
 
     // Load recent transactions - top 5 only
     this.pointsService.getUserTransactions(this.currentUserId, 1, 5).subscribe({

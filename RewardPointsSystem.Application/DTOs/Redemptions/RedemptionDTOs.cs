@@ -28,7 +28,6 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
         public string Status { get; set; }
         public DateTime RequestedAt { get; set; }
         public DateTime? ApprovedAt { get; set; }
-        public DateTime? DeliveredAt { get; set; }
         public string RejectionReason { get; set; }  // Added for rejected/cancelled redemptions
     }
 
@@ -50,9 +49,7 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
         public DateTime? ApprovedAt { get; set; }
         public Guid? ApprovedBy { get; set; }
         public string ApprovedByName { get; set; }
-        public DateTime? DeliveredAt { get; set; }
         public DateTime? ProcessedAt { get; set; }
-        public string DeliveryNotes { get; set; }
         public string RejectionReason { get; set; }
     }
 
@@ -62,14 +59,6 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     public class ApproveRedemptionDto
     {
         public string? Notes { get; set; }
-    }
-
-    /// <summary>
-    /// DTO for delivering a redemption
-    /// </summary>
-    public class DeliverRedemptionDto
-    {
-        public string? DeliveryNotes { get; set; }
     }
 
     /// <summary>

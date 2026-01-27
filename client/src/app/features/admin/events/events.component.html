@@ -46,6 +46,12 @@
         </button>
         <button
           class="filter-tab"
+          [class.active]="selectedFilter() === 'Active'"
+          (click)="onFilterChange('Active')">
+          Active
+        </button>
+        <button
+          class="filter-tab"
           [class.active]="selectedFilter() === 'Completed'"
           (click)="onFilterChange('Completed')">
           Completed
@@ -190,6 +196,7 @@
             >
               <option value="Draft">Draft</option>
               <option value="Upcoming">Upcoming</option>
+              <option value="Active">Active</option>
               <option value="Completed">Completed</option>
             </select>
           </div>

@@ -20,5 +20,10 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<IEnumerable<UserPointsAccount>> GetAllAccountsAsync();
         Task<IEnumerable<UserPointsAccount>> GetTopAccountsAsync(int count);
         Task UpdateAccountAsync(UserPointsAccount account);
+        
+        // Pending points management (for tracking redemptions in progress)
+        Task AddPendingPointsAsync(Guid userId, int points);
+        Task ReleasePendingPointsAsync(Guid userId, int points);
+        Task CancelPendingPointsAsync(Guid userId, int points);
     }
 }

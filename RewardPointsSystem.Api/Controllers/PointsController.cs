@@ -69,6 +69,7 @@ namespace RewardPointsSystem.Api.Controllers
                     CurrentBalance = account.CurrentBalance,
                     TotalEarned = account.TotalEarned,
                     TotalRedeemed = account.TotalRedeemed,
+                    PendingPoints = account.PendingPoints,
                     LastTransaction = account.LastUpdatedAt,
                     CreatedAt = account.CreatedAt
                 };
@@ -116,12 +117,14 @@ namespace RewardPointsSystem.Api.Controllers
                         var isEventTransaction = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Event;
                         var eventId = isEventTransaction ? t.SourceId : (Guid?)null;
                         string eventName = null;
+                        string eventDescription = null;
                         int? eventRank = null;
                         
                         if (isEventTransaction && eventId.HasValue)
                         {
                             var evt = allEvents.FirstOrDefault(e => e.Id == eventId.Value);
                             eventName = evt?.Name;
+                            eventDescription = evt?.Description;
                             var participant = userParticipants.FirstOrDefault(p => p.EventId == eventId.Value);
                             eventRank = participant?.EventRank;
                         }
@@ -135,6 +138,7 @@ namespace RewardPointsSystem.Api.Controllers
                             Description = t.Description,
                             EventId = eventId,
                             EventName = eventName,
+                            EventDescription = eventDescription,
                             EventRank = eventRank,
                             RedemptionId = t.TransactionSource == RewardPointsSystem.Domain.Entities.Accounts.TransactionOrigin.Redemption ? t.SourceId : (Guid?)null,
                             TransactionSource = t.TransactionSource.ToString(),

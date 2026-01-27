@@ -10,7 +10,6 @@ namespace RewardPointsSystem.Domain.Entities.Operations
     {
         Pending,
         Approved,
-        Delivered,
         Cancelled
     }
 
@@ -41,10 +40,6 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         public Guid? ApprovedBy { get; private set; }
         public DateTime? ProcessedAt { get; private set; }
         public Guid? ProcessedBy { get; private set; }
-        public DateTime? DeliveredAt { get; private set; }
-
-        [StringLength(1000, ErrorMessage = "Delivery notes cannot exceed 1000 characters")]
-        public string? DeliveryNotes { get; private set; }
 
         [StringLength(500, ErrorMessage = "Rejection reason cannot exceed 500 characters")]
         public string? RejectionReason { get; private set; }
@@ -125,35 +120,10 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         }
 
         /// <summary>
-        /// Marks the redemption as delivered (Approved → Delivered)
-        /// </summary>
-        public void MarkAsDelivered(Guid processedBy, string? deliveryNotes = null)
-        {
-            if (Status != RedemptionStatus.Approved)
-                throw new InvalidRedemptionStateException(Id, $"Cannot mark as delivered with status {Status}.");
-
-            if (processedBy == Guid.Empty)
-                throw new ArgumentException("Processor ID cannot be empty.", nameof(processedBy));
-
-            Status = RedemptionStatus.Delivered;
-            DeliveredAt = DateTime.UtcNow;
-            DeliveryNotes = deliveryNotes;
-
-            if (!ProcessedAt.HasValue)
-            {
-                ProcessedAt = DateTime.UtcNow;
-                ProcessedBy = processedBy;
-            }
-        }
-
-        /// <summary>
         /// Cancels the redemption (Pending/Approved → Cancelled)
         /// </summary>
         public void Cancel(string reason)
         {
-            if (Status == RedemptionStatus.Delivered)
-                throw new InvalidRedemptionStateException(Id, "Cannot cancel a delivered redemption.");
-
             if (Status == RedemptionStatus.Cancelled)
                 throw new InvalidRedemptionStateException(Id, "Redemption is already cancelled.");
 
@@ -180,7 +150,7 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         /// </summary>
         public bool IsInFinalState()
         {
-            return Status == RedemptionStatus.Delivered || Status == RedemptionStatus.Cancelled;
+            return Status == RedemptionStatus.Approved || Status == RedemptionStatus.Cancelled;
         }
 
         /// <summary>

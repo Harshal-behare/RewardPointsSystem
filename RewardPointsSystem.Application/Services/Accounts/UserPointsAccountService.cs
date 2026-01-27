@@ -106,5 +106,59 @@ namespace RewardPointsSystem.Application.Services.Accounts
             await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
             await _unitOfWork.SaveChangesAsync();
         }
+
+        /// <summary>
+        /// Adds pending points when a redemption is created
+        /// </summary>
+        public async Task AddPendingPointsAsync(Guid userId, int points)
+        {
+            if (points <= 0)
+                throw new InvalidUserPointsOperationException("Points must be greater than zero");
+
+            var account = await GetAccountAsync(userId);
+            if (account == null)
+                throw new UserPointsAccountNotFoundException(userId);
+
+            account.AddPendingPoints(points, userId);
+
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Releases pending points when a redemption is approved
+        /// </summary>
+        public async Task ReleasePendingPointsAsync(Guid userId, int points)
+        {
+            if (points <= 0)
+                throw new InvalidUserPointsOperationException("Points must be greater than zero");
+
+            var account = await GetAccountAsync(userId);
+            if (account == null)
+                throw new UserPointsAccountNotFoundException(userId);
+
+            account.ReleasePendingPoints(points, userId);
+
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Cancels pending points and refunds to balance when a redemption is cancelled/rejected
+        /// </summary>
+        public async Task CancelPendingPointsAsync(Guid userId, int points)
+        {
+            if (points <= 0)
+                throw new InvalidUserPointsOperationException("Points must be greater than zero");
+
+            var account = await GetAccountAsync(userId);
+            if (account == null)
+                throw new UserPointsAccountNotFoundException(userId);
+
+            account.CancelPendingPoints(points, userId);
+
+            await _unitOfWork.UserPointsAccounts.UpdateAsync(account);
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

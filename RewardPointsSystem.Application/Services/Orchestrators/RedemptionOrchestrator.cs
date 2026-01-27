@@ -73,6 +73,9 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 // 6. Deduct user points (UserPointsAccountService)
                 await _accountService.DeductUserPointsAsync(userId, pointsCost);
 
+                // 6.1 Add to pending points (tracking for pending redemptions)
+                await _accountService.AddPendingPointsAsync(userId, pointsCost);
+
                 // 7. Record transaction (UserPointsTransactionService)
                 var redemption = Redemption.Create(userId, productId, pointsCost, quantity);
 
@@ -121,26 +124,11 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 throw new InvalidOperationException($"Only pending redemptions can be approved. Current status: {redemption.Status}");
 
             redemption.Approve(approvedBy);
+            
+            // Release pending points when approved (redemption is confirmed, no longer pending)
+            await _accountService.ReleasePendingPointsAsync(redemption.UserId, redemption.PointsSpent);
+            
             await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task DeliverRedemptionAsync(Guid redemptionId, Guid processedBy, string? notes = null)
-        {
-            var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
-            if (redemption == null)
-                throw new ArgumentException($"Redemption with ID {redemptionId} not found");
-
-            if (redemption.Status != RedemptionStatus.Approved)
-                throw new InvalidOperationException($"Only approved redemptions can be delivered. Current status: {redemption.Status}");
-
-            redemption.MarkAsDelivered(processedBy, notes);
-
-            await _unitOfWork.SaveChangesAsync();
-        }
-
-        public async Task MarkAsDeliveredAsync(Guid redemptionId, Guid processedBy)
-        {
-            await DeliverRedemptionAsync(redemptionId, processedBy, "Delivered");
         }
 
         public async Task CancelRedemptionAsync(Guid redemptionId, string reason)
@@ -149,17 +137,14 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption == null)
                 throw new ArgumentException($"Redemption with ID {redemptionId} not found");
 
-            if (redemption.Status == RedemptionStatus.Delivered)
-                throw new InvalidOperationException("Cannot cancel delivered redemptions");
-
             if (redemption.Status == RedemptionStatus.Cancelled)
                 throw new InvalidOperationException("Redemption is already cancelled");
 
             // Release reserved stock using the actual quantity from redemption
             await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
 
-            // Refund user points
-            await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
+            // Cancel pending points and refund to balance (this handles both operations)
+            await _accountService.CancelPendingPointsAsync(redemption.UserId, redemption.PointsSpent);
 
             // Record refund transaction with Redemption source (not Event)
             await _transactionService.RecordRedemptionRefundAsync(redemption.UserId, redemption.PointsSpent,
@@ -181,8 +166,8 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             // Release reserved stock using the actual quantity from redemption
             await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
 
-            // Refund user points
-            await _accountService.AddUserPointsAsync(redemption.UserId, redemption.PointsSpent);
+            // Cancel pending points and refund to balance (this handles both operations)
+            await _accountService.CancelPendingPointsAsync(redemption.UserId, redemption.PointsSpent);
 
             // Record refund transaction with Redemption source (not Event)
             await _transactionService.RecordRedemptionRefundAsync(redemption.UserId, redemption.PointsSpent,

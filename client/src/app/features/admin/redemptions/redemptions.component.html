@@ -256,13 +256,6 @@
       </div>
 
       <div class="details-section">
-        <h4>Delivery Address</h4>
-        <div class="address-box">
-          <p>{{ selectedRequest()?.deliveryAddress || 'Office Address: 123 Business Park, Suite 100, City, ST 12345' }}</p>
-        </div>
-      </div>
-
-      <div class="details-section">
         <h4>Request Information</h4>
         <div class="detail-row">
           <span class="detail-label">Request Date:</span>
@@ -279,10 +272,6 @@
         <div class="detail-row" *ngIf="selectedRequest()?.approvedAt">
           <span class="detail-label">Approved At:</span>
           <span class="detail-value">{{ selectedRequest()?.approvedAt | date: 'MMM dd, yyyy HH:mm' }}</span>
-        </div>
-        <div class="detail-row" *ngIf="selectedRequest()?.deliveredAt">
-          <span class="detail-label">Delivered At:</span>
-          <span class="detail-value">{{ selectedRequest()?.deliveredAt | date: 'MMM dd, yyyy HH:mm' }}</span>
         </div>
       </div>
 

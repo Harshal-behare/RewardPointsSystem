@@ -23,6 +23,7 @@ namespace RewardPointsSystem.Application.DTOs
         public string? Description { get; set; }
         public DateTime? EventDate { get; set; }
         public int? TotalPointsPool { get; set; }
+        public string? Status { get; set; }  // Added: Draft, Upcoming, Active, Completed
     }
 
     /// <summary>

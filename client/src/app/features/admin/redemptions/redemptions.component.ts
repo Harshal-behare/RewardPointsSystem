@@ -16,11 +16,9 @@ interface RedemptionRequest {
   productId: string;
   productName: string;
   pointsSpent: number;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
   requestedAt: Date;
   approvedAt?: Date;
-  deliveredAt?: Date;
-  deliveryAddress?: string;
   notes?: string;
   rejectionReason?: string;  // Add rejection reason field
 }
@@ -144,21 +142,18 @@ export class AdminRedemptionsComponent implements OnInit {
       status: status,
       requestedAt: new Date(redemption.requestedAt || redemption.createdAt),
       approvedAt: redemption.approvedAt ? new Date(redemption.approvedAt) : undefined,
-      deliveredAt: redemption.deliveredAt ? new Date(redemption.deliveredAt) : undefined,
-      deliveryAddress: redemption.deliveryAddress || redemption.shippingAddress,
       notes: redemption.notes || redemption.adminNotes,
       rejectionReason: rejectionReason
     };
   }
 
-  private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' {
+  private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' {
     if (typeof status === 'number') {
-      // Backend enum: Pending=0, Approved=1, Delivered=2, Cancelled=3
-      const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Delivered' | 'Cancelled' } = {
+      // Backend enum: Pending=0, Approved=1, Cancelled=2
+      const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' } = {
         0: 'Pending',
         1: 'Approved',
-        2: 'Delivered',
-        3: 'Cancelled'
+        2: 'Cancelled'
       };
       return statusMap[status] || 'Pending';
     }
@@ -166,7 +161,6 @@ export class AdminRedemptionsComponent implements OnInit {
     const statusStr = (status || '').toLowerCase();
     if (statusStr === 'pending') return 'Pending';
     if (statusStr === 'approved') return 'Approved';
-    if (statusStr === 'delivered') return 'Delivered';
     if (statusStr === 'cancelled') return 'Cancelled';
     if (statusStr === 'rejected') return 'Rejected';
     return 'Pending';
@@ -184,7 +178,6 @@ export class AdminRedemptionsComponent implements OnInit {
         pointsSpent: 5000,
         status: 'Pending',
         requestedAt: new Date('2026-01-10T10:30:00'),
-        deliveryAddress: '123 Main St, Suite 100, Cityville, ST 12345',
         notes: 'Please deliver during office hours (9 AM - 5 PM)'
       },
       {
@@ -196,8 +189,7 @@ export class AdminRedemptionsComponent implements OnInit {
         productName: 'Coffee Maker',
         pointsSpent: 3500,
         status: 'Pending',
-        requestedAt: new Date('2026-01-12T14:15:00'),
-        deliveryAddress: '456 Oak Avenue, Apt 5B, Townsburg, ST 54321'
+        requestedAt: new Date('2026-01-12T14:15:00')
       },
       {
         id: '3',
@@ -209,8 +201,7 @@ export class AdminRedemptionsComponent implements OnInit {
         pointsSpent: 2500,
         status: 'Approved',
         requestedAt: new Date('2026-01-09T09:00:00'),
-        approvedAt: new Date('2026-01-09T15:00:00'),
-        deliveryAddress: '789 Elm Street, Building C, Villageton, ST 98765'
+        approvedAt: new Date('2026-01-09T15:00:00')
       }
     ]);
     this.toast.warning('Using demo data - API unavailable');
@@ -221,7 +212,7 @@ export class AdminRedemptionsComponent implements OnInit {
     this.stats.set({
       total: requests.length,
       pending: requests.filter(r => r.status === 'Pending').length,
-      approved: requests.filter(r => r.status === 'Approved' || r.status === 'Delivered').length,
+      approved: requests.filter(r => r.status === 'Approved').length,
       rejected: requests.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length
     });
   }
@@ -238,9 +229,7 @@ export class AdminRedemptionsComponent implements OnInit {
     if (filter === 'All') {
       this.filteredRequests.set([...requests]);
     } else if (filter === 'Approved') {
-      this.filteredRequests.set(requests.filter(r => 
-        r.status === 'Approved' || r.status === 'Delivered'
-      ));
+      this.filteredRequests.set(requests.filter(r => r.status === 'Approved'));
     } else if (filter === 'Rejected') {
       this.filteredRequests.set(requests.filter(r => 
         r.status === 'Rejected' || r.status === 'Cancelled'
@@ -257,8 +246,7 @@ export class AdminRedemptionsComponent implements OnInit {
   getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'danger' | 'secondary' {
     const variantMap: { [key: string]: 'success' | 'warning' | 'info' | 'danger' | 'secondary' } = {
       'Pending': 'warning',
-      'Approved': 'info',
-      'Delivered': 'success',
+      'Approved': 'success',
       'Rejected': 'danger',
       'Cancelled': 'secondary'
     };

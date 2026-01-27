@@ -3,13 +3,13 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response.model';
 
-// Event Interfaces - Status: Draft (admin only), Upcoming (employees can register), Completed (finished)
+// Event Interfaces - Status: Draft (admin only), Upcoming (employees can register), Active (ongoing), Completed (finished)
 export interface EventDto {
   id: string;
   name: string;
   description: string;
   eventDate: string;
-  status: 'Draft' | 'Upcoming' | 'Completed';
+  status: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
   totalPointsPool: number;
   remainingPoints?: number;
   participantCount?: number;
@@ -46,10 +46,11 @@ export interface UpdateEventDto {
   description?: string;
   eventDate?: string;
   totalPointsPool?: number;
+  status?: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
 }
 
 export interface ChangeEventStatusDto {
-  status: 'Draft' | 'Upcoming' | 'Completed';
+  status: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
 }
 
 export interface RegisterParticipantDto {

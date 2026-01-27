@@ -13,6 +13,7 @@ namespace RewardPointsSystem.Application.DTOs.Points
         public int CurrentBalance { get; set; }
         public int TotalEarned { get; set; }
         public int TotalRedeemed { get; set; }
+        public int PendingPoints { get; set; }
         public DateTime LastTransaction { get; set; }
         public DateTime CreatedAt { get; set; }
     }
@@ -29,6 +30,7 @@ namespace RewardPointsSystem.Application.DTOs.Points
         public string Description { get; set; }
         public Guid? EventId { get; set; }
         public string EventName { get; set; }
+        public string EventDescription { get; set; }
         public int? EventRank { get; set; }
         public Guid? RedemptionId { get; set; }
         public string TransactionSource { get; set; }

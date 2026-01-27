@@ -11,6 +11,7 @@ export interface PointsAccountDto {
   currentBalance: number;
   totalEarned: number;
   totalRedeemed: number;
+  pendingPoints?: number;  // Points reserved for pending redemptions
   lastTransactionDate?: string;
 }
 
@@ -22,6 +23,7 @@ export interface PointsTransactionDto {
   points?: number;          // Alias for compatibility
   description: string;
   eventName?: string;
+  eventDescription?: string;  // Event's description from backend
   eventId?: string;
   eventRank?: number;
   redemptionId?: string;

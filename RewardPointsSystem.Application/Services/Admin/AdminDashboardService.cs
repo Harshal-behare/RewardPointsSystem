@@ -114,12 +114,12 @@ namespace RewardPointsSystem.Application.Services.Admin
 
             var productRedemptionCounts = products.ToDictionary(
                 p => p.Id.ToString(),
-                p => redemptions.Count(r => r.ProductId == p.Id && r.Status == RedemptionStatus.Delivered)
+                p => redemptions.Count(r => r.ProductId == p.Id && r.Status == RedemptionStatus.Approved)
             );
 
             var productRedemptionValues = products.ToDictionary(
                 p => p.Id.ToString(),
-                p => redemptions.Where(r => r.ProductId == p.Id && r.Status == RedemptionStatus.Delivered)
+                p => redemptions.Where(r => r.ProductId == p.Id && r.Status == RedemptionStatus.Approved)
                                .Sum(r => r.PointsSpent)
             );
 

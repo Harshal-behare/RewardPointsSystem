@@ -9,6 +9,7 @@ interface PointTransaction {
   id: string;
   date: string;
   description: string;
+  eventDescription?: string;  // Event's description for display
   points: number;
   type: 'earned' | 'redeemed' | 'expired';
   status: string;
@@ -23,9 +24,10 @@ interface RedemptionRecord {
   productName: string;
   points: number;
   quantity: number;
-  status: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
   trackingNumber?: string;
   rejectionReason?: string;
+  isRefunded?: boolean;  // Indicates if points were refunded (for cancelled/rejected)
 }
 
 @Component({
@@ -93,6 +95,8 @@ export class EmployeeAccountComponent implements OnInit {
           this.totalEarned.set(response.data.totalEarned);
           this.totalRedeemed.set(response.data.totalRedeemed);
           this.currentBalance.set(response.data.currentBalance);
+          // Use pendingPoints from API (stored in DB)
+          this.pendingPoints.set(response.data.pendingPoints || 0);
         }
         this.isLoadingAccount.set(false);
       },
@@ -124,9 +128,17 @@ export class EmployeeAccountComponent implements OnInit {
           
           // Filter only EARNED transactions for Earning History
           // Backend returns 'Earned' for TransactionType (not 'Credit')
-          const earnedTransactions = transactions.filter((t: PointsTransactionDto) => 
-            t.transactionType === 'Earned'
-          );
+          // Exclude refund transactions as they belong in Redemption History:
+          // 1. TransactionSource = 'Redemption' (new refunds)
+          // 2. Description contains 'refund' (legacy refunds with wrong source)
+          const earnedTransactions = transactions.filter((t: PointsTransactionDto) => {
+            if (t.transactionType !== 'Earned') return false;
+            if (t.transactionSource === 'Redemption') return false;
+            // Also filter out any transaction with 'refund' in description (legacy data)
+            const desc = (t.description || '').toLowerCase();
+            if (desc.includes('refund')) return false;
+            return true;
+          });
           
           const mappedTransactions: PointTransaction[] = earnedTransactions.map((t: PointsTransactionDto) => {
             const points = t.userPoints ?? t.points ?? 0;
@@ -147,10 +159,14 @@ export class EmployeeAccountComponent implements OnInit {
               t.eventRank
             );
             
+            // Use event description from backend if available, otherwise use parsed description
+            const displayDescription = t.eventDescription || description;
+            
             return {
               id: t.id,
               date: new Date(dateStr).toISOString().split('T')[0],
-              description: description,
+              description: displayDescription,
+              eventDescription: t.eventDescription,
               points: points,
               type: 'earned' as const,
               status: 'Completed',
@@ -264,6 +280,9 @@ export class EmployeeAccountComponent implements OnInit {
               // This covers: "Cancelled by user", "Cancelled by employee", "User cancelled", etc.
             }
             
+            // Mark as refunded if cancelled or rejected (points were returned)
+            const isRefunded = displayStatus === 'cancelled' || displayStatus === 'rejected';
+            
             return {
               id: r.id,
               date: new Date(r.requestedAt).toISOString().split('T')[0],
@@ -271,18 +290,15 @@ export class EmployeeAccountComponent implements OnInit {
               points: r.pointsSpent,
               quantity: r.quantity || 1,
               status: displayStatus,
-              trackingNumber: r.deliveryNotes,
-              rejectionReason: r.rejectionReason
+              rejectionReason: r.rejectionReason,
+              isRefunded: isRefunded
             };
           });
 
           this.redemptionHistory.set(mappedRedemptions);
           
-          // Calculate pending points from redemptions that are still pending or approved (not delivered yet)
-          const pendingPointsValue = mappedRedemptions
-            .filter(r => r.status === 'pending' || r.status === 'approved')
-            .reduce((sum, r) => sum + r.points, 0);
-          this.pendingPoints.set(pendingPointsValue);
+          // Note: pendingPoints is now loaded from the account API (stored in database)
+          // This ensures consistency across the system
         }
         this.isLoadingRedemptions.set(false);
       },
@@ -294,24 +310,21 @@ export class EmployeeAccountComponent implements OnInit {
     });
   }
 
-  private mapRedemptionStatus(status: string | number): 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' {
+  private mapRedemptionStatus(status: string | number): 'pending' | 'approved' | 'rejected' | 'cancelled' {
     // Handle numeric status values from backend enum
     if (typeof status === 'number') {
-      const numericMap: { [key: number]: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' } = {
+      const numericMap: { [key: number]: 'pending' | 'approved' | 'rejected' | 'cancelled' } = {
         0: 'pending',    // RedemptionStatus.Pending
         1: 'approved',   // RedemptionStatus.Approved
-        2: 'delivered',  // RedemptionStatus.Delivered
-        3: 'cancelled'   // RedemptionStatus.Cancelled
+        2: 'cancelled'   // RedemptionStatus.Cancelled
       };
       return numericMap[status] || 'pending';
     }
 
     // Handle string status values
-    const statusMap: { [key: string]: 'pending' | 'approved' | 'shipped' | 'delivered' | 'rejected' | 'cancelled' } = {
+    const statusMap: { [key: string]: 'pending' | 'approved' | 'rejected' | 'cancelled' } = {
       'Pending': 'pending',
       'Approved': 'approved',
-      'Shipped': 'shipped',
-      'Delivered': 'delivered',
       'Rejected': 'rejected',
       'Cancelled': 'cancelled'
     };
@@ -351,11 +364,8 @@ export class EmployeeAccountComponent implements OnInit {
     const statusMap: { [key: string]: string } = {
       'Completed': 'status-completed',
       'Approved': 'status-approved',
-      'Delivered': 'status-delivered',
       'pending': 'status-pending',
       'approved': 'status-approved',
-      'shipped': 'status-shipped',
-      'delivered': 'status-delivered',
       'rejected': 'status-rejected',
       'cancelled': 'status-cancelled'
     };

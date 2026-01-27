@@ -51,10 +51,10 @@ interface EventParticipant {
 export class AdminEventsComponent implements OnInit {
   events = signal<DisplayEvent[]>([]);
   
-  // Filter and Search - Only 3 statuses: Draft, Upcoming, Completed
+  // Filter and Search - 4 statuses: Draft, Upcoming, Active, Completed
   filteredEvents = signal<DisplayEvent[]>([]);
   searchQuery = signal('');
-  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'>('all');
 
   // Event Modal
   showModal = signal(false);
@@ -144,17 +144,19 @@ export class AdminEventsComponent implements OnInit {
 
   private mapEventStatus(status: string | number): string {
     if (typeof status === 'number') {
-      // Backend enum: Draft=0, Upcoming=1, Completed=2
+      // Backend enum: Draft=0, Upcoming=1, Active=2, Completed=3
       const statusMap: { [key: number]: string } = {
         0: 'Draft',
         1: 'Upcoming',
-        2: 'Completed'
+        2: 'Active',
+        3: 'Completed'
       };
       return statusMap[status] || 'Draft';
     }
-    // Normalize string status to one of 3 valid values
+    // Normalize string status to one of 4 valid values
     const normalizedStatus = (status || '').toLowerCase();
     if (normalizedStatus === 'upcoming' || normalizedStatus === 'published') return 'Upcoming';
+    if (normalizedStatus === 'active') return 'Active';
     if (normalizedStatus === 'completed') return 'Completed';
     return 'Draft';
   }
@@ -205,7 +207,7 @@ export class AdminEventsComponent implements OnInit {
     this.filteredEvents.set(filtered);
   }
 
-  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -218,6 +220,7 @@ export class AdminEventsComponent implements OnInit {
     const variantMap: { [key: string]: 'success' | 'warning' | 'info' | 'secondary' } = {
       'Draft': 'secondary',
       'Upcoming': 'info',
+      'Active': 'warning',
       'Completed': 'success'
     };
     return variantMap[status] || 'secondary';
@@ -376,7 +379,8 @@ export class AdminEventsComponent implements OnInit {
         name: this.selectedEvent.name,
         description: this.selectedEvent.description,
         eventDate: this.formatDateForAPI(this.selectedEvent.eventDate || ''),
-        totalPointsPool: this.selectedEvent.pointsPool
+        totalPointsPool: this.selectedEvent.pointsPool,
+        status: this.selectedEvent.status as 'Draft' | 'Upcoming' | 'Active' | 'Completed'
       };
 
       this.eventService.updateEvent(this.selectedEvent.id!, updateData).subscribe({

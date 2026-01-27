@@ -99,7 +99,6 @@ namespace RewardPointsSystem.Api.Controllers
                             Status = r.Status.ToString(),
                             RequestedAt = r.RequestedAt,
                             ApprovedAt = r.ApprovedAt,
-                            DeliveredAt = r.DeliveredAt,
                             RejectionReason = r.RejectionReason
                         };
                     });
@@ -172,9 +171,7 @@ namespace RewardPointsSystem.Api.Controllers
                     ApprovedAt = redemption.ApprovedAt,
                     ApprovedBy = redemption.ApprovedBy,
                     ApprovedByName = approverName,
-                    DeliveredAt = redemption.DeliveredAt,
                     ProcessedAt = redemption.ProcessedAt,
-                    DeliveryNotes = redemption.DeliveryNotes,
                     RejectionReason = redemption.RejectionReason
                 };
 
@@ -273,40 +270,6 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error approving redemption {RedemptionId}", id);
                 return Error("Failed to approve redemption");
-            }
-        }
-
-        /// <summary>
-        /// Mark redemption as delivered (Admin only)
-        /// </summary>
-        /// <param name="id">Redemption ID</param>
-        /// <param name="dto">Delivery data</param>
-        /// <response code="200">Redemption marked as delivered</response>
-        /// <response code="404">Redemption not found</response>
-        [HttpPatch("{id}/deliver")]
-        [Authorize(Roles = "Admin")]
-        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
-        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> MarkAsDelivered(Guid id, [FromBody] DeliverRedemptionDto dto)
-        {
-            try
-            {
-                // Get admin user ID from JWT claims
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var adminUserId))
-                    return UnauthorizedError("Admin user not authenticated");
-
-                await _redemptionOrchestrator.DeliverRedemptionAsync(id, adminUserId, dto?.DeliveryNotes);
-                return Success<object>(null, "Redemption marked as delivered");
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFoundError($"Redemption with ID {id} not found");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error marking redemption as delivered {RedemptionId}", id);
-                return Error("Failed to mark as delivered");
             }
         }
 
@@ -414,7 +377,6 @@ namespace RewardPointsSystem.Api.Controllers
                             Status = r.Status.ToString(),
                             RequestedAt = r.RequestedAt,
                             ApprovedAt = r.ApprovedAt,
-                            DeliveredAt = r.DeliveredAt,
                             RejectionReason = r.RejectionReason
                         };
                     });
@@ -516,7 +478,6 @@ namespace RewardPointsSystem.Api.Controllers
                             Status = r.Status.ToString(),
                             RequestedAt = r.RequestedAt,
                             ApprovedAt = r.ApprovedAt,
-                            DeliveredAt = r.DeliveredAt,
                             RejectionReason = r.RejectionReason
                         };
                     });

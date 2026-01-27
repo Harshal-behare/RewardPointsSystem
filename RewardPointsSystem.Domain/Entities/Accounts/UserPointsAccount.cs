@@ -25,6 +25,9 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         [Range(0, int.MaxValue, ErrorMessage = "Total redeemed cannot be negative")]
         public int TotalRedeemed { get; private set; }
 
+        [Range(0, int.MaxValue, ErrorMessage = "Pending points cannot be negative")]
+        public int PendingPoints { get; private set; }
+
         public DateTime CreatedAt { get; private set; }
         public DateTime LastUpdatedAt { get; private set; }
         public Guid? UpdatedBy { get; private set; }
@@ -44,6 +47,7 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
             CurrentBalance = 0;
             TotalEarned = 0;
             TotalRedeemed = 0;
+            PendingPoints = 0;
             CreatedAt = DateTime.UtcNow;
             LastUpdatedAt = DateTime.UtcNow;
         }
@@ -161,6 +165,77 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
             if (reversedBy.HasValue && reversedBy.Value != Guid.Empty)
             {
                 UpdatedBy = reversedBy.Value;
+            }
+        }
+
+        /// <summary>
+        /// Adds pending points (when a redemption is created)
+        /// </summary>
+        public void AddPendingPoints(int points, Guid? updatedBy = null)
+        {
+            ValidatePointsAmount(points);
+
+            PendingPoints += points;
+            LastUpdatedAt = DateTime.UtcNow;
+            
+            if (updatedBy.HasValue && updatedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = updatedBy.Value;
+            }
+        }
+
+        /// <summary>
+        /// Releases pending points (when redemption is approved/delivered/completed)
+        /// </summary>
+        public void ReleasePendingPoints(int points, Guid? updatedBy = null)
+        {
+            ValidatePointsAmount(points);
+
+            if (PendingPoints < points)
+            {
+                // Just clear what we have if trying to release more than pending
+                PendingPoints = 0;
+            }
+            else
+            {
+                PendingPoints -= points;
+            }
+            
+            LastUpdatedAt = DateTime.UtcNow;
+            
+            if (updatedBy.HasValue && updatedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = updatedBy.Value;
+            }
+        }
+
+        /// <summary>
+        /// Cancels pending points and returns them to balance (when redemption is cancelled/rejected)
+        /// </summary>
+        public void CancelPendingPoints(int points, Guid? updatedBy = null)
+        {
+            ValidatePointsAmount(points);
+
+            if (PendingPoints < points)
+            {
+                // Release what we have and add back to balance
+                CurrentBalance += PendingPoints;
+                TotalRedeemed -= PendingPoints;
+                PendingPoints = 0;
+            }
+            else
+            {
+                PendingPoints -= points;
+                // Note: CancelPendingPoints also reverses the debit
+                CurrentBalance += points;
+                TotalRedeemed -= points;
+            }
+            
+            LastUpdatedAt = DateTime.UtcNow;
+            
+            if (updatedBy.HasValue && updatedBy.Value != Guid.Empty)
+            {
+                UpdatedBy = updatedBy.Value;
             }
         }
 

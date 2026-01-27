@@ -370,7 +370,6 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.Quantity).IsRequired().HasDefaultValue(1);
                 entity.Property(e => e.Status).IsRequired().HasConversion<string>();
                 entity.Property(e => e.RequestedAt).IsRequired();
-                entity.Property(e => e.DeliveryNotes).HasMaxLength(1000);
                 entity.Property(e => e.RejectionReason).HasMaxLength(500);
 
                 // Check constraint for data integrity

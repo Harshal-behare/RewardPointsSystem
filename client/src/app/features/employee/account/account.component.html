@@ -142,7 +142,12 @@
               </td>
               <td>{{ redemption.quantity }}</td>
               <td>
-                <span class="points-value negative">-{{ redemption.points }}</span>
+                <span class="points-value" [ngClass]="redemption.isRefunded ? 'refunded' : 'negative'">
+                  {{ redemption.isRefunded ? '+' : '-' }}{{ redemption.points }}
+                </span>
+                <span *ngIf="redemption.isRefunded" class="refund-badge" title="Points refunded to your balance">
+                  ↩ Refunded
+                </span>
               </td>
               <td>
                 <span class="status-badge" [ngClass]="getStatusClass(redemption.status)">
@@ -150,13 +155,10 @@
                 </span>
               </td>
               <td>
-                <span *ngIf="redemption.trackingNumber" class="tracking-number">
-                  {{ redemption.trackingNumber }}
-                </span>
                 <span *ngIf="redemption.rejectionReason" class="rejection-reason">
                   {{ redemption.rejectionReason }}
                 </span>
-                <span *ngIf="!redemption.trackingNumber && !redemption.rejectionReason" class="text-muted">-</span>
+                <span *ngIf="!redemption.rejectionReason" class="text-muted">-</span>
               </td>
               <td>
                 <button 
