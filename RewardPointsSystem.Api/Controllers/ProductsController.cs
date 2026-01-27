@@ -4,6 +4,7 @@ using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Products;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Entities.Products;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -33,7 +34,7 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
-        /// Get all products
+        /// Get all active products (for employees/general use)
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductResponseDto>>), StatusCodes.Status200OK)]
@@ -41,7 +42,7 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Load products with ProductCategory navigation property
+                // Load only active products for general users
                 var products = await _unitOfWork.Products.FindWithIncludesAsync(
                     p => p.IsActive,
                     p => p.ProductCategory
@@ -77,6 +78,56 @@ namespace RewardPointsSystem.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error retrieving products");
+                return Error("Failed to retrieve products");
+            }
+        }
+
+        /// <summary>
+        /// Get all products including inactive (Admin only)
+        /// </summary>
+        [HttpGet("admin/all")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<ProductResponseDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllProductsAdmin()
+        {
+            try
+            {
+                // Load ALL products for admin (including inactive)
+                var products = await _unitOfWork.Products.FindWithIncludesAsync(
+                    p => true, // No filter - return all products
+                    p => p.ProductCategory
+                );
+                var allInventory = await _unitOfWork.Inventory.GetAllAsync();
+                var productDtos = new List<ProductResponseDto>();
+
+                foreach (var product in products)
+                {
+                    var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
+                    var inStock = await _inventoryService.IsInStockAsync(product.Id);
+                    var inventory = allInventory.FirstOrDefault(i => i.ProductId == product.Id);
+                    var stockQuantity = inventory != null ? inventory.QuantityAvailable - inventory.QuantityReserved : 0;
+
+                    productDtos.Add(new ProductResponseDto
+                    {
+                        Id = product.Id,
+                        Name = product.Name,
+                        Description = product.Description,
+                        CategoryId = product.CategoryId,
+                        CategoryName = product.ProductCategory?.Name,
+                        ImageUrl = product.ImageUrl,
+                        CurrentPointsCost = price,
+                        IsActive = product.IsActive,
+                        IsInStock = inStock,
+                        StockQuantity = stockQuantity,
+                        CreatedAt = product.CreatedAt
+                    });
+                }
+
+                return Success(productDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all products for admin");
                 return Error("Failed to retrieve products");
             }
         }
@@ -433,13 +484,17 @@ namespace RewardPointsSystem.Api.Controllers
                 var categories = await _unitOfWork.ProductCategories.GetAllAsync();
                 var activeCat = categories.Where(c => c.IsActive).OrderBy(c => c.DisplayOrder);
                 
+                // Get product counts for each category
+                var products = await _unitOfWork.Products.GetAllAsync();
+                
                 var categoryDtos = activeCat.Select(c => new CategoryResponseDto
                 {
                     Id = c.Id,
                     Name = c.Name,
                     Description = c.Description,
                     DisplayOrder = c.DisplayOrder,
-                    IsActive = c.IsActive
+                    IsActive = c.IsActive,
+                    ProductCount = products.Count(p => p.CategoryId == c.Id && p.IsActive)
                 });
 
                 return Success(categoryDtos);
@@ -448,6 +503,201 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error retrieving categories");
                 return Error("Failed to retrieve categories");
+            }
+        }
+
+        /// <summary>
+        /// Get all categories including inactive (Admin only)
+        /// </summary>
+        /// <response code="200">Returns all categories including inactive</response>
+        [HttpGet("categories/admin/all")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<CategoryResponseDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAllCategoriesAdmin()
+        {
+            try
+            {
+                var categories = await _unitOfWork.ProductCategories.GetAllAsync();
+                var products = await _unitOfWork.Products.GetAllAsync();
+                
+                var categoryDtos = categories.OrderBy(c => c.DisplayOrder).Select(c => new CategoryResponseDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Description = c.Description,
+                    DisplayOrder = c.DisplayOrder,
+                    IsActive = c.IsActive,
+                    ProductCount = products.Count(p => p.CategoryId == c.Id)
+                });
+
+                return Success(categoryDtos);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving all categories for admin");
+                return Error("Failed to retrieve categories");
+            }
+        }
+
+        /// <summary>
+        /// Create a new product category (Admin only)
+        /// </summary>
+        [HttpPost("categories")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<CategoryResponseDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> CreateCategory([FromBody] CreateCategoryDto dto)
+        {
+            try
+            {
+                // Validate name is not empty
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    return ValidationError(new[] { "Category name is required" });
+
+                // Check if category with same name already exists
+                var existingCategories = await _unitOfWork.ProductCategories.GetAllAsync();
+                if (existingCategories.Any(c => c.Name.Equals(dto.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
+                    return ValidationError(new[] { $"A category with name '{dto.Name}' already exists" });
+
+                var category = ProductCategory.Create(dto.Name, dto.DisplayOrder, dto.Description);
+                
+                await _unitOfWork.ProductCategories.AddAsync(category);
+                await _unitOfWork.SaveChangesAsync();
+
+                var response = new CategoryResponseDto
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Description = category.Description,
+                    DisplayOrder = category.DisplayOrder,
+                    IsActive = category.IsActive,
+                    ProductCount = 0
+                };
+
+                return CreatedAtAction(nameof(GetCategories), new { id = category.Id }, 
+                    new ApiResponse<CategoryResponseDto> { Success = true, Data = response, Message = "Category created successfully" });
+            }
+            catch (ArgumentException ex)
+            {
+                return ValidationError(new[] { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating category");
+                return Error("Failed to create category");
+            }
+        }
+
+        /// <summary>
+        /// Update a product category (Admin only)
+        /// </summary>
+        [HttpPut("categories/{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<CategoryResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> UpdateCategory(Guid id, [FromBody] UpdateCategoryDto dto)
+        {
+            try
+            {
+                var category = await _unitOfWork.ProductCategories.GetByIdAsync(id);
+                if (category == null)
+                    return NotFoundError($"Category with ID {id} not found");
+
+                // Check for duplicate name if name is being changed
+                if (!string.IsNullOrWhiteSpace(dto.Name) && !dto.Name.Equals(category.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    var existingCategories = await _unitOfWork.ProductCategories.GetAllAsync();
+                    if (existingCategories.Any(c => c.Id != id && c.Name.Equals(dto.Name.Trim(), StringComparison.OrdinalIgnoreCase)))
+                        return ValidationError(new[] { $"A category with name '{dto.Name}' already exists" });
+                }
+
+                // Update category info
+                category.UpdateInfo(
+                    dto.Name ?? category.Name,
+                    dto.DisplayOrder ?? category.DisplayOrder,
+                    dto.Description ?? category.Description
+                );
+
+                // Handle IsActive changes
+                if (dto.IsActive.HasValue && dto.IsActive.Value != category.IsActive)
+                {
+                    if (dto.IsActive.Value)
+                        category.Activate();
+                    else
+                        category.Deactivate();
+                }
+
+                await _unitOfWork.SaveChangesAsync();
+
+                var products = await _unitOfWork.Products.GetAllAsync();
+                var response = new CategoryResponseDto
+                {
+                    Id = category.Id,
+                    Name = category.Name,
+                    Description = category.Description,
+                    DisplayOrder = category.DisplayOrder,
+                    IsActive = category.IsActive,
+                    ProductCount = products.Count(p => p.CategoryId == category.Id)
+                };
+
+                return Success(response, "Category updated successfully");
+            }
+            catch (ArgumentException ex)
+            {
+                return ValidationError(new[] { ex.Message });
+            }
+            catch (InvalidOperationException ex)
+            {
+                return ValidationError(new[] { ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating category {CategoryId}", id);
+                return Error("Failed to update category");
+            }
+        }
+
+        /// <summary>
+        /// Delete a product category (Admin only)
+        /// </summary>
+        /// <remarks>
+        /// This will permanently delete the category if no products are assigned to it.
+        /// Products in this category will have their CategoryId set to null (handled by FK ON DELETE SET NULL).
+        /// </remarks>
+        [HttpDelete("categories/{id}")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> DeleteCategory(Guid id)
+        {
+            try
+            {
+                var category = await _unitOfWork.ProductCategories.GetByIdAsync(id);
+                if (category == null)
+                    return NotFoundError($"Category with ID {id} not found");
+
+                // Check if any products are using this category
+                var products = await _unitOfWork.Products.GetAllAsync();
+                var productsInCategory = products.Where(p => p.CategoryId == id).ToList();
+
+                if (productsInCategory.Any())
+                {
+                    return ValidationError(new[] { 
+                        $"Cannot delete category '{category.Name}' because it has {productsInCategory.Count} product(s) assigned. " +
+                        "Please reassign or remove the products first, or deactivate the category instead."
+                    });
+                }
+
+                await _unitOfWork.ProductCategories.DeleteAsync(category);
+                await _unitOfWork.SaveChangesAsync();
+
+                return Success<object>(null, $"Category '{category.Name}' deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting category {CategoryId}", id);
+                return Error("Failed to delete category");
             }
         }
     }

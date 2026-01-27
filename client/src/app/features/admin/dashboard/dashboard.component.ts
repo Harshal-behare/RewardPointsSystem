@@ -4,7 +4,6 @@ import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter } from 'rxjs';
 import { CardComponent } from '../../../shared/components/card/card.component';
-import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
 import { AdminService, DashboardStats } from '../../../core/services/admin.service';
@@ -35,7 +34,6 @@ interface RecentActivity {
     CommonModule,
     FormsModule,
     CardComponent,
-    BadgeComponent,
     ButtonComponent,
     KpiCardComponent
   ],

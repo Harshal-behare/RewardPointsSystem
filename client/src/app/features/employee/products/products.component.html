@@ -15,7 +15,7 @@
   <div class="filters-section">
     <div class="category-tabs">
       <button
-        *ngFor="let category of categories"
+        *ngFor="let category of categories()"
         class="category-tab"
         [class.active]="selectedCategory() === category.value"
         (click)="onCategoryChange(category.value)"
@@ -43,7 +43,8 @@
         <img [src]="product.image" [alt]="product.name" class="product-image" />
         <span *ngIf="product.featured" class="featured-badge">⭐ Featured</span>
         <span *ngIf="isOutOfStock(product)" class="stock-badge out-of-stock">Out of Stock</span>
-        <span *ngIf="isLowStock(product)" class="stock-badge low-stock">Only {{ product.stock }} left</span>
+        <span *ngIf="isLowStock(product) && !isOutOfStock(product)" class="stock-badge low-stock">Only {{ product.stock }} left</span>
+        <span *ngIf="hasPendingRedemption(product)" class="stock-badge pending">⏳ Pending Request</span>
       </div>
 
       <div class="product-content">
@@ -62,7 +63,9 @@
             [disabled]="!canRedeem(product)"
             (click)="openRedeemModal(product)"
           >
-            {{ isOutOfStock(product) ? 'Out of Stock' : (userPoints() >= product.points ? 'Redeem Now' : 'Insufficient Points') }}
+            {{ isOutOfStock(product) ? 'Out of Stock' : 
+               (hasPendingRedemption(product) ? 'Pending Request' : 
+               (userPoints() >= product.points ? 'Redeem Now' : 'Insufficient Points')) }}
           </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { ProductService, ProductDto } from '../../../core/services/product.service';
-import { RedemptionService, CreateRedemptionDto } from '../../../core/services/redemption.service';
+import { ProductService, ProductDto, CategoryDto } from '../../../core/services/product.service';
+import { RedemptionService, CreateRedemptionDto, RedemptionDto } from '../../../core/services/redemption.service';
 import { PointsService, PointsAccountDto } from '../../../core/services/points.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -37,16 +37,14 @@ export class EmployeeProductsComponent implements OnInit {
   redemptionValidationErrors = signal<string[]>([]);
   isLoading = signal<boolean>(true);
   currentUserId: string = '';
+  
+  // Track pending redemption product IDs
+  pendingRedemptionProductIds = signal<Set<string>>(new Set());
 
-  categories = [
-    { value: 'all', label: 'All Products' },
-    { value: 'Electronics', label: 'Electronics' },
-    { value: 'Gift Cards', label: 'Gift Cards' },
-    { value: 'Home & Kitchen', label: 'Home & Kitchen' },
-    { value: 'Fashion', label: 'Fashion' },
-    { value: 'Books', label: 'Books' },
-    { value: 'Sports', label: 'Sports & Outdoors' }
-  ];
+  // Dynamic categories loaded from database
+  categories = signal<{ value: string; label: string }[]>([
+    { value: 'all', label: 'All Products' }
+  ]);
 
   constructor(
     private productService: ProductService,
@@ -70,8 +68,53 @@ export class EmployeeProductsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    this.loadCategories();
     this.loadProducts();
     this.loadUserPoints();
+    this.loadPendingRedemptions();
+  }
+
+  loadPendingRedemptions(): void {
+    this.redemptionService.getMyRedemptions().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Get all product IDs that have pending redemptions
+          const pendingIds = new Set<string>();
+          const redemptions = Array.isArray(response.data) ? response.data : 
+                              (response.data as any).items || [];
+          redemptions.forEach((r: RedemptionDto) => {
+            if (r.status === 'Pending') {
+              pendingIds.add(r.productId);
+            }
+          });
+          this.pendingRedemptionProductIds.set(pendingIds);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading pending redemptions:', error);
+      }
+    });
+  }
+
+  loadCategories(): void {
+    this.productService.getCategories().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const dynamicCategories = response.data.map((c: CategoryDto) => ({
+            value: c.name,
+            label: c.name
+          }));
+          this.categories.set([
+            { value: 'all', label: 'All Products' },
+            ...dynamicCategories
+          ]);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+        // Keep default 'All Products' category on error
+      }
+    });
   }
 
   loadProducts(): void {
@@ -222,6 +265,7 @@ export class EmployeeProductsComponent implements OnInit {
           this.toast.success('Redemption request submitted! Your request is pending admin approval. You will be notified once it is processed.');
           this.loadProducts();
           this.loadUserPoints();
+          this.loadPendingRedemptions(); // Reload pending redemptions
         } else {
           this.toast.error(response.message || 'Failed to redeem product');
         }
@@ -235,7 +279,13 @@ export class EmployeeProductsComponent implements OnInit {
   }
 
   canRedeem(product: Product): boolean {
-    return this.userPoints() >= product.points && product.stock > 0;
+    return this.userPoints() >= product.points && 
+           product.stock > 0 && 
+           !this.hasPendingRedemption(product);
+  }
+
+  hasPendingRedemption(product: Product): boolean {
+    return this.pendingRedemptionProductIds().has(product.id);
   }
 
   isOutOfStock(product: Product): boolean {

@@ -6,7 +6,7 @@ import { filter } from 'rxjs';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
-import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto } from '../../../core/services/product.service';
+import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface DisplayProduct {
@@ -19,6 +19,15 @@ interface DisplayProduct {
   stock: number;
   imageUrl: string;
   status: 'Active' | 'Inactive';
+}
+
+interface DisplayCategory {
+  id: string;
+  name: string;
+  description?: string;
+  displayOrder: number;
+  isActive: boolean;
+  productCount: number;
 }
 
 @Component({
@@ -88,10 +97,19 @@ export class AdminProductsComponent implements OnInit {
   filteredProducts = signal<DisplayProduct[]>([]);
   searchQuery = signal('');
   selectedCategory = signal<string>('all');
+  selectedStatus = signal<string>('all'); // Status filter: 'all', 'Active', 'Inactive'
   categories = signal<string[]>(['all']);
   
   // Categories from database
   dbCategories = signal<CategoryDto[]>([]);
+
+  // Category Management
+  showCategoryModal = signal(false);
+  showCategoryFormModal = signal(false);
+  categoryModalMode = signal<'create' | 'edit'>('create');
+  selectedCategoryItem: Partial<DisplayCategory> = {};
+  categoryValidationErrors: string[] = [];
+  allCategories = signal<DisplayCategory[]>([]);
 
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
@@ -136,7 +154,8 @@ export class AdminProductsComponent implements OnInit {
 
   loadProducts(): void {
     this.isLoading.set(true);
-    this.productService.getProducts().subscribe({
+    // Use admin endpoint to get ALL products including inactive
+    this.productService.getAllProductsAdmin().subscribe({
       next: (response) => {
         if (response.success && response.data) {
           this.products.set(this.mapProductsToDisplay(response.data));
@@ -191,6 +210,11 @@ export class AdminProductsComponent implements OnInit {
       filtered = filtered.filter(product => product.category === this.selectedCategory());
     }
 
+    // Filter by status (Active/Inactive)
+    if (this.selectedStatus() !== 'all') {
+      filtered = filtered.filter(product => product.status === this.selectedStatus());
+    }
+
     // Filter by search query
     if (this.searchQuery().trim()) {
       const query = this.searchQuery().toLowerCase();
@@ -206,6 +230,11 @@ export class AdminProductsComponent implements OnInit {
 
   onCategoryChange(category: string): void {
     this.selectedCategory.set(category);
+    this.applyFilters();
+  }
+
+  onStatusChange(status: string): void {
+    this.selectedStatus.set(status);
     this.applyFilters();
   }
 
@@ -349,5 +378,195 @@ export class AdminProductsComponent implements OnInit {
   refreshData(): void {
     this.loadProducts();
     this.toast.info('Data refreshed!');
+  }
+
+  // ============================================
+  // CATEGORY MANAGEMENT METHODS
+  // ============================================
+
+  openCategoryModal(): void {
+    this.loadAllCategories();
+    this.showCategoryModal.set(true);
+  }
+
+  closeCategoryModal(): void {
+    this.showCategoryModal.set(false);
+  }
+
+  loadAllCategories(): void {
+    this.productService.getAllCategoriesAdmin().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.allCategories.set(response.data.map(c => ({
+            id: c.id,
+            name: c.name,
+            description: c.description,
+            displayOrder: c.displayOrder,
+            isActive: c.isActive,
+            productCount: c.productCount || 0
+          })));
+        }
+      },
+      error: (error) => {
+        console.error('Error loading all categories:', error);
+        this.toast.error('Failed to load categories');
+      }
+    });
+  }
+
+  openCreateCategoryForm(): void {
+    this.categoryModalMode.set('create');
+    this.selectedCategoryItem = {
+      name: '',
+      description: '',
+      displayOrder: this.allCategories().length,
+      isActive: true
+    };
+    this.categoryValidationErrors = [];
+    this.showCategoryFormModal.set(true);
+  }
+
+  openEditCategoryForm(category: DisplayCategory): void {
+    this.categoryModalMode.set('edit');
+    this.selectedCategoryItem = {
+      id: category.id,
+      name: category.name,
+      description: category.description,
+      displayOrder: category.displayOrder,
+      isActive: category.isActive,
+      productCount: category.productCount
+    };
+    this.categoryValidationErrors = [];
+    this.showCategoryFormModal.set(true);
+  }
+
+  closeCategoryFormModal(): void {
+    this.showCategoryFormModal.set(false);
+    this.selectedCategoryItem = {};
+  }
+
+  validateCategoryForm(): boolean {
+    this.categoryValidationErrors = [];
+
+    const name = (this.selectedCategoryItem.name || '').trim();
+    if (!name) {
+      this.categoryValidationErrors.push('Category name is required');
+    } else if (name.length < 2 || name.length > 100) {
+      this.categoryValidationErrors.push('Category name must be between 2 and 100 characters');
+    }
+
+    const description = (this.selectedCategoryItem.description || '').trim();
+    if (description && description.length > 500) {
+      this.categoryValidationErrors.push('Description cannot exceed 500 characters');
+    }
+
+    if (this.selectedCategoryItem.displayOrder !== undefined && this.selectedCategoryItem.displayOrder < 0) {
+      this.categoryValidationErrors.push('Display order cannot be negative');
+    }
+
+    return this.categoryValidationErrors.length === 0;
+  }
+
+  saveCategory(): void {
+    if (!this.validateCategoryForm()) {
+      return;
+    }
+
+    if (this.categoryModalMode() === 'create') {
+      const createData: CreateCategoryDto = {
+        name: this.selectedCategoryItem.name || '',
+        description: this.selectedCategoryItem.description,
+        displayOrder: this.selectedCategoryItem.displayOrder || 0
+      };
+
+      this.productService.createCategory(createData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.toast.success('Category created successfully!');
+            this.closeCategoryFormModal();
+            this.loadAllCategories();
+            this.loadCategories(); // Refresh the filter tabs
+          } else {
+            this.toast.error(response.message || 'Failed to create category');
+          }
+        },
+        error: (error) => {
+          console.error('Error creating category:', error);
+          this.toast.showValidationErrors(error);
+        }
+      });
+    } else {
+      const updateData: UpdateCategoryDto = {
+        name: this.selectedCategoryItem.name,
+        description: this.selectedCategoryItem.description,
+        displayOrder: this.selectedCategoryItem.displayOrder,
+        isActive: this.selectedCategoryItem.isActive
+      };
+
+      this.productService.updateCategory(this.selectedCategoryItem.id!, updateData).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.toast.success('Category updated successfully!');
+            this.closeCategoryFormModal();
+            this.loadAllCategories();
+            this.loadCategories(); // Refresh the filter tabs
+            this.loadProducts(); // Refresh products in case category name changed
+          } else {
+            this.toast.error(response.message || 'Failed to update category');
+          }
+        },
+        error: (error) => {
+          console.error('Error updating category:', error);
+          this.toast.showValidationErrors(error);
+        }
+      });
+    }
+  }
+
+  deleteCategory(category: DisplayCategory): void {
+    if (category.productCount > 0) {
+      this.toast.error(`Cannot delete category '${category.name}' because it has ${category.productCount} product(s). Please reassign or remove the products first.`);
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete the category '${category.name}'?`)) {
+      this.productService.deleteCategory(category.id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            this.toast.success(`Category '${category.name}' deleted successfully!`);
+            this.loadAllCategories();
+            this.loadCategories(); // Refresh the filter tabs
+          } else {
+            this.toast.error(response.message || 'Failed to delete category');
+          }
+        },
+        error: (error) => {
+          console.error('Error deleting category:', error);
+          this.toast.showApiError(error, 'Failed to delete category');
+        }
+      });
+    }
+  }
+
+  toggleCategoryStatus(category: DisplayCategory): void {
+    const updateData: UpdateCategoryDto = {
+      isActive: !category.isActive
+    };
+
+    this.productService.updateCategory(category.id, updateData).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toast.success(`Category '${category.name}' ${category.isActive ? 'deactivated' : 'activated'} successfully!`);
+          this.loadAllCategories();
+          this.loadCategories();
+        } else {
+          this.toast.error(response.message || 'Failed to update category');
+        }
+      },
+      error: (error) => {
+        console.error('Error toggling category status:', error);
+        this.toast.showApiError(error, 'Failed to update category');
+      }
+    });
   }
 }

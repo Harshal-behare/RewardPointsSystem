@@ -5,6 +5,10 @@
       <span class="action-icon">➕</span>
       <span>Add New Product</span>
     </button>
+    <button class="quick-action-btn secondary" (click)="openCategoryModal()">
+      <span class="action-icon">📁</span>
+      <span>Manage Categories</span>
+    </button>
     <button class="quick-action-btn secondary" (click)="refreshData()">
       <span class="action-icon">🔄</span>
       <span>Refresh</span>
@@ -44,6 +48,18 @@
           (click)="onCategoryChange(category)">
           {{ category }}
         </button>
+      </div>
+
+      <!-- Status Filter -->
+      <div class="status-filter">
+        <select 
+          class="status-select"
+          [ngModel]="selectedStatus()"
+          (ngModelChange)="onStatusChange($event)">
+          <option value="all">All Status</option>
+          <option value="Active">Active Only</option>
+          <option value="Inactive">Inactive Only</option>
+        </select>
       </div>
 
       <div class="search-box">
@@ -271,6 +287,170 @@
       </app-button>
       <app-button (clicked)="saveProduct()">
         {{ modalMode() === 'create' ? 'Add Product' : 'Save Changes' }}
+      </app-button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Management Modal -->
+<div class="modal-overlay" *ngIf="showCategoryModal()" (click)="closeCategoryModal()">
+  <div class="modal-content category-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>📁 Manage Categories</h3>
+      <button class="close-btn" (click)="closeCategoryModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <div class="category-actions">
+        <app-button (clicked)="openCreateCategoryForm()">
+          ➕ Add Category
+        </app-button>
+      </div>
+
+      <div class="categories-list" *ngIf="allCategories().length > 0">
+        <table class="categories-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Description</th>
+              <th>Order</th>
+              <th>Products</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let category of allCategories()" [class.inactive-row]="!category.isActive">
+              <td>
+                <strong>{{ category.name }}</strong>
+              </td>
+              <td class="description-cell">{{ category.description || '-' }}</td>
+              <td>{{ category.displayOrder }}</td>
+              <td>
+                <app-badge [variant]="category.productCount > 0 ? 'info' : 'secondary'" size="sm">
+                  {{ category.productCount }}
+                </app-badge>
+              </td>
+              <td>
+                <app-badge [variant]="category.isActive ? 'success' : 'secondary'" size="sm">
+                  {{ category.isActive ? 'Active' : 'Inactive' }}
+                </app-badge>
+              </td>
+              <td>
+                <div class="category-action-buttons">
+                  <button class="action-btn edit-btn" (click)="openEditCategoryForm(category)" title="Edit">
+                    ✏️
+                  </button>
+                  <button 
+                    class="action-btn toggle-btn" 
+                    (click)="toggleCategoryStatus(category)" 
+                    [title]="category.isActive ? 'Deactivate' : 'Activate'">
+                    {{ category.isActive ? '🚫' : '✅' }}
+                  </button>
+                  <button 
+                    class="action-btn delete-btn" 
+                    (click)="deleteCategory(category)" 
+                    title="Delete"
+                    [disabled]="category.productCount > 0">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="empty-categories" *ngIf="allCategories().length === 0">
+        <p>No categories found. Click "Add Category" to create one.</p>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeCategoryModal()">
+        Close
+      </app-button>
+    </div>
+  </div>
+</div>
+
+<!-- Category Form Modal (Add/Edit) -->
+<div class="modal-overlay" *ngIf="showCategoryFormModal()" (click)="closeCategoryFormModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h3>{{ categoryModalMode() === 'create' ? '➕ Add New Category' : '✏️ Edit Category' }}</h3>
+      <button class="close-btn" (click)="closeCategoryFormModal()">✕</button>
+    </div>
+
+    <div class="modal-body">
+      <form>
+        <!-- Validation Errors -->
+        <div class="error-list" *ngIf="categoryValidationErrors.length > 0">
+          <div class="error" *ngFor="let error of categoryValidationErrors">{{ error }}</div>
+        </div>
+        
+        <div class="form-group">
+          <label for="categoryName">Category Name *</label>
+          <input
+            id="categoryName"
+            type="text"
+            [(ngModel)]="selectedCategoryItem.name"
+            name="categoryName"
+            placeholder="Enter category name"
+            required
+            minlength="2"
+            maxlength="100"
+          />
+          <small class="form-hint">2-100 characters required</small>
+        </div>
+
+        <div class="form-group">
+          <label for="categoryDescription">Description</label>
+          <textarea
+            id="categoryDescription"
+            [(ngModel)]="selectedCategoryItem.description"
+            name="categoryDescription"
+            placeholder="Enter category description (optional)"
+            rows="3"
+            maxlength="500"
+          ></textarea>
+          <small class="form-hint">Max 500 characters</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="displayOrder">Display Order</label>
+            <input
+              id="displayOrder"
+              type="number"
+              [(ngModel)]="selectedCategoryItem.displayOrder"
+              name="displayOrder"
+              placeholder="0"
+              min="0"
+            />
+            <small class="form-hint">Lower numbers appear first</small>
+          </div>
+          <div class="form-group" *ngIf="categoryModalMode() === 'edit'">
+            <label for="categoryStatus">Status</label>
+            <select
+              id="categoryStatus"
+              [(ngModel)]="selectedCategoryItem.isActive"
+              name="categoryStatus"
+            >
+              <option [ngValue]="true">Active</option>
+              <option [ngValue]="false">Inactive</option>
+            </select>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeCategoryFormModal()">
+        Cancel
+      </app-button>
+      <app-button (clicked)="saveCategory()">
+        {{ categoryModalMode() === 'create' ? 'Add Category' : 'Save Changes' }}
       </app-button>
     </div>
   </div>

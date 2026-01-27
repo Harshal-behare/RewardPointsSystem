@@ -16,6 +16,7 @@ interface RedemptionRequest {
   productId: string;
   productName: string;
   pointsSpent: number;
+  quantity: number;
   status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
   requestedAt: Date;
   approvedAt?: Date;
@@ -139,6 +140,7 @@ export class AdminRedemptionsComponent implements OnInit {
       productId: redemption.productId,
       productName: redemption.productName || 'Unknown Product',
       pointsSpent: redemption.pointsSpent || redemption.pointsCost || 0,
+      quantity: redemption.quantity || 1,
       status: status,
       requestedAt: new Date(redemption.requestedAt || redemption.createdAt),
       approvedAt: redemption.approvedAt ? new Date(redemption.approvedAt) : undefined,
@@ -176,6 +178,7 @@ export class AdminRedemptionsComponent implements OnInit {
         productId: 'prod-001',
         productName: 'Wireless Headphones',
         pointsSpent: 5000,
+        quantity: 1,
         status: 'Pending',
         requestedAt: new Date('2026-01-10T10:30:00'),
         notes: 'Please deliver during office hours (9 AM - 5 PM)'
@@ -188,6 +191,7 @@ export class AdminRedemptionsComponent implements OnInit {
         productId: 'prod-002',
         productName: 'Coffee Maker',
         pointsSpent: 3500,
+        quantity: 2,
         status: 'Pending',
         requestedAt: new Date('2026-01-12T14:15:00')
       },
@@ -199,6 +203,7 @@ export class AdminRedemptionsComponent implements OnInit {
         productId: 'prod-003',
         productName: 'Fitness Tracker',
         pointsSpent: 2500,
+        quantity: 1,
         status: 'Approved',
         requestedAt: new Date('2026-01-09T09:00:00'),
         approvedAt: new Date('2026-01-09T15:00:00')

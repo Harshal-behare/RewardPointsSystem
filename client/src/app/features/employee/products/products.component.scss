@@ -192,6 +192,11 @@
           background-color: rgba(243, 156, 18, 0.95);
           color: #ffffff;
         }
+
+        &.pending {
+          background-color: rgba(52, 152, 219, 0.95);
+          color: #ffffff;
+        }
       }
     }
 

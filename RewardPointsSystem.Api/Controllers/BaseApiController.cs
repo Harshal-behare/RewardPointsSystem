@@ -111,5 +111,22 @@ namespace RewardPointsSystem.Api.Controllers
         {
             return PagedResponse<T>.Create(items, pageNumber, pageSize, totalCount);
         }
+
+        /// <summary>
+        /// Returns a validation error response (422)
+        /// </summary>
+        protected IActionResult ValidationError(IEnumerable<string> errors)
+        {
+            var response = new ValidationErrorResponse
+            {
+                Success = false,
+                Message = "Validation failed",
+                Errors = new Dictionary<string, string[]> { { "General", errors.ToArray() } },
+                StatusCode = StatusCodes.Status422UnprocessableEntity,
+                Timestamp = DateTime.UtcNow,
+                Path = HttpContext.Request.Path
+            };
+            return StatusCode(StatusCodes.Status422UnprocessableEntity, response);
+        }
     }
 }

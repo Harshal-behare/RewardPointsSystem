@@ -24,6 +24,20 @@ export interface CategoryDto {
   description?: string;
   displayOrder: number;
   isActive: boolean;
+  productCount?: number;
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  description?: string;
+  displayOrder: number;
+}
+
+export interface UpdateCategoryDto {
+  name?: string;
+  description?: string;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface CreateProductDto {
@@ -51,9 +65,14 @@ export interface UpdateProductDto {
 export class ProductService {
   constructor(private api: ApiService) {}
 
-  // Get all products
+  // Get all active products (for employees)
   getProducts(): Observable<ApiResponse<ProductDto[]>> {
     return this.api.get<ProductDto[]>('Products');
+  }
+
+  // Get all products including inactive (for admin)
+  getAllProductsAdmin(): Observable<ApiResponse<ProductDto[]>> {
+    return this.api.get<ProductDto[]>('Products/admin/all');
   }
 
   // Get product by ID
@@ -81,8 +100,28 @@ export class ProductService {
     return this.api.get<ProductDto[]>(`Products/category/${categoryId}`);
   }
 
-  // Get all product categories
+  // Get all product categories (active only)
   getCategories(): Observable<ApiResponse<CategoryDto[]>> {
     return this.api.get<CategoryDto[]>('Products/categories');
+  }
+
+  // Get all categories including inactive (for admin)
+  getAllCategoriesAdmin(): Observable<ApiResponse<CategoryDto[]>> {
+    return this.api.get<CategoryDto[]>('Products/categories/admin/all');
+  }
+
+  // Create new category (admin only)
+  createCategory(data: CreateCategoryDto): Observable<ApiResponse<CategoryDto>> {
+    return this.api.post<CategoryDto>('Products/categories', data);
+  }
+
+  // Update category (admin only)
+  updateCategory(id: string, data: UpdateCategoryDto): Observable<ApiResponse<CategoryDto>> {
+    return this.api.put<CategoryDto>(`Products/categories/${id}`, data);
+  }
+
+  // Delete category (admin only)
+  deleteCategory(id: string): Observable<ApiResponse<void>> {
+    return this.api.delete<void>(`Products/categories/${id}`);
   }
 }

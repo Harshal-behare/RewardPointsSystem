@@ -120,5 +120,27 @@ namespace RewardPointsSystem.Application.DTOs.Products
         public string? Description { get; set; }
         public int DisplayOrder { get; set; }
         public bool IsActive { get; set; }
+        public int ProductCount { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for creating a product category
+    /// </summary>
+    public class CreateCategoryDto
+    {
+        public string Name { get; set; }
+        public string? Description { get; set; }
+        public int DisplayOrder { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for updating a product category
+    /// </summary>
+    public class UpdateCategoryDto
+    {
+        public string? Name { get; set; }
+        public string? Description { get; set; }
+        public int? DisplayOrder { get; set; }
+        public bool? IsActive { get; set; }
     }
 }

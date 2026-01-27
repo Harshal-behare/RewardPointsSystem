@@ -155,6 +155,35 @@
     }
   }
 
+  // Status Filter Dropdown
+  .status-filter {
+    .status-select {
+      padding: 10px 36px 10px 16px;
+      border: 2px solid #E1E8ED;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #2C3E50;
+      background-color: white;
+      cursor: pointer;
+      transition: all 0.2s;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%237F8C8D' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      min-width: 150px;
+
+      &:focus {
+        outline: none;
+        border-color: #27AE60;
+      }
+
+      &:hover {
+        border-color: #27AE60;
+      }
+    }
+  }
+
   .search-box {
     position: relative;
     width: 280px;
@@ -557,5 +586,122 @@
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+}
+
+// Category Management Styles
+.category-modal {
+  max-width: 900px;
+  width: 95%;
+}
+
+.category-actions {
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: flex-start;
+}
+
+.categories-list {
+  overflow-x: auto;
+}
+
+.categories-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+
+  th, td {
+    padding: 12px 16px;
+    text-align: left;
+    border-bottom: 1px solid #E8EBED;
+  }
+
+  th {
+    background-color: #F8F9FA;
+    font-weight: 600;
+    color: #2C3E50;
+    white-space: nowrap;
+  }
+
+  tr {
+    transition: background-color 0.2s ease;
+
+    &:hover {
+      background-color: #F4F6F7;
+    }
+
+    &.inactive-row {
+      opacity: 0.6;
+      background-color: #F8F9FA;
+    }
+  }
+
+  .description-cell {
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #7A7A7A;
+  }
+}
+
+.category-action-buttons {
+  display: flex;
+  gap: 8px;
+
+  .action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &.edit-btn {
+      background-color: #EBF5FB;
+      
+      &:hover {
+        background-color: #3498DB;
+        color: white;
+      }
+    }
+
+    &.toggle-btn {
+      background-color: #FEF9E7;
+      
+      &:hover {
+        background-color: #F39C12;
+        color: white;
+      }
+    }
+
+    &.delete-btn {
+      background-color: #FDEDEC;
+      
+      &:hover:not(:disabled) {
+        background-color: #E74C3C;
+        color: white;
+      }
+
+      &:disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+.empty-categories {
+  padding: 40px;
+  text-align: center;
+  color: #7A7A7A;
+  
+  p {
+    margin: 0;
+    font-size: 15px;
   }
 }

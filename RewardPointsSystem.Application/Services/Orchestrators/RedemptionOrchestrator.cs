@@ -32,24 +32,41 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             _unitOfWork = unitOfWork;
         }
 
-        public async Task<RedemptionResult> ProcessRedemptionAsync(Guid userId, Guid productId)
+        public async Task<RedemptionResult> ProcessRedemptionAsync(Guid userId, Guid productId, int quantity = 1)
         {
             try
             {
+                // Validate quantity
+                if (quantity < 1)
+                    throw new InvalidOperationException("Quantity must be at least 1");
+                if (quantity > 10)
+                    throw new InvalidOperationException("Quantity cannot exceed 10 items per redemption");
+
+                // Check for existing pending redemption for this user and product
+                var existingRedemptions = await _unitOfWork.Redemptions.GetAllAsync();
+                var hasPendingRedemption = existingRedemptions.Any(r => 
+                    r.UserId == userId && 
+                    r.ProductId == productId && 
+                    r.Status == RedemptionStatus.Pending);
+                
+                if (hasPendingRedemption)
+                    throw new InvalidOperationException("You already have a pending redemption request for this product. Please wait for it to be processed before requesting again.");
+
                 // 1. Check balance (PointsAccountService)
                 var hasAccount = await _accountService.GetAccountAsync(userId) != null;
                 if (!hasAccount)
                     throw new InvalidOperationException($"User {userId} does not have a reward account");
 
-                // 2. Get points cost (PricingService)
-                var pointsCost = await _pricingService.GetCurrentPointsCostAsync(productId);
+                // 2. Get points cost per unit (PricingService)
+                var pointsCostPerUnit = await _pricingService.GetCurrentPointsCostAsync(productId);
+                var totalPointsCost = pointsCostPerUnit * quantity;
 
-                // 3. Check sufficient balance
-                var hasSufficientBalance = await _accountService.HasSufficientBalanceAsync(userId, pointsCost);
+                // 3. Check sufficient balance for total cost
+                var hasSufficientBalance = await _accountService.HasSufficientBalanceAsync(userId, totalPointsCost);
                 if (!hasSufficientBalance)
                 {
                     var currentBalance = await _accountService.GetBalanceAsync(userId);
-                    throw new InvalidOperationException($"Insufficient balance. Required: {pointsCost}, Available: {currentBalance}");
+                    throw new InvalidOperationException($"Insufficient balance. Required: {totalPointsCost}, Available: {currentBalance}");
                 }
 
                 // 4. Check stock (InventoryService)
@@ -58,7 +75,6 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                     throw new InvalidOperationException($"Product {productId} is out of stock");
 
                 // 4.1 Validate requested quantity against available inventory
-                int quantity = 1; // Default quantity, could be parameterized
                 var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == productId);
                 if (inventory == null)
                     throw new InvalidOperationException($"Inventory not found for product {productId}");
@@ -67,28 +83,28 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
                 if (quantity > availableQuantity)
                     throw new InvalidOperationException($"Insufficient quantity available. Requested: {quantity}, Available: {availableQuantity}");
 
-                // 5. Reserve stock (InventoryService) - using quantity from redemption
+                // 5. Reserve stock (InventoryService) - using requested quantity
                 await _inventoryService.ReserveStockAsync(productId, quantity);
 
-                // 6. Deduct user points (UserPointsAccountService)
-                await _accountService.DeductUserPointsAsync(userId, pointsCost);
+                // 6. Deduct user points (UserPointsAccountService) - total cost
+                await _accountService.DeductUserPointsAsync(userId, totalPointsCost);
 
                 // 6.1 Add to pending points (tracking for pending redemptions)
-                await _accountService.AddPendingPointsAsync(userId, pointsCost);
+                await _accountService.AddPendingPointsAsync(userId, totalPointsCost);
 
                 // 7. Record transaction (UserPointsTransactionService)
-                var redemption = Redemption.Create(userId, productId, pointsCost, quantity);
+                var redemption = Redemption.Create(userId, productId, totalPointsCost, quantity);
 
                 await _unitOfWork.Redemptions.AddAsync(redemption);
                 await _unitOfWork.SaveChangesAsync();
 
-                await _transactionService.RecordRedeemedUserPointsAsync(userId, pointsCost, redemption.Id,
-                    $"Product redemption - Redemption ID: {redemption.Id}");
+                await _transactionService.RecordRedeemedUserPointsAsync(userId, totalPointsCost, redemption.Id,
+                    $"Product redemption (Qty: {quantity}) - Redemption ID: {redemption.Id}");
 
                 return new RedemptionResult
                 {
                     Success = true,
-                    Message = $"Successfully processed redemption request for {pointsCost} points",
+                    Message = $"Successfully processed redemption request for {totalPointsCost} points (Quantity: {quantity})",
                     Redemption = redemption,
                     Transaction = (await _transactionService.GetUserTransactionsAsync(userId))
                         .OrderByDescending(t => t.Timestamp).FirstOrDefault()
@@ -108,7 +124,7 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
 
         public async Task<Redemption> CreateRedemptionAsync(Guid userId, Guid productId, int quantity = 1)
         {
-            var result = await ProcessRedemptionAsync(userId, productId);
+            var result = await ProcessRedemptionAsync(userId, productId, quantity);
             if (!result.Success)
                 throw new InvalidOperationException(result.Message);
             return result.Redemption;
