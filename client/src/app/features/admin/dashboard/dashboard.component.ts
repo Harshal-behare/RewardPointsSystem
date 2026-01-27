@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed, effect, model } from '@angular/core';
+import { Component, OnInit, signal, computed, effect, model, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { filter } from 'rxjs';
+import { filter, takeUntil } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
@@ -41,6 +42,8 @@ interface RecentActivity {
   styleUrls: ['./dashboard.component.scss']
 })
 export class AdminDashboardComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+  
   // Signals for reactive state management
   isLoading = signal(true);
   
@@ -85,13 +88,12 @@ export class AdminDashboardComponent implements OnInit {
     private productService: ProductService,
     private toast: ToastService
   ) {
-    // Use effect to reload data on route changes
-    effect(() => {
-      this.router.events.pipe(
-        filter(event => event instanceof NavigationEnd)
-      ).subscribe(() => {
-        this.loadDashboardData();
-      });
+    // Subscribe to route changes with automatic cleanup
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadDashboardData();
     });
   }
 

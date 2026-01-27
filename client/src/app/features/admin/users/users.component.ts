@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -35,6 +36,8 @@ interface DisplayUser {
   styleUrls: ['./users.component.scss']
 })
 export class AdminUsersComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+  
   users = signal<DisplayUser[]>([]);
   isLoading = signal(true);
   currentPage = signal(1);
@@ -53,13 +56,12 @@ export class AdminUsersComponent implements OnInit {
     private userService: UserService,
     private toast: ToastService
   ) {
-    // Use effect to reload data when navigating back to users
-    effect(() => {
-      this.router.events.pipe(
-        filter(event => event instanceof NavigationEnd)
-      ).subscribe(() => {
-        this.loadUsers();
-      });
+    // Subscribe to route changes with automatic cleanup
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadUsers();
     });
   }
 

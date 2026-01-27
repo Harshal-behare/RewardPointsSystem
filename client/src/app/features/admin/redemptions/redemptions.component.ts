@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, effect } from '@angular/core';
+import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { RedemptionService } from '../../../core/services/redemption.service';
@@ -44,6 +45,8 @@ interface Stats {
   styleUrls: ['./redemptions.component.scss']
 })
 export class AdminRedemptionsComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+  
   // Filter state
   currentFilter = signal<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
   
@@ -73,13 +76,12 @@ export class AdminRedemptionsComponent implements OnInit {
     private redemptionService: RedemptionService,
     private toast: ToastService
   ) {
-    // Use effect to reload data when navigating back to redemptions
-    effect(() => {
-      this.router.events.pipe(
-        filter(event => event instanceof NavigationEnd)
-      ).subscribe(() => {
-        this.loadRedemptions();
-      });
+    // Subscribe to route changes with automatic cleanup
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadRedemptions();
     });
   }
 

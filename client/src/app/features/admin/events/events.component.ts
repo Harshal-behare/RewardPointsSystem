@@ -1,8 +1,9 @@
-import { Component, OnInit, signal, computed, effect } from '@angular/core';
+import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
@@ -49,6 +50,8 @@ interface EventParticipant {
   styleUrls: ['./events.component.scss']
 })
 export class AdminEventsComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+  
   events = signal<DisplayEvent[]>([]);
   
   // Filter and Search - 4 statuses: Draft, Upcoming, Active, Completed
@@ -93,13 +96,12 @@ export class AdminEventsComponent implements OnInit {
     private pointsService: PointsService,
     private toast: ToastService
   ) {
-    // Use effect to reload data when navigating back to events
-    effect(() => {
-      this.router.events.pipe(
-        filter(event => event instanceof NavigationEnd)
-      ).subscribe(() => {
-        this.loadEvents();
-      });
+    // Subscribe to route changes with automatic cleanup
+    this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(() => {
+      this.loadEvents();
     });
   }
 

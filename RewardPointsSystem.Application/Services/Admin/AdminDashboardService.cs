@@ -26,56 +26,48 @@ namespace RewardPointsSystem.Application.Services.Admin
 
         public async Task<DashboardStats> GetDashboardStatsAsync()
         {
-            var users = await _unitOfWork.Users.GetAllAsync();
-            var events = await _unitOfWork.Events.GetAllAsync();
-            var participants = await _unitOfWork.EventParticipants.GetAllAsync();
+            // Use CountAsync with predicates instead of loading entire tables
+            var totalUsers = await _unitOfWork.Users.CountAsync();
+            var activeUsers = await _unitOfWork.Users.CountAsync(u => u.IsActive);
+            var totalEvents = await _unitOfWork.Events.CountAsync();
+            var activeEvents = await _unitOfWork.Events.CountAsync(e => e.Status == EventStatus.Upcoming);
+            var activeProducts = await _unitOfWork.Products.CountAsync(p => p.IsActive);
+            var pendingRedemptions = await _unitOfWork.Redemptions.CountAsync(r => r.Status == RedemptionStatus.Pending);
+            var totalRedemptions = await _unitOfWork.Redemptions.CountAsync();
+
+            // For aggregations, we still need to query but can be more selective
             var accounts = await _unitOfWork.UserPointsAccounts.GetAllAsync();
-            var transactions = await _unitOfWork.UserPointsTransactions.GetAllAsync();
-            var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
-            var products = await _unitOfWork.Products.GetAllAsync();
-
-            var activeUsers = users.Where(u => u.IsActive);
-            var activeEvents = events.Where(e => e.Status == EventStatus.Upcoming);
-            var completedEvents = events.Where(e => e.Status == EventStatus.Completed);
-            var activeProducts = products.Where(p => p.IsActive);
-
-            var userEventParticipation = activeUsers.ToDictionary(
-                u => u.Id.ToString(),
-                u => participants.Count(p => p.UserId == u.Id)
-            );
-
-            var userPointsEarned = activeUsers.ToDictionary(
-                u => u.Id.ToString(),
-                u => accounts.FirstOrDefault(a => a.UserId == u.Id)?.TotalEarned ?? 0
-            );
+            var totalPointsDistributed = accounts.Sum(a => a.TotalEarned);
+            var totalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed);
 
             return new DashboardStats
             {
-                TotalUsers = users.Count(),
-                TotalActiveUsers = activeUsers.Count(),
-                TotalEvents = events.Count(),
-                ActiveEvents = activeEvents.Count(),
-                TotalProducts = activeProducts.Count(), // Only count active products (not soft-deleted)
-                ActiveProducts = activeProducts.Count(),
-                TotalPointsDistributed = accounts.Sum(a => a.TotalEarned),
-                TotalPointsRedeemed = accounts.Sum(a => a.TotalRedeemed),
-                PendingRedemptions = redemptions.Count(r => r.Status == RedemptionStatus.Pending),
-                TotalRedemptions = redemptions.Count(),
-                TotalPointsAwarded = accounts.Sum(a => a.TotalEarned),
-                UserEventParticipation = userEventParticipation,
-                UserPointsEarned = userPointsEarned
+                TotalUsers = totalUsers,
+                TotalActiveUsers = activeUsers,
+                TotalEvents = totalEvents,
+                ActiveEvents = activeEvents,
+                TotalProducts = activeProducts,
+                ActiveProducts = activeProducts,
+                TotalPointsDistributed = totalPointsDistributed,
+                TotalPointsRedeemed = totalPointsRedeemed,
+                PendingRedemptions = pendingRedemptions,
+                TotalRedemptions = totalRedemptions,
+                TotalPointsAwarded = totalPointsDistributed,
+                UserEventParticipation = new Dictionary<string, int>(), // Loaded on demand
+                UserPointsEarned = new Dictionary<string, int>() // Loaded on demand
             };
         }
 
         public async Task<IEnumerable<Event>> GetEventsNeedingAllocationAsync()
         {
-            var events = await _unitOfWork.Events.GetAllAsync();
-            var participants = await _unitOfWork.EventParticipants.GetAllAsync();
+            // Use FindAsync with predicate instead of GetAllAsync
+            var completedEvents = await _unitOfWork.Events.FindAsync(e => e.Status == EventStatus.Completed);
+            var participants = await _unitOfWork.EventParticipants.FindAsync(p => p.PointsAwarded == null);
 
             // Events that are completed but have participants without points awarded
-            var eventsNeedingAllocation = events
-                .Where(e => e.Status == EventStatus.Completed)
-                .Where(e => participants.Any(p => p.EventId == e.Id && p.PointsAwarded == null))
+            var participantEventIds = participants.Select(p => p.EventId).ToHashSet();
+            var eventsNeedingAllocation = completedEvents
+                .Where(e => participantEventIds.Contains(e.Id))
                 .ToList();
 
             return eventsNeedingAllocation;
@@ -83,8 +75,8 @@ namespace RewardPointsSystem.Application.Services.Admin
 
         public async Task<IEnumerable<Redemption>> GetPendingRedemptionsAsync()
         {
-            var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
-            return redemptions.Where(r => r.Status == RedemptionStatus.Pending);
+            // Use FindAsync with predicate instead of GetAllAsync
+            return await _unitOfWork.Redemptions.FindAsync(r => r.Status == RedemptionStatus.Pending);
         }
 
         public async Task<IEnumerable<InventoryAlert>> GetInventoryAlertsAsync()
