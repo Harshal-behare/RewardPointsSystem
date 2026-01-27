@@ -190,6 +190,14 @@ namespace RewardPointsSystem.Domain.Entities.Products
         }
 
         /// <summary>
+        /// Updates the product category
+        /// </summary>
+        public void UpdateCategory(Guid? categoryId)
+        {
+            CategoryId = categoryId;
+        }
+
+        /// <summary>
         /// Sets the category (internal use for EF navigation)
         /// </summary>
         internal void SetCategory(ProductCategory category)

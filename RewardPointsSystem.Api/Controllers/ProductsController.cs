@@ -200,29 +200,76 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
+                // Get authenticated user ID
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                    return UnauthorizedError("User not authenticated");
+
+                _logger.LogInformation("UpdateProduct called for ID: {ProductId} by User: {UserId}", id, userId);
+                _logger.LogInformation("DTO received: Name={Name}, Description={Desc}, CategoryId={CatId}, PointsPrice={Price}, StockQuantity={Stock}, IsActive={Active}, ImageUrl={Img}",
+                    dto.Name, dto.Description?.Substring(0, Math.Min(50, dto.Description?.Length ?? 0)), 
+                    dto.CategoryId, dto.PointsPrice, dto.StockQuantity, dto.IsActive, dto.ImageUrl);
+
                 var existingProduct = await _unitOfWork.Products.GetByIdAsync(id);
                 if (existingProduct == null)
                     return NotFoundError($"Product with ID {id} not found");
+
+                _logger.LogInformation("Existing product found: Name={Name}, IsActive={Active}", existingProduct.Name, existingProduct.IsActive);
 
                 var updateData = new RewardPointsSystem.Application.DTOs.ProductUpdateDto
                 {
                     Name = dto.Name ?? existingProduct.Name,
                     Description = dto.Description ?? existingProduct.Description,
-                    Category = dto.CategoryId?.ToString() ?? existingProduct.CategoryId?.ToString(),
+                    Category = existingProduct.Category, // Keep existing category string (deprecated field)
                     ImageUrl = dto.ImageUrl ?? existingProduct.ImageUrl
                 };
 
+                _logger.LogInformation("Calling UpdateProductAsync...");
                 var product = await _productService.UpdateProductAsync(id, updateData);
+                _logger.LogInformation("UpdateProductAsync completed successfully");
 
-                // Update pricing if provided
-                if (dto.PointsPrice.HasValue)
+                // Update CategoryId if provided
+                if (dto.CategoryId.HasValue && dto.CategoryId.Value != existingProduct.CategoryId)
                 {
+                    _logger.LogInformation("Updating category to {CategoryId}", dto.CategoryId.Value);
+                    // Verify the category exists
+                    var category = await _unitOfWork.ProductCategories.GetByIdAsync(dto.CategoryId.Value);
+                    if (category != null)
+                    {
+                        product.UpdateCategory(dto.CategoryId.Value);
+                        await _unitOfWork.SaveChangesAsync();
+                        _logger.LogInformation("Category updated successfully");
+                    }
+                }
+
+                // Update active status if provided
+                if (dto.IsActive.HasValue && dto.IsActive.Value != product.IsActive)
+                {
+                    _logger.LogInformation("Updating IsActive from {Old} to {New}", product.IsActive, dto.IsActive.Value);
+                    if (dto.IsActive.Value)
+                    {
+                        product.Activate();
+                    }
+                    else
+                    {
+                        product.Deactivate();
+                    }
+                    await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("IsActive updated successfully");
+                }
+
+                // Update pricing if provided and greater than 0
+                if (dto.PointsPrice.HasValue && dto.PointsPrice.Value > 0)
+                {
+                    _logger.LogInformation("Updating pricing to {Price}", dto.PointsPrice.Value);
                     await _pricingService.UpdatePointsCostAsync(id, dto.PointsPrice.Value);
+                    _logger.LogInformation("Pricing updated successfully");
                 }
 
                 // Update inventory if provided
                 if (dto.StockQuantity.HasValue)
                 {
+                    _logger.LogInformation("Updating stock quantity to {Quantity}", dto.StockQuantity.Value);
                     // Check if inventory exists first
                     var existingInventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
                     if (existingInventory != null)
@@ -230,25 +277,25 @@ namespace RewardPointsSystem.Api.Controllers
                         // Update existing inventory - set the stock to the new value
                         var currentStock = existingInventory.QuantityAvailable;
                         var difference = dto.StockQuantity.Value - currentStock;
-                        if (difference > 0)
+                        _logger.LogInformation("Current stock: {Current}, Difference: {Diff}", currentStock, difference);
+                        if (difference != 0)
                         {
-                            await _inventoryService.AddStockAsync(id, difference);
-                        }
-                        else if (difference < 0)
-                        {
-                            // For reducing stock, we need to handle it differently
-                            // Just update the quantity directly via the inventory item
-                            existingInventory.Restock(dto.StockQuantity.Value - currentStock, Guid.Empty);
+                            // Use Adjust method which handles both positive and negative changes
+                            existingInventory.Adjust(difference, userId);
                             await _unitOfWork.SaveChangesAsync();
+                            _logger.LogInformation("Stock adjusted successfully");
                         }
                     }
                     else
                     {
+                        _logger.LogInformation("Creating new inventory for product");
                         // Create new inventory if it doesn't exist
                         await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 5);
+                        _logger.LogInformation("Inventory created successfully");
                     }
                 }
 
+                _logger.LogInformation("Fetching final product data for response...");
                 var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
                 var inStock = await _inventoryService.IsInStockAsync(product.Id);
                 
@@ -271,16 +318,28 @@ namespace RewardPointsSystem.Api.Controllers
                     CreatedAt = product.CreatedAt
                 };
 
+                _logger.LogInformation("Product update completed successfully");
                 return Success(productDto, "Product updated successfully");
             }
-            catch (KeyNotFoundException)
+            catch (KeyNotFoundException ex)
             {
+                _logger.LogWarning(ex, "KeyNotFoundException for product {ProductId}", id);
                 return NotFoundError($"Product with ID {id} not found");
+            }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "InvalidOperationException while updating product {ProductId}: {Message}", id, ex.Message);
+                return Error(ex.Message);
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "ArgumentException while updating product {ProductId}: {Message}", id, ex.Message);
+                return Error(ex.Message);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error updating product {ProductId}", id);
-                return Error("Failed to update product");
+                _logger.LogError(ex, "Unhandled exception updating product {ProductId}: {Type} - {Message}", id, ex.GetType().Name, ex.Message);
+                return Error($"Failed to update product: {ex.Message}");
             }
         }
 
