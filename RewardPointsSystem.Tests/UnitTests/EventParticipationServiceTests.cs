@@ -80,15 +80,15 @@ namespace RewardPointsSystem.Tests.UnitTests
         }
 
         [Fact]
-        public async Task RegisterParticipantAsync_WithCancelledEvent_ShouldThrowException()
+        public async Task RegisterParticipantAsync_WithDeletedEvent_ShouldThrowException()
         {
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
-            await _eventService.CancelEventAsync(eventObj.Id);
+            await _eventService.DeleteEventAsync(eventObj.Id);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
                 await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id));
         }
 

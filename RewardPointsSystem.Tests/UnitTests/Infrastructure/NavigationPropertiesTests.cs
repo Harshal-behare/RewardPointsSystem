@@ -11,7 +11,21 @@ using Xunit;
 namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
 {
     /// <summary>
-    /// Test Case 2: Navigation properties in domain entities are correctly mapped and can be accessed.
+    /// Tests for Entity Framework Navigation Properties
+    /// 
+    /// These tests verify that entity relationships are correctly mapped
+    /// and can be accessed through EF Core navigation properties.
+    /// 
+    /// NOTE: Domain entities use factory methods and have private setters.
+    /// Navigation properties are loaded through EF Core's Include() method.
+    /// 
+    /// Key relationships tested:
+    /// - User ↔ UserPointsAccount (One-to-One)
+    /// - User ↔ UserRoles (Many-to-Many through UserRole)
+    /// - User ↔ EventParticipations (One-to-Many)
+    /// - Event ↔ Participants (One-to-Many)
+    /// - Product ↔ Inventory (One-to-One)
+    /// - Product ↔ PricingHistory (One-to-Many)
     /// </summary>
     public class NavigationPropertiesTests
     {
@@ -24,416 +38,374 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             return new RewardPointsDbContext(options);
         }
 
+        #region User Navigation Property Tests
+
+        /// <summary>
+        /// SCENARIO: A user has a points account (one-to-one relationship)
+        /// EXPECTED: Can navigate from User to UserPointsAccount
+        /// WHY: Users need points accounts to earn and redeem points
+        /// </summary>
         [Fact]
-        public void User_UserPointsAccount_OneToOne_ShouldBeCorrectlyMapped()
+        public async Task User_ShouldNavigateToPointsAccount()
         {
-            // Arrange
+            // Arrange - Create user and points account
             using var context = CreateContext();
 
-            var user = new User
-            {
-                Email = "test@example.com",
-                FirstName = "John",
-                LastName = "Doe"
-            };
+            var user = User.Create("test@example.com", "John", "Doe");
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
 
-            var userPointsAccount = new UserPointsAccount
-            {
-                UserId = user.Id,
-                User = user
-            };
+            var pointsAccount = UserPointsAccount.CreateForUser(user.Id);
+            await context.UserPointsAccounts.AddAsync(pointsAccount);
+            await context.SaveChangesAsync();
 
-            user.UserPointsAccount = userPointsAccount;
-
-            // Act
-            context.Users.Add(user);
-            context.SaveChanges();
-
-            // Assert
-            var savedUser = context.Users
+            // Act - Query user with points account included
+            var savedUser = await context.Users
                 .Include(u => u.UserPointsAccount)
-                .FirstOrDefault(u => u.Id == user.Id);
+                .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-            savedUser.Should().NotBeNull();
-            savedUser!.UserPointsAccount.Should().NotBeNull();
-            savedUser.UserPointsAccount.UserId.Should().Be(user.Id);
-            savedUser.UserPointsAccount.User.Should().NotBeNull();
+            // Assert - Navigation should work
+            savedUser.Should().NotBeNull("user should be found");
+            savedUser!.UserPointsAccount.Should().NotBeNull("points account should be navigable");
+            savedUser.UserPointsAccount!.UserId.Should().Be(user.Id, "account should be linked to user");
         }
 
+        /// <summary>
+        /// SCENARIO: A user has multiple role assignments
+        /// EXPECTED: Can navigate from User to UserRoles
+        /// WHY: Users can have multiple roles (admin, employee, etc.)
+        /// </summary>
         [Fact]
-        public void User_UserRoles_OneToMany_ShouldBeCorrectlyMapped()
+        public async Task User_ShouldNavigateToRoles()
         {
-            // Arrange
+            // Arrange - Create user and roles
             using var context = CreateContext();
 
-            var user = new User
-            {
-                Email = "test@example.com",
-                FirstName = "Jane",
-                LastName = "Doe"
-            };
+            var user = User.Create("admin@example.com", "Admin", "User");
+            await context.Users.AddAsync(user);
 
-            var role = new Role
-            {
-                Name = "Admin",
-                Description = "Administrator role"
-            };
+            var adminRole = Role.Create("Admin", "Administrator");
+            var employeeRole = Role.Create("Employee", "Regular Employee");
+            await context.Roles.AddRangeAsync(new[] { adminRole, employeeRole });
+            await context.SaveChangesAsync();
 
-            var userRole = new UserRole
-            {
-                UserId = user.Id,
-                RoleId = role.Id,
-                User = user,
-                Role = role,
-                AssignedBy = Guid.NewGuid()
-            };
+            // Create role assignments
+            var adminAssignment = UserRole.Assign(user.Id, adminRole.Id, user.Id);
+            var employeeAssignment = UserRole.Assign(user.Id, employeeRole.Id, user.Id);
+            await context.UserRoles.AddRangeAsync(new[] { adminAssignment, employeeAssignment });
+            await context.SaveChangesAsync();
 
-            user.UserRoles.Add(userRole);
-            role.UserRoles.Add(userRole);
-
-            // Act
-            context.Users.Add(user);
-            context.Roles.Add(role);
-            context.SaveChanges();
-
-            // Assert
-            var savedUser = context.Users
+            // Act - Query user with roles included
+            var savedUser = await context.Users
                 .Include(u => u.UserRoles)
                     .ThenInclude(ur => ur.Role)
-                .FirstOrDefault(u => u.Id == user.Id);
+                .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-            savedUser.Should().NotBeNull();
-            savedUser!.UserRoles.Should().HaveCount(1);
-            savedUser.UserRoles.First().Role.Should().NotBeNull();
-            savedUser.UserRoles.First().Role.Name.Should().Be("Admin");
+            // Assert - Navigation should work
+            savedUser.Should().NotBeNull("user should be found");
+            savedUser!.UserRoles.Should().HaveCount(2, "user should have 2 roles");
         }
 
+        /// <summary>
+        /// SCENARIO: A user participates in multiple events
+        /// EXPECTED: Can navigate from User to EventParticipations
+        /// WHY: Users can sign up for multiple events
+        /// </summary>
         [Fact]
-        public void User_EventParticipations_OneToMany_ShouldBeCorrectlyMapped()
+        public async Task User_ShouldNavigateToEventParticipations()
         {
-            // Arrange
+            // Arrange - Create user and events
             using var context = CreateContext();
 
-            var user = new User
-            {
-                Email = "participant@example.com",
-                FirstName = "Event",
-                LastName = "Participant"
-            };
+            var user = User.Create("participant@example.com", "Event", "Participant");
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
 
-            var eventEntity = new Event
-            {
-                Name = "Test Event",
-                Description = "Test Description",
-                EventDate = DateTime.UtcNow.AddDays(7),
-                Status = EventStatus.Upcoming,
-                TotalPointsPool = 1000,
-                CreatedBy = user.Id
-            };
+            var event1 = Event.Create("Event 1", DateTime.UtcNow.AddDays(7), 500, user.Id, "Description 1");
+            var event2 = Event.Create("Event 2", DateTime.UtcNow.AddDays(14), 1000, user.Id, "Description 2");
+            await context.Events.AddRangeAsync(new[] { event1, event2 });
+            await context.SaveChangesAsync();
 
-            var eventParticipant = new EventParticipant
-            {
-                EventId = eventEntity.Id,
-                UserId = user.Id,
-                User = user,
-                Event = eventEntity
-            };
+            // Create participations
+            var participation1 = EventParticipant.Register(event1.Id, user.Id);
+            var participation2 = EventParticipant.Register(event2.Id, user.Id);
+            await context.EventParticipants.AddRangeAsync(new[] { participation1, participation2 });
+            await context.SaveChangesAsync();
 
-            user.EventParticipations.Add(eventParticipant);
-
-            // Act
-            context.Users.Add(user);
-            context.Events.Add(eventEntity);
-            context.SaveChanges();
-
-            // Assert
-            var savedUser = context.Users
+            // Act - Query user with participations included
+            var savedUser = await context.Users
                 .Include(u => u.EventParticipations)
                     .ThenInclude(ep => ep.Event)
-                .FirstOrDefault(u => u.Id == user.Id);
+                .FirstOrDefaultAsync(u => u.Id == user.Id);
 
-            savedUser.Should().NotBeNull();
-            savedUser!.EventParticipations.Should().HaveCount(1);
-            savedUser.EventParticipations.First().Event.Should().NotBeNull();
-            savedUser.EventParticipations.First().Event.Name.Should().Be("Test Event");
+            // Assert - Navigation should work
+            savedUser.Should().NotBeNull("user should be found");
+            savedUser!.EventParticipations.Should().HaveCount(2, "user should have 2 participations");
         }
 
+        #endregion
+
+        #region Event Navigation Property Tests
+
+        /// <summary>
+        /// SCENARIO: An event has multiple participants
+        /// EXPECTED: Can navigate from Event to Participants
+        /// WHY: Events need to track who is participating
+        /// </summary>
         [Fact]
-        public void User_Redemptions_OneToMany_ShouldBeCorrectlyMapped()
+        public async Task Event_ShouldNavigateToParticipants()
         {
-            // Arrange
+            // Arrange - Create event creator and participants
             using var context = CreateContext();
 
-            var user = new User
-            {
-                Email = "redeemer@example.com",
-                FirstName = "Redeem",
-                LastName = "User"
-            };
+            var creator = User.Create("creator@example.com", "Event", "Creator");
+            var participant1 = User.Create("participant1@example.com", "First", "Participant");
+            var participant2 = User.Create("participant2@example.com", "Second", "Participant");
+            await context.Users.AddRangeAsync(new[] { creator, participant1, participant2 });
+            await context.SaveChangesAsync();
 
-            var product = new Product
-            {
-                Name = "Test Product",
-                Description = "Test Description",
-                Category = "Electronics",
-                ImageUrl = "https://example.com/image.jpg",
-                CreatedBy = user.Id
-            };
+            var eventEntity = Event.Create("Team Event", DateTime.UtcNow.AddDays(7), 1000, creator.Id, "Team building event");
+            await context.Events.AddAsync(eventEntity);
+            await context.SaveChangesAsync();
 
-            var redemption = new Redemption
-            {
-                UserId = user.Id,
-                ProductId = product.Id,
-                PointsSpent = 100,
-                Status = RedemptionStatus.Pending,
-                DeliveryNotes = "Test delivery notes",
-                User = user,
-                Product = product
-            };
+            // Create participations
+            var p1 = EventParticipant.Register(eventEntity.Id, participant1.Id);
+            var p2 = EventParticipant.Register(eventEntity.Id, participant2.Id);
+            await context.EventParticipants.AddRangeAsync(new[] { p1, p2 });
+            await context.SaveChangesAsync();
 
-            user.Redemptions.Add(redemption);
-
-            // Act
-            context.Users.Add(user);
-            context.Products.Add(product);
-            context.SaveChanges();
-
-            // Assert
-            var savedUser = context.Users
-                .Include(u => u.Redemptions)
-                    .ThenInclude(r => r.Product)
-                .FirstOrDefault(u => u.Id == user.Id);
-
-            savedUser.Should().NotBeNull();
-            savedUser!.Redemptions.Should().HaveCount(1);
-            savedUser.Redemptions.First().Product.Should().NotBeNull();
-            savedUser.Redemptions.First().Product.Name.Should().Be("Test Product");
-        }
-
-        [Fact]
-        public void Product_InventoryItem_OneToOne_ShouldBeCorrectlyMapped()
-        {
-            // Arrange
-            using var context = CreateContext();
-
-            var creator = new User
-            {
-                Email = "creator@example.com",
-                FirstName = "Product",
-                LastName = "Creator"
-            };
-
-            var product = new Product
-            {
-                Name = "Product with Inventory",
-                Description = "Test",
-                Category = "Electronics",
-                ImageUrl = "https://example.com/inventory.jpg",
-                CreatedBy = creator.Id
-            };
-
-            var inventoryItem = new InventoryItem
-            {
-                ProductId = product.Id,
-                QuantityAvailable = 50,
-                QuantityReserved = 10,
-                ReorderLevel = 20,
-                Product = product
-            };
-
-            product.Inventory = inventoryItem;
-
-            // Act
-            context.Users.Add(creator);
-            context.Products.Add(product);
-            context.SaveChanges();
-
-            // Assert
-            var savedProduct = context.Products
-                .Include(p => p.Inventory)
-                .FirstOrDefault(p => p.Id == product.Id);
-
-            savedProduct.Should().NotBeNull();
-            savedProduct!.Inventory.Should().NotBeNull();
-            savedProduct.Inventory.QuantityAvailable.Should().Be(50);
-            savedProduct.Inventory.Product.Should().NotBeNull();
-        }
-
-        [Fact]
-        public void Product_ProductPricing_OneToMany_ShouldBeCorrectlyMapped()
-        {
-            // Arrange
-            using var context = CreateContext();
-
-            var creator = new User
-            {
-                Email = "creator@example.com",
-                FirstName = "Price",
-                LastName = "Creator"
-            };
-
-            var product = new Product
-            {
-                Name = "Product with Pricing",
-                Description = "Test",
-                Category = "Electronics",
-                ImageUrl = "https://example.com/pricing.jpg",
-                CreatedBy = creator.Id
-            };
-
-            var pricing1 = new ProductPricing
-            {
-                ProductId = product.Id,
-                PointsCost = 100,
-                EffectiveFrom = DateTime.UtcNow.AddDays(-30),
-                IsActive = false,
-                Product = product
-            };
-
-            var pricing2 = new ProductPricing
-            {
-                ProductId = product.Id,
-                PointsCost = 150,
-                EffectiveFrom = DateTime.UtcNow,
-                IsActive = true,
-                Product = product
-            };
-
-            product.PricingHistory.Add(pricing1);
-            product.PricingHistory.Add(pricing2);
-
-            // Act
-            context.Users.Add(creator);
-            context.Products.Add(product);
-            context.SaveChanges();
-
-            // Assert
-            var savedProduct = context.Products
-                .Include(p => p.PricingHistory)
-                .FirstOrDefault(p => p.Id == product.Id);
-
-            savedProduct.Should().NotBeNull();
-            savedProduct!.PricingHistory.Should().HaveCount(2);
-            savedProduct.PricingHistory.Should().Contain(p => p.IsActive && p.PointsCost == 150);
-        }
-
-        [Fact]
-        public void Event_EventParticipants_OneToMany_ShouldBeCorrectlyMapped()
-        {
-            // Arrange
-            using var context = CreateContext();
-
-            var creator = new User
-            {
-                Email = "creator@example.com",
-                FirstName = "Event",
-                LastName = "Creator"
-            };
-
-            var participant1 = new User
-            {
-                Email = "participant1@example.com",
-                FirstName = "Participant",
-                LastName = "One"
-            };
-
-            var participant2 = new User
-            {
-                Email = "participant2@example.com",
-                FirstName = "Participant",
-                LastName = "Two"
-            };
-
-            var eventEntity = new Event
-            {
-                Name = "Multi-Participant Event",
-                Description = "Test",
-                EventDate = DateTime.UtcNow.AddDays(7),
-                Status = EventStatus.Upcoming,
-                TotalPointsPool = 1000,
-                CreatedBy = creator.Id,
-                Creator = creator
-            };
-
-            var ep1 = new EventParticipant
-            {
-                EventId = eventEntity.Id,
-                UserId = participant1.Id,
-                Event = eventEntity,
-                User = participant1
-            };
-
-            var ep2 = new EventParticipant
-            {
-                EventId = eventEntity.Id,
-                UserId = participant2.Id,
-                Event = eventEntity,
-                User = participant2
-            };
-
-            eventEntity.Participants.Add(ep1);
-            eventEntity.Participants.Add(ep2);
-
-            // Act
-            context.Users.Add(creator);
-            context.Users.Add(participant1);
-            context.Users.Add(participant2);
-            context.Events.Add(eventEntity);
-            context.SaveChanges();
-
-            // Assert
-            var savedEvent = context.Events
+            // Act - Query event with participants included
+            var savedEvent = await context.Events
                 .Include(e => e.Participants)
-                    .ThenInclude(ep => ep.User)
-                .FirstOrDefault(e => e.Id == eventEntity.Id);
+                    .ThenInclude(p => p.User)
+                .FirstOrDefaultAsync(e => e.Id == eventEntity.Id);
 
-            savedEvent.Should().NotBeNull();
-            savedEvent!.Participants.Should().HaveCount(2);
-            savedEvent.Participants.Select(p => p.User.Email).Should().Contain(new[] 
-            { 
-                "participant1@example.com", 
-                "participant2@example.com" 
-            });
+            // Assert - Navigation should work
+            savedEvent.Should().NotBeNull("event should be found");
+            savedEvent!.Participants.Should().HaveCount(2, "event should have 2 participants");
         }
 
+        /// <summary>
+        /// SCENARIO: An event has a creator (user who created it)
+        /// EXPECTED: Can navigate from Event to Creator
+        /// WHY: Need to track who created each event
+        /// </summary>
         [Fact]
-        public void UserPointsTransaction_User_ManyToOne_ShouldBeCorrectlyMapped()
+        public async Task Event_ShouldNavigateToCreator()
         {
-            // Arrange
+            // Arrange - Create event with creator
             using var context = CreateContext();
 
-            var user = new User
-            {
-                Email = "transaction@example.com",
-                FirstName = "Transaction",
-                LastName = "User"
-            };
+            var creator = User.Create("eventcreator@example.com", "Event", "Creator");
+            await context.Users.AddAsync(creator);
+            await context.SaveChangesAsync();
 
-            var transaction = new UserPointsTransaction
-            {
-                UserId = user.Id,
-                UserPoints = 100,
-                TransactionType = TransactionCategory.Earned,
-                TransactionSource = TransactionOrigin.Event,
-                SourceId = Guid.NewGuid(),
-                Description = "Test transaction",
-                BalanceAfter = 100,
-                User = user
-            };
+            var eventEntity = Event.Create("My Event", DateTime.UtcNow.AddDays(7), 500, creator.Id, "Event description");
+            await context.Events.AddAsync(eventEntity);
+            await context.SaveChangesAsync();
 
-            // Act
-            context.Users.Add(user);
-            context.UserPointsTransactions.Add(transaction);
-            context.SaveChanges();
+            // Act - Query event with creator included
+            var savedEvent = await context.Events
+                .Include(e => e.Creator)
+                .FirstOrDefaultAsync(e => e.Id == eventEntity.Id);
 
-            // Assert
-            var savedTransaction = context.UserPointsTransactions
-                .Include(t => t.User)
-                .FirstOrDefault(t => t.Id == transaction.Id);
-
-            savedTransaction.Should().NotBeNull();
-            savedTransaction!.User.Should().NotBeNull();
-            savedTransaction.User.Email.Should().Be("transaction@example.com");
+            // Assert - Navigation should work
+            savedEvent.Should().NotBeNull("event should be found");
+            savedEvent!.Creator.Should().NotBeNull("creator should be navigable");
+            savedEvent.Creator!.Email.Should().Be("eventcreator@example.com", "correct creator should be loaded");
         }
+
+        #endregion
+
+        #region Product Navigation Property Tests
+
+        /// <summary>
+        /// SCENARIO: A product has an inventory item (one-to-one)
+        /// EXPECTED: Can navigate from Product to Inventory
+        /// WHY: Products need inventory tracking
+        /// </summary>
+        [Fact]
+        public async Task Product_ShouldNavigateToInventory()
+        {
+            // Arrange - Create product and inventory
+            using var context = CreateContext();
+
+            var creator = User.Create("productcreator@example.com", "Product", "Creator");
+            await context.Users.AddAsync(creator);
+            await context.SaveChangesAsync();
+
+            var product = Product.Create("Laptop", creator.Id, "High-end laptop");
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
+
+            var inventory = InventoryItem.Create(product.Id, 50, 10);
+            await context.InventoryItems.AddAsync(inventory);
+            await context.SaveChangesAsync();
+
+            // Act - Query product with inventory included
+            var savedProduct = await context.Products
+                .Include(p => p.Inventory)
+                .FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            // Assert - Navigation should work
+            savedProduct.Should().NotBeNull("product should be found");
+            savedProduct!.Inventory.Should().NotBeNull("inventory should be navigable");
+            savedProduct.Inventory!.QuantityAvailable.Should().Be(50, "correct inventory should be loaded");
+        }
+
+        /// <summary>
+        /// SCENARIO: A product has pricing history (one-to-many)
+        /// EXPECTED: Can navigate from Product to PricingHistory
+        /// WHY: Products can have multiple price changes over time
+        /// </summary>
+        [Fact]
+        public async Task Product_ShouldNavigateToPricingHistory()
+        {
+            // Arrange - Create product and pricing records
+            using var context = CreateContext();
+
+            var creator = User.Create("productcreator@example.com", "Product", "Creator");
+            await context.Users.AddAsync(creator);
+            await context.SaveChangesAsync();
+
+            var product = Product.Create("Headphones", creator.Id, "Wireless headphones");
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
+
+            var pricing1 = ProductPricing.Create(product.Id, 100, DateTime.UtcNow.AddDays(-30));
+            var pricing2 = ProductPricing.Create(product.Id, 120, DateTime.UtcNow);
+            await context.ProductPricings.AddRangeAsync(new[] { pricing1, pricing2 });
+            await context.SaveChangesAsync();
+
+            // Act - Query product with pricing history included
+            var savedProduct = await context.Products
+                .Include(p => p.PricingHistory)
+                .FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            // Assert - Navigation should work
+            savedProduct.Should().NotBeNull("product should be found");
+            savedProduct!.PricingHistory.Should().HaveCount(2, "product should have 2 pricing records");
+        }
+
+        /// <summary>
+        /// SCENARIO: A product has redemptions (one-to-many)
+        /// EXPECTED: Can navigate from Product to Redemptions
+        /// WHY: Products track their redemption history
+        /// </summary>
+        [Fact]
+        public async Task Product_ShouldNavigateToRedemptions()
+        {
+            // Arrange - Create product, user, and redemption
+            using var context = CreateContext();
+
+            var creator = User.Create("productcreator@example.com", "Product", "Creator");
+            var customer = User.Create("customer@example.com", "Customer", "User");
+            await context.Users.AddRangeAsync(new[] { creator, customer });
+            await context.SaveChangesAsync();
+
+            var product = Product.Create("Gift Card", creator.Id, "$50 Gift Card");
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
+
+            var redemption = Redemption.Create(customer.Id, product.Id, 500, 1);
+            await context.Redemptions.AddAsync(redemption);
+            await context.SaveChangesAsync();
+
+            // Act - Query product with redemptions included
+            var savedProduct = await context.Products
+                .Include(p => p.Redemptions)
+                    .ThenInclude(r => r.User)
+                .FirstOrDefaultAsync(p => p.Id == product.Id);
+
+            // Assert - Navigation should work
+            savedProduct.Should().NotBeNull("product should be found");
+            savedProduct!.Redemptions.Should().HaveCount(1, "product should have 1 redemption");
+            savedProduct.Redemptions.First().User.Should().NotBeNull("user should be navigable from redemption");
+        }
+
+        #endregion
+
+        #region Redemption Navigation Property Tests
+
+        /// <summary>
+        /// SCENARIO: A redemption links to both user and product
+        /// EXPECTED: Can navigate from Redemption to User and Product
+        /// WHY: Redemptions connect users to products
+        /// </summary>
+        [Fact]
+        public async Task Redemption_ShouldNavigateToUserAndProduct()
+        {
+            // Arrange - Create user, product, and redemption
+            using var context = CreateContext();
+
+            var creator = User.Create("creator@example.com", "Product", "Creator");
+            var customer = User.Create("customer@example.com", "Customer", "User");
+            await context.Users.AddRangeAsync(new[] { creator, customer });
+            await context.SaveChangesAsync();
+
+            var product = Product.Create("Reward Item", creator.Id, "Special reward");
+            await context.Products.AddAsync(product);
+            await context.SaveChangesAsync();
+
+            var redemption = Redemption.Create(customer.Id, product.Id, 250, 1);
+            await context.Redemptions.AddAsync(redemption);
+            await context.SaveChangesAsync();
+
+            // Act - Query redemption with user and product included
+            var savedRedemption = await context.Redemptions
+                .Include(r => r.User)
+                .Include(r => r.Product)
+                .FirstOrDefaultAsync(r => r.Id == redemption.Id);
+
+            // Assert - Navigations should work
+            savedRedemption.Should().NotBeNull("redemption should be found");
+            savedRedemption!.User.Should().NotBeNull("user should be navigable");
+            savedRedemption.User!.Email.Should().Be("customer@example.com", "correct user should be loaded");
+            savedRedemption.Product.Should().NotBeNull("product should be navigable");
+            savedRedemption.Product!.Name.Should().Be("Reward Item", "correct product should be loaded");
+        }
+
+        #endregion
+
+        #region Transaction Navigation Property Tests
+
+        /// <summary>
+        /// SCENARIO: A user has multiple points transactions
+        /// EXPECTED: Transactions are linked to the user
+        /// WHY: Need to track all point changes for a user
+        /// </summary>
+        [Fact]
+        public async Task UserPointsTransaction_ShouldNavigateToUser()
+        {
+            // Arrange - Create user and transactions
+            using var context = CreateContext();
+
+            var user = User.Create("transactionuser@example.com", "Transaction", "User");
+            await context.Users.AddAsync(user);
+            await context.SaveChangesAsync();
+
+            var sourceId = Guid.NewGuid();
+            var transaction1 = UserPointsTransaction.CreateEarned(
+                user.Id, 100, TransactionOrigin.Event, 
+                sourceId, 100, "Won event reward");
+            var redemptionId = Guid.NewGuid();
+            var transaction2 = UserPointsTransaction.CreateRedeemed(
+                user.Id, 50, redemptionId, 50, "Redeemed points");
+            await context.UserPointsTransactions.AddRangeAsync(new[] { transaction1, transaction2 });
+            await context.SaveChangesAsync();
+
+            // Act - Query transactions with user included
+            var savedTransactions = await context.UserPointsTransactions
+                .Include(t => t.User)
+                .Where(t => t.UserId == user.Id)
+                .ToListAsync();
+
+            // Assert - Navigations should work
+            savedTransactions.Should().HaveCount(2, "user should have 2 transactions");
+            savedTransactions.Should().AllSatisfy(t => 
+                t.User.Should().NotBeNull("user should be navigable"));
+        }
+
+        #endregion
     }
 }

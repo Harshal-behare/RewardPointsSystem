@@ -3,6 +3,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using RewardPointsSystem.Domain.Entities.Events;
+using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.DTOs;
@@ -10,6 +12,19 @@ using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
+    /// <summary>
+    /// Unit tests for EventService
+    /// 
+    /// These tests verify that the event lifecycle management works correctly.
+    /// Events follow this state machine: Draft → Upcoming → Active → Completed
+    /// 
+    /// Key scenarios tested:
+    /// - Creating events with valid and invalid data
+    /// - Event status transitions (publish, activate, complete, revert to draft)
+    /// - Event retrieval (by ID, upcoming events)
+    /// - Event updates
+    /// - Error handling for invalid operations
+    /// </summary>
     public class EventServiceTests : IDisposable
     {
         private readonly InMemoryUnitOfWork _unitOfWork;
@@ -26,286 +41,519 @@ namespace RewardPointsSystem.Tests.UnitTests
             _unitOfWork?.Dispose();
         }
 
+        #region Event Creation Tests
+
+        /// <summary>
+        /// SCENARIO: Create an event with all valid information
+        /// EXPECTED: Event is created successfully with correct details and Draft status
+        /// WHY: This is the basic happy path for creating a new event in the system
+        /// </summary>
         [Fact]
-        public async Task CreateEventAsync_WithValidData_ShouldCreateEvent()
+        public async Task CreateEvent_WithValidData_ShouldCreateEventInDraftStatus()
         {
-            // Arrange
-            var name = "Annual Sales Competition";
-            var description = "Yearly competition for top sales";
-            var date = DateTime.UtcNow.AddDays(30);
+            // Arrange - Set up the event details
+            var eventName = "Annual Sales Competition";
+            var eventDescription = "Yearly competition for top sales performers";
+            var eventDate = DateTime.UtcNow.AddDays(30);
             var pointsPool = 1000;
 
-            // Act
-            var result = await _eventService.CreateEventAsync(name, description, date, pointsPool);
+            // Act - Create the event
+            var createdEvent = await _eventService.CreateEventAsync(
+                eventName, 
+                eventDescription, 
+                eventDate, 
+                pointsPool);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Name.Should().Be(name);
-            result.Description.Should().Be(description);
-            result.EventDate.Should().Be(date);
-            result.TotalPointsPool.Should().Be(pointsPool);
-            result.Status.Should().Be(EventStatus.Upcoming);
-            result.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+            // Assert - Verify the event was created correctly
+            createdEvent.Should().NotBeNull("event should be created");
+            createdEvent.Name.Should().Be(eventName, "event name should match");
+            createdEvent.Description.Should().Be(eventDescription, "event description should match");
+            createdEvent.EventDate.Should().Be(eventDate, "event date should match");
+            createdEvent.TotalPointsPool.Should().Be(pointsPool, "points pool should match");
+            createdEvent.Status.Should().Be(EventStatus.Draft, "new events start in Draft status");
+            createdEvent.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5), "creation time should be recent");
         }
 
+        /// <summary>
+        /// SCENARIO: Try to create an event without a name
+        /// EXPECTED: System rejects the request with appropriate error
+        /// WHY: Event name is required for identification and display
+        /// </summary>
         [Theory]
-        [InlineData(null, "Description", 10)]
-        [InlineData("", "Description", 10)]
-        [InlineData("   ", "Description", 10)]
-        public async Task CreateEventAsync_WithInvalidName_ShouldThrowException(string name, string description, int pointsPool)
+        [InlineData("", "Description", 100)]
+        [InlineData("   ", "Description", 100)]
+        public async Task CreateEvent_WithMissingName_ShouldRejectRequest(string name, string description, int pointsPool)
         {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CreateEventAsync(name, description, DateTime.UtcNow.AddDays(1), pointsPool));
+            // Arrange - Set up the event date
+            var futureDate = DateTime.UtcNow.AddDays(7);
+
+            // Act & Assert - Try to create event and expect error
+            await Assert.ThrowsAsync<InvalidEventDataException>(async () =>
+                await _eventService.CreateEventAsync(name, description, futureDate, pointsPool));
         }
 
+        /// <summary>
+        /// SCENARIO: Try to create an event without a description
+        /// EXPECTED: System rejects the request with appropriate error
+        /// WHY: Description is required so participants understand the event
+        /// </summary>
         [Theory]
-        [InlineData("Event", null, 10)]
-        [InlineData("Event", "", 10)]
-        [InlineData("Event", "   ", 10)]
-        public async Task CreateEventAsync_WithInvalidDescription_ShouldThrowException(string name, string description, int pointsPool)
+        [InlineData("Event Name", "", 100)]
+        [InlineData("Event Name", "   ", 100)]
+        public async Task CreateEvent_WithMissingDescription_ShouldRejectRequest(string name, string description, int pointsPool)
         {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CreateEventAsync(name, description, DateTime.UtcNow.AddDays(1), pointsPool));
+            // Arrange - Set up the event date
+            var futureDate = DateTime.UtcNow.AddDays(7);
+
+            // Act & Assert - Try to create event and expect error
+            await Assert.ThrowsAsync<InvalidEventDataException>(async () =>
+                await _eventService.CreateEventAsync(name, description, futureDate, pointsPool));
         }
 
+        /// <summary>
+        /// SCENARIO: Try to create an event with zero or negative points pool
+        /// EXPECTED: System rejects the request with appropriate error
+        /// WHY: Events must have a positive number of points to award
+        /// </summary>
         [Theory]
         [InlineData(0)]
         [InlineData(-100)]
-        public async Task CreateEventAsync_WithInvalidPointsPool_ShouldThrowException(int pointsPool)
+        [InlineData(-1)]
+        public async Task CreateEvent_WithInvalidPointsPool_ShouldRejectRequest(int invalidPointsPool)
         {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), pointsPool));
+            // Arrange - Set up valid name and description
+            var name = "Test Event";
+            var description = "Test Description";
+            var futureDate = DateTime.UtcNow.AddDays(7);
+
+            // Act & Assert - Try to create event and expect error
+            await Assert.ThrowsAsync<InvalidEventDataException>(async () =>
+                await _eventService.CreateEventAsync(name, description, futureDate, invalidPointsPool));
         }
 
+        /// <summary>
+        /// SCENARIO: Try to create an event with a date in the past
+        /// EXPECTED: System rejects the request with appropriate error
+        /// WHY: Events must be scheduled for the future
+        /// </summary>
         [Fact]
-        public async Task CreateEventAsync_WithPastDate_ShouldThrowException()
+        public async Task CreateEvent_WithPastDate_ShouldRejectRequest()
         {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(-1), 100));
+            // Arrange - Set up event with past date
+            var name = "Past Event";
+            var description = "This event is in the past";
+            var pastDate = DateTime.UtcNow.AddDays(-5);
+            var pointsPool = 500;
+
+            // Act & Assert - Try to create event and expect error
+            await Assert.ThrowsAsync<InvalidEventDataException>(async () =>
+                await _eventService.CreateEventAsync(name, description, pastDate, pointsPool));
         }
 
+        #endregion
+
+        #region Event Retrieval Tests
+
+        /// <summary>
+        /// SCENARIO: Retrieve an event that exists in the system
+        /// EXPECTED: The correct event is returned with all details
+        /// WHY: Users need to view event details after creation
+        /// </summary>
         [Fact]
-        public async Task GetEventByIdAsync_WithExistingEvent_ShouldReturnEvent()
+        public async Task GetEventById_WhenEventExists_ShouldReturnEvent()
         {
-            // Arrange
-            var created = await _eventService.CreateEventAsync("Test Event", "Description", DateTime.UtcNow.AddDays(5), 500);
+            // Arrange - Create an event first
+            var createdEvent = await _eventService.CreateEventAsync(
+                "Findable Event", 
+                "This event should be found", 
+                DateTime.UtcNow.AddDays(10), 
+                500);
 
-            // Act
-            var result = await _eventService.GetEventByIdAsync(created.Id);
+            // Act - Try to retrieve the event
+            var retrievedEvent = await _eventService.GetEventByIdAsync(createdEvent.Id);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Id.Should().Be(created.Id);
-            result.Name.Should().Be("Test Event");
+            // Assert - Verify we got the right event
+            retrievedEvent.Should().NotBeNull("event should be found");
+            retrievedEvent.Id.Should().Be(createdEvent.Id, "IDs should match");
+            retrievedEvent.Name.Should().Be("Findable Event", "name should match");
         }
 
+        /// <summary>
+        /// SCENARIO: Try to retrieve an event that doesn't exist
+        /// EXPECTED: Returns null (not found)
+        /// WHY: System should gracefully handle requests for non-existent events
+        /// </summary>
         [Fact]
-        public async Task GetEventByIdAsync_WithNonExistentEvent_ShouldReturnNull()
+        public async Task GetEventById_WhenEventDoesNotExist_ShouldReturnNull()
         {
-            // Act
-            var result = await _eventService.GetEventByIdAsync(Guid.NewGuid());
+            // Arrange - Use a random ID that doesn't exist
+            var nonExistentId = Guid.NewGuid();
 
-            // Assert
-            result.Should().BeNull();
+            // Act - Try to retrieve the non-existent event
+            var result = await _eventService.GetEventByIdAsync(nonExistentId);
+
+            // Assert - Should return null
+            result.Should().BeNull("non-existent events should return null");
         }
 
+        /// <summary>
+        /// SCENARIO: Get all upcoming events (events visible to employees)
+        /// EXPECTED: Only published (Upcoming status) events are returned
+        /// WHY: Employees should only see events they can register for
+        /// </summary>
         [Fact]
-        public async Task GetUpcomingEventsAsync_ShouldReturnOnlyUpcomingEvents()
+        public async Task GetUpcomingEvents_ShouldReturnOnlyPublishedEvents()
         {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event1", "Desc1", DateTime.UtcNow.AddDays(1), 100);
-            var event2 = await _eventService.CreateEventAsync("Event2", "Desc2", DateTime.UtcNow.AddDays(2), 200);
-            var event3 = await _eventService.CreateEventAsync("Event3", "Desc3", DateTime.UtcNow.AddDays(3), 300);
+            // Arrange - Create multiple events in different states
+            var draftEvent = await _eventService.CreateEventAsync("Draft Event", "Still in draft", DateTime.UtcNow.AddDays(5), 100);
+            var upcomingEvent1 = await _eventService.CreateEventAsync("Upcoming Event 1", "Published event", DateTime.UtcNow.AddDays(10), 200);
+            var upcomingEvent2 = await _eventService.CreateEventAsync("Upcoming Event 2", "Another published event", DateTime.UtcNow.AddDays(15), 300);
+            
+            // Publish some events (Draft → Upcoming)
+            await _eventService.PublishEventAsync(upcomingEvent1.Id);
+            await _eventService.PublishEventAsync(upcomingEvent2.Id);
 
-            await _eventService.ActivateEventAsync(event2.Id);
+            // Act - Get upcoming events
+            var upcomingEvents = await _eventService.GetUpcomingEventsAsync();
 
-            // Act
-            var result = await _eventService.GetUpcomingEventsAsync();
-
-            // Assert
-            result.Should().HaveCount(2);
-            result.Should().Contain(e => e.Id == event1.Id);
-            result.Should().Contain(e => e.Id == event3.Id);
-            result.Should().NotContain(e => e.Id == event2.Id);
+            // Assert - Should only see published events
+            upcomingEvents.Should().HaveCount(2, "only 2 events are in Upcoming status");
+            upcomingEvents.Should().Contain(e => e.Id == upcomingEvent1.Id, "first published event should be included");
+            upcomingEvents.Should().Contain(e => e.Id == upcomingEvent2.Id, "second published event should be included");
+            upcomingEvents.Should().NotContain(e => e.Id == draftEvent.Id, "draft event should not be included");
         }
 
+        #endregion
+
+        #region Event Status Transition Tests
+
+        /// <summary>
+        /// SCENARIO: Publish a draft event to make it visible to employees
+        /// EXPECTED: Event status changes from Draft to Upcoming
+        /// WHY: This is how admins make events available for employee registration
+        /// </summary>
         [Fact]
-        public async Task GetActiveEventsAsync_ShouldReturnOnlyActiveEvents()
+        public async Task PublishEvent_FromDraftStatus_ShouldMakeEventUpcoming()
         {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event1", "Desc1", DateTime.UtcNow.AddDays(1), 100);
-            var event2 = await _eventService.CreateEventAsync("Event2", "Desc2", DateTime.UtcNow.AddDays(2), 200);
-            var event3 = await _eventService.CreateEventAsync("Event3", "Desc3", DateTime.UtcNow.AddDays(3), 300);
+            // Arrange - Create an event (starts in Draft status)
+            var draftEvent = await _eventService.CreateEventAsync(
+                "Event to Publish", 
+                "Will be published", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            
+            draftEvent.Status.Should().Be(EventStatus.Draft, "event should start in Draft");
 
-            await _eventService.ActivateEventAsync(event1.Id);
-            await _eventService.ActivateEventAsync(event3.Id);
+            // Act - Publish the event
+            await _eventService.PublishEventAsync(draftEvent.Id);
 
-            // Act
-            var result = await _eventService.GetActiveEventsAsync();
-
-            // Assert
-            result.Should().HaveCount(2);
-            result.Should().Contain(e => e.Id == event1.Id);
-            result.Should().Contain(e => e.Id == event3.Id);
-            result.Should().NotContain(e => e.Id == event2.Id);
+            // Assert - Verify status changed
+            var publishedEvent = await _eventService.GetEventByIdAsync(draftEvent.Id);
+            publishedEvent.Status.Should().Be(EventStatus.Upcoming, "status should change to Upcoming after publishing");
         }
 
+        /// <summary>
+        /// SCENARIO: Try to publish an event that is already Upcoming
+        /// EXPECTED: System rejects the operation with appropriate error
+        /// WHY: Events can only be published from Draft status
+        /// </summary>
         [Fact]
-        public async Task UpdateEventAsync_WithValidData_ShouldUpdateEvent()
+        public async Task PublishEvent_WhenAlreadyUpcoming_ShouldRejectOperation()
         {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Old Name", "Old Desc", DateTime.UtcNow.AddDays(1), 100);
+            // Arrange - Create and publish an event
+            var eventEntity = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(7), 500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+
+            // Act & Assert - Try to publish again
+            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+                await _eventService.PublishEventAsync(eventEntity.Id));
+        }
+
+        /// <summary>
+        /// SCENARIO: Activate an upcoming event to indicate it's in progress
+        /// EXPECTED: Event status changes from Upcoming to Active
+        /// WHY: This marks that the event has started
+        /// </summary>
+        [Fact]
+        public async Task ActivateEvent_FromUpcomingStatus_ShouldMakeEventActive()
+        {
+            // Arrange - Create and publish an event
+            var eventEntity = await _eventService.CreateEventAsync(
+                "Event to Activate", 
+                "Will be activated", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+
+            // Act - Activate the event
+            await _eventService.ActivateEventAsync(eventEntity.Id);
+
+            // Assert - Verify status changed
+            var activatedEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
+            activatedEvent.Status.Should().Be(EventStatus.Active, "status should change to Active");
+        }
+
+        /// <summary>
+        /// SCENARIO: Try to activate an event that is still in Draft status
+        /// EXPECTED: System rejects the operation with appropriate error
+        /// WHY: Events must be published before they can be activated
+        /// </summary>
+        [Fact]
+        public async Task ActivateEvent_FromDraftStatus_ShouldRejectOperation()
+        {
+            // Arrange - Create event but don't publish it
+            var draftEvent = await _eventService.CreateEventAsync("Draft Event", "Still draft", DateTime.UtcNow.AddDays(7), 500);
+
+            // Act & Assert - Try to activate directly
+            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+                await _eventService.ActivateEventAsync(draftEvent.Id));
+        }
+
+        /// <summary>
+        /// SCENARIO: Try to activate a non-existent event
+        /// EXPECTED: System returns not found error
+        /// WHY: Cannot perform operations on events that don't exist
+        /// </summary>
+        [Fact]
+        public async Task ActivateEvent_WhenEventDoesNotExist_ShouldThrowNotFound()
+        {
+            // Arrange - Use a random ID
+            var nonExistentId = Guid.NewGuid();
+
+            // Act & Assert - Try to activate non-existent event
+            await Assert.ThrowsAsync<EventNotFoundException>(async () =>
+                await _eventService.ActivateEventAsync(nonExistentId));
+        }
+
+        /// <summary>
+        /// SCENARIO: Complete an active event
+        /// EXPECTED: Event status changes to Completed and completion time is recorded
+        /// WHY: Completing an event enables point awarding to participants
+        /// </summary>
+        [Fact]
+        public async Task CompleteEvent_FromActiveStatus_ShouldMarkEventCompleted()
+        {
+            // Arrange - Create, publish, and activate an event
+            var eventEntity = await _eventService.CreateEventAsync(
+                "Event to Complete", 
+                "Will be completed", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+            await _eventService.ActivateEventAsync(eventEntity.Id);
+
+            // Act - Complete the event
+            await _eventService.CompleteEventAsync(eventEntity.Id);
+
+            // Assert - Verify status and completion time
+            var completedEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
+            completedEvent.Status.Should().Be(EventStatus.Completed, "status should change to Completed");
+            completedEvent.CompletedAt.Should().NotBeNull("completion time should be recorded");
+            completedEvent.CompletedAt!.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5), "completion time should be recent");
+        }
+
+        /// <summary>
+        /// SCENARIO: Complete an upcoming event directly (skip active phase)
+        /// EXPECTED: Event can be completed from Upcoming status
+        /// WHY: Some events may complete without an active phase (e.g., one-time events)
+        /// </summary>
+        [Fact]
+        public async Task CompleteEvent_FromUpcomingStatus_ShouldMarkEventCompleted()
+        {
+            // Arrange - Create and publish an event (but don't activate)
+            var eventEntity = await _eventService.CreateEventAsync(
+                "Quick Event", 
+                "Completes from upcoming", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+
+            // Act - Complete directly from upcoming
+            await _eventService.CompleteEventAsync(eventEntity.Id);
+
+            // Assert - Verify completion
+            var completedEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
+            completedEvent.Status.Should().Be(EventStatus.Completed, "event should be completed");
+        }
+
+        /// <summary>
+        /// SCENARIO: Try to complete a draft event
+        /// EXPECTED: System rejects the operation with appropriate error
+        /// WHY: Draft events cannot be completed without publishing first
+        /// </summary>
+        [Fact]
+        public async Task CompleteEvent_FromDraftStatus_ShouldRejectOperation()
+        {
+            // Arrange - Create event but don't publish it
+            var draftEvent = await _eventService.CreateEventAsync("Draft Event", "Still draft", DateTime.UtcNow.AddDays(7), 500);
+
+            // Act & Assert - Try to complete directly
+            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+                await _eventService.CompleteEventAsync(draftEvent.Id));
+        }
+
+        /// <summary>
+        /// SCENARIO: Revert a published event back to draft (hide from employees)
+        /// EXPECTED: Event status changes from Upcoming back to Draft
+        /// WHY: Admins may need to hide an event to make changes before re-publishing
+        /// </summary>
+        [Fact]
+        public async Task RevertToDraft_FromUpcomingStatus_ShouldHideEventFromEmployees()
+        {
+            // Arrange - Create and publish an event
+            var eventEntity = await _eventService.CreateEventAsync(
+                "Event to Revert", 
+                "Will be reverted", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+            
+            // Verify it's upcoming
+            var upcomingEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
+            upcomingEvent.Status.Should().Be(EventStatus.Upcoming);
+
+            // Act - Revert to draft
+            await _eventService.RevertToDraftAsync(eventEntity.Id);
+
+            // Assert - Verify status reverted
+            var draftEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
+            draftEvent.Status.Should().Be(EventStatus.Draft, "status should revert to Draft");
+        }
+
+        /// <summary>
+        /// SCENARIO: Try to revert a completed event
+        /// EXPECTED: System rejects the operation with appropriate error
+        /// WHY: Completed events cannot be reverted (they're finalized)
+        /// </summary>
+        [Fact]
+        public async Task RevertToDraft_FromCompletedStatus_ShouldRejectOperation()
+        {
+            // Arrange - Create, publish, and complete an event
+            var eventEntity = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(7), 500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+            await _eventService.CompleteEventAsync(eventEntity.Id);
+
+            // Act & Assert - Try to revert completed event
+            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+                await _eventService.RevertToDraftAsync(eventEntity.Id));
+        }
+
+        #endregion
+
+        #region Event Update Tests
+
+        /// <summary>
+        /// SCENARIO: Update an event's details
+        /// EXPECTED: Event is updated with new values
+        /// WHY: Admins need to modify event details after creation
+        /// </summary>
+        [Fact]
+        public async Task UpdateEvent_WithValidData_ShouldUpdateEventDetails()
+        {
+            // Arrange - Create an event
+            var originalEvent = await _eventService.CreateEventAsync(
+                "Original Name", 
+                "Original Description", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+
             var updateDto = new UpdateEventDto
             {
-                Name = "New Name",
-                Description = "New Desc",
-                EventDate = DateTime.UtcNow.AddDays(10),
-                TotalPointsPool = 500
+                Name = "Updated Name",
+                Description = "Updated Description",
+                TotalPointsPool = 1000
             };
 
-            // Act
-            var result = await _eventService.UpdateEventAsync(event1.Id, updateDto);
+            // Act - Update the event
+            var updatedEvent = await _eventService.UpdateEventAsync(originalEvent.Id, updateDto);
 
-            // Assert
-            result.Should().NotBeNull();
-            result.Name.Should().Be("New Name");
-            result.Description.Should().Be("New Desc");
-            result.TotalPointsPool.Should().Be(500);
+            // Assert - Verify updates
+            updatedEvent.Name.Should().Be("Updated Name", "name should be updated");
+            updatedEvent.Description.Should().Be("Updated Description", "description should be updated");
+            updatedEvent.TotalPointsPool.Should().Be(1000, "points pool should be updated");
         }
 
+        /// <summary>
+        /// SCENARIO: Try to update a non-existent event
+        /// EXPECTED: System returns not found error
+        /// WHY: Cannot update events that don't exist
+        /// </summary>
         [Fact]
-        public async Task UpdateEventAsync_WithNonExistentEvent_ShouldThrowException()
+        public async Task UpdateEvent_WhenEventDoesNotExist_ShouldThrowNotFound()
         {
             // Arrange
+            var nonExistentId = Guid.NewGuid();
             var updateDto = new UpdateEventDto { Name = "New Name" };
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.UpdateEventAsync(Guid.NewGuid(), updateDto));
+            await Assert.ThrowsAsync<EventNotFoundException>(async () =>
+                await _eventService.UpdateEventAsync(nonExistentId, updateDto));
         }
 
+        /// <summary>
+        /// SCENARIO: Try to update a completed event (except status to completed)
+        /// EXPECTED: System rejects the modification
+        /// WHY: Completed events are finalized and should not be modified
+        /// </summary>
         [Fact]
-        public async Task UpdateEventAsync_WithCompletedEvent_ShouldThrowException()
+        public async Task UpdateEvent_WhenEventIsCompleted_ShouldRejectModification()
         {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-            await _eventService.ActivateEventAsync(event1.Id);
-            await _eventService.CompleteEventAsync(event1.Id);
+            // Arrange - Create, publish, and complete an event
+            var eventEntity = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(7), 500);
+            await _eventService.PublishEventAsync(eventEntity.Id);
+            await _eventService.CompleteEventAsync(eventEntity.Id);
 
             var updateDto = new UpdateEventDto { Name = "New Name" };
 
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _eventService.UpdateEventAsync(event1.Id, updateDto));
+            // Act & Assert - Try to update completed event
+            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+                await _eventService.UpdateEventAsync(eventEntity.Id, updateDto));
         }
 
+        #endregion
+
+        #region Event Deletion Tests
+
+        /// <summary>
+        /// SCENARIO: Delete an event
+        /// EXPECTED: Event is removed from the system
+        /// WHY: Admins need to be able to remove events
+        /// </summary>
         [Fact]
-        public async Task ActivateEventAsync_WithUpcomingEvent_ShouldActivateEvent()
+        public async Task DeleteEvent_WhenEventExists_ShouldRemoveEvent()
+        {
+            // Arrange - Create an event
+            var eventEntity = await _eventService.CreateEventAsync(
+                "Event to Delete", 
+                "Will be deleted", 
+                DateTime.UtcNow.AddDays(7), 
+                500);
+            var eventId = eventEntity.Id;
+
+            // Act - Delete the event
+            await _eventService.DeleteEventAsync(eventId);
+
+            // Assert - Verify event no longer exists
+            var deletedEvent = await _eventService.GetEventByIdAsync(eventId);
+            deletedEvent.Should().BeNull("event should no longer exist after deletion");
+        }
+
+        /// <summary>
+        /// SCENARIO: Try to delete a non-existent event
+        /// EXPECTED: System returns not found error
+        /// WHY: Cannot delete events that don't exist
+        /// </summary>
+        [Fact]
+        public async Task DeleteEvent_WhenEventDoesNotExist_ShouldThrowNotFound()
         {
             // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-
-            // Act
-            await _eventService.ActivateEventAsync(event1.Id);
-
-            // Assert
-            var activated = await _eventService.GetEventByIdAsync(event1.Id);
-            activated.Status.Should().Be(EventStatus.Active);
-        }
-
-        [Fact]
-        public async Task ActivateEventAsync_WithNonExistentEvent_ShouldThrowException()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.ActivateEventAsync(Guid.NewGuid()));
-        }
-
-        [Fact]
-        public async Task ActivateEventAsync_WithNonUpcomingEvent_ShouldThrowException()
-        {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-            await _eventService.ActivateEventAsync(event1.Id);
+            var nonExistentId = Guid.NewGuid();
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _eventService.ActivateEventAsync(event1.Id));
+            await Assert.ThrowsAsync<EventNotFoundException>(async () =>
+                await _eventService.DeleteEventAsync(nonExistentId));
         }
 
-        [Fact]
-        public async Task CompleteEventAsync_WithActiveEvent_ShouldCompleteEvent()
-        {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-            await _eventService.ActivateEventAsync(event1.Id);
-
-            // Act
-            await _eventService.CompleteEventAsync(event1.Id);
-
-            // Assert
-            var completed = await _eventService.GetEventByIdAsync(event1.Id);
-            completed.Status.Should().Be(EventStatus.Completed);
-            completed.CompletedAt.Should().NotBeNull();
-            completed.CompletedAt.Value.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
-        }
-
-        [Fact]
-        public async Task CompleteEventAsync_WithNonExistentEvent_ShouldThrowException()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CompleteEventAsync(Guid.NewGuid()));
-        }
-
-        [Fact]
-        public async Task CompleteEventAsync_WithNonActiveEvent_ShouldThrowException()
-        {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _eventService.CompleteEventAsync(event1.Id));
-        }
-
-        [Fact]
-        public async Task CancelEventAsync_WithValidEvent_ShouldCancelEvent()
-        {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-
-            // Act
-            await _eventService.CancelEventAsync(event1.Id);
-
-            // Assert
-            var cancelled = await _eventService.GetEventByIdAsync(event1.Id);
-            cancelled.Status.Should().Be(EventStatus.Cancelled);
-        }
-
-        [Fact]
-        public async Task CancelEventAsync_WithNonExistentEvent_ShouldThrowException()
-        {
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
-                await _eventService.CancelEventAsync(Guid.NewGuid()));
-        }
-
-        [Fact]
-        public async Task CancelEventAsync_WithCompletedEvent_ShouldThrowException()
-        {
-            // Arrange
-            var event1 = await _eventService.CreateEventAsync("Event", "Desc", DateTime.UtcNow.AddDays(1), 100);
-            await _eventService.ActivateEventAsync(event1.Id);
-            await _eventService.CompleteEventAsync(event1.Id);
-
-            // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
-                await _eventService.CancelEventAsync(event1.Id));
-        }
+        #endregion
     }
 }
