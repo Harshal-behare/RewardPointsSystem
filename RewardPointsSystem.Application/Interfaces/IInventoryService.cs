@@ -18,6 +18,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<bool> IsInStockAsync(Guid productId);
         Task ReserveStockAsync(Guid productId, int quantity);
         Task ReleaseReservationAsync(Guid productId, int quantity);
+        Task ConfirmFulfillmentAsync(Guid productId, int quantity);
         Task<IEnumerable<InventoryAlert>> GetLowStockItemsAsync();
     }
 }

@@ -108,6 +108,22 @@ namespace RewardPointsSystem.Application.Services.Products
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task ConfirmFulfillmentAsync(Guid productId, int quantity)
+        {
+            if (quantity <= 0)
+                throw new ArgumentException("Quantity must be positive", nameof(quantity));
+
+            var allInventory = await _unitOfWork.Inventory.GetAllAsync();
+            var inventory = allInventory.FirstOrDefault(i => i.ProductId == productId);
+
+            if (inventory == null)
+                throw new ArgumentException($"No inventory found for product {productId}", nameof(productId));
+
+            inventory.ConfirmFulfillment(quantity);
+
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task<IEnumerable<InventoryAlert>> GetLowStockItemsAsync()
         {
             var allInventory = await _unitOfWork.Inventory.GetAllAsync();

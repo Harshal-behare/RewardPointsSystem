@@ -1,8 +1,10 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Entities.Operations;
 using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Application.Services.Core
@@ -82,6 +84,16 @@ namespace RewardPointsSystem.Application.Services.Core
             var user = await _unitOfWork.Users.GetByIdAsync(id);
             if (user == null)
                 throw new UserNotFoundException(id);
+
+            // Check for pending or approved (not yet delivered) redemptions
+            var pendingRedemptions = await _unitOfWork.Redemptions.FindAsync(
+                r => r.UserId == id && 
+                     (r.Status == RedemptionStatus.Pending || r.Status == RedemptionStatus.Approved));
+            
+            if (pendingRedemptions.Any())
+                throw new InvalidOperationException(
+                    $"Cannot deactivate user with {pendingRedemptions.Count()} pending redemption(s). " +
+                    "Please process all redemptions before deactivating the user.");
 
             user.Deactivate(id);
             await _unitOfWork.Users.UpdateAsync(user);

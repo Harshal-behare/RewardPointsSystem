@@ -15,6 +15,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<RedemptionResult> ProcessRedemptionAsync(Guid userId, Guid productId, int quantity = 1);
         Task<Redemption> CreateRedemptionAsync(Guid userId, Guid productId, int quantity = 1);
         Task ApproveRedemptionAsync(Guid redemptionId, Guid approvedBy);
+        Task DeliverRedemptionAsync(Guid redemptionId, Guid deliveredBy);
         Task RejectRedemptionAsync(Guid redemptionId, string reason);
         Task CancelRedemptionAsync(Guid redemptionId, string reason);
     }

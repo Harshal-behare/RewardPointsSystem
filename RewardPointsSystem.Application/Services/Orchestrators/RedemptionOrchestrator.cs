@@ -147,6 +147,23 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             await _unitOfWork.SaveChangesAsync();
         }
 
+        public async Task DeliverRedemptionAsync(Guid redemptionId, Guid deliveredBy)
+        {
+            var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);
+            if (redemption == null)
+                throw new ArgumentException($"Redemption with ID {redemptionId} not found");
+
+            if (redemption.Status != RedemptionStatus.Approved)
+                throw new InvalidOperationException($"Only approved redemptions can be delivered. Current status: {redemption.Status}");
+
+            // Confirm fulfillment - this permanently reduces the reserved stock
+            await _inventoryService.ConfirmFulfillmentAsync(redemption.ProductId, redemption.Quantity);
+
+            redemption.Deliver(deliveredBy);
+            
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task CancelRedemptionAsync(Guid redemptionId, string reason)
         {
             var redemption = await _unitOfWork.Redemptions.GetByIdAsync(redemptionId);

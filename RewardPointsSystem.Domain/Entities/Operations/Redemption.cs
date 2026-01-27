@@ -10,6 +10,7 @@ namespace RewardPointsSystem.Domain.Entities.Operations
     {
         Pending,
         Approved,
+        Delivered,
         Cancelled
     }
 
@@ -105,18 +106,19 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         }
 
         /// <summary>
-        /// Processes the redemption (Approved → (internal state))
+        /// Marks the redemption as delivered (Approved → Delivered)
         /// </summary>
-        public void Process(Guid processedBy)
+        public void Deliver(Guid deliveredBy)
         {
             if (Status != RedemptionStatus.Approved)
-                throw new InvalidRedemptionStateException(Id, $"Cannot process redemption with status {Status}.");
+                throw new InvalidRedemptionStateException(Id, $"Cannot deliver redemption with status {Status}. Only approved redemptions can be delivered.");
 
-            if (processedBy == Guid.Empty)
-                throw new ArgumentException("Processor ID cannot be empty.", nameof(processedBy));
+            if (deliveredBy == Guid.Empty)
+                throw new ArgumentException("Deliverer ID cannot be empty.", nameof(deliveredBy));
 
+            Status = RedemptionStatus.Delivered;
             ProcessedAt = DateTime.UtcNow;
-            ProcessedBy = processedBy;
+            ProcessedBy = deliveredBy;
         }
 
         /// <summary>
@@ -150,7 +152,7 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         /// </summary>
         public bool IsInFinalState()
         {
-            return Status == RedemptionStatus.Approved || Status == RedemptionStatus.Cancelled;
+            return Status == RedemptionStatus.Delivered || Status == RedemptionStatus.Cancelled;
         }
 
         /// <summary>

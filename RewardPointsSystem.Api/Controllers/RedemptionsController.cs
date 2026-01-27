@@ -274,6 +274,43 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
+        /// Mark redemption as delivered (Admin only)
+        /// </summary>
+        /// <param name="id">Redemption ID</param>
+        /// <response code="200">Redemption marked as delivered successfully</response>
+        /// <response code="404">Redemption not found</response>
+        [HttpPatch("{id}/deliver")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> DeliverRedemption(Guid id)
+        {
+            try
+            {
+                // Get admin user ID from JWT claims
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var adminUserId))
+                    return UnauthorizedError("Admin user not authenticated");
+
+                await _redemptionOrchestrator.DeliverRedemptionAsync(id, adminUserId);
+                return Success<object>(null, "Redemption delivered successfully");
+            }
+            catch (KeyNotFoundException)
+            {
+                return NotFoundError($"Redemption with ID {id} not found");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error delivering redemption {RedemptionId}", id);
+                return Error("Failed to deliver redemption");
+            }
+        }
+
+        /// <summary>
         /// Reject redemption (Admin only)
         /// </summary>
         /// <param name="id">Redemption ID</param>
