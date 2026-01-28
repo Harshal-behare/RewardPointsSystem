@@ -1,10 +1,8 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-kpi-card',
   standalone: true,
-  imports: [CommonModule],
   template: `
     <div class="kpi-card">
       <div class="kpi-icon">
@@ -13,11 +11,13 @@ import { CommonModule } from '@angular/common';
       <div class="kpi-content">
         <div class="kpi-label">{{ label }}</div>
         <div class="kpi-value">{{ value }}</div>
-        <div class="kpi-trend" *ngIf="trend">
-          <span [class]="getTrendClass()">
-            {{ trend > 0 ? '↑' : '↓' }} {{ Math.abs(trend) }}%
-          </span>
-        </div>
+        @if (trend) {
+          <div class="kpi-trend">
+            <span [class]="getTrendClass()">
+              {{ trend > 0 ? '↑' : '↓' }} {{ Math.abs(trend) }}%
+            </span>
+          </div>
+        }
       </div>
     </div>
   `,

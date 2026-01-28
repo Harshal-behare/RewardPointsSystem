@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
@@ -36,13 +36,13 @@ interface Stats {
   selector: 'app-admin-redemptions',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
     FormsModule,
     CardComponent,
     BadgeComponent
   ],
   templateUrl: './redemptions.component.html',
-  styleUrls: ['./redemptions.component.scss']
+  styleUrl: './redemptions.component.scss'
 })
 export class AdminRedemptionsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

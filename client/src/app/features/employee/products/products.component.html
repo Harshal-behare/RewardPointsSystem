@@ -14,14 +14,15 @@
   <!-- Filters & Search -->
   <div class="filters-section">
     <div class="category-tabs">
-      <button
-        *ngFor="let category of categories()"
-        class="category-tab"
-        [class.active]="selectedCategory() === category.value"
-        (click)="onCategoryChange(category.value)"
-      >
-        {{ category.label }}
-      </button>
+      @for (category of categories(); track category.value) {
+        <button
+          class="category-tab"
+          [class.active]="selectedCategory() === category.value"
+          (click)="onCategoryChange(category.value)"
+        >
+          {{ category.label }}
+        </button>
+      }
     </div>
 
     <div class="search-box">
@@ -38,110 +39,128 @@
 
   <!-- Products Grid -->
   <div class="products-grid">
-    <div *ngFor="let product of filteredProducts()" class="product-card">
-      <div class="product-image-container">
-        <img [src]="product.image" [alt]="product.name" class="product-image" />
-        <span *ngIf="product.featured" class="featured-badge">⭐ Featured</span>
-        <span *ngIf="isOutOfStock(product)" class="stock-badge out-of-stock">Out of Stock</span>
-        <span *ngIf="isLowStock(product) && !isOutOfStock(product)" class="stock-badge low-stock">Only {{ product.stock }} left</span>
-        <span *ngIf="hasPendingRedemption(product)" class="stock-badge pending">⏳ Pending Request</span>
-      </div>
+    @for (product of filteredProducts(); track product.id) {
+      <div class="product-card">
+        <div class="product-image-container">
+          <img [src]="product.image" [alt]="product.name" class="product-image" />
+          @if (product.featured) {
+            <span class="featured-badge">⭐ Featured</span>
+          }
+          @if (isOutOfStock(product)) {
+            <span class="stock-badge out-of-stock">Out of Stock</span>
+          }
+          @if (isLowStock(product) && !isOutOfStock(product)) {
+            <span class="stock-badge low-stock">Only {{ product.stock }} left</span>
+          }
+          @if (hasPendingRedemption(product)) {
+            <span class="stock-badge pending">⏳ Pending Request</span>
+          }
+        </div>
 
-      <div class="product-content">
-        <span class="product-category">{{ product.category }}</span>
-        <h3 class="product-title">{{ product.name }}</h3>
-        <p class="product-description">{{ product.description }}</p>
+        <div class="product-content">
+          <span class="product-category">{{ product.category }}</span>
+          <h3 class="product-title">{{ product.name }}</h3>
+          <p class="product-description">{{ product.description }}</p>
 
-        <div class="product-footer">
-          <div class="product-info">
-            <span class="product-points">{{ product.points }} pts</span>
-            <span class="product-stock">Stock: {{ product.stock }}</span>
+          <div class="product-footer">
+            <div class="product-info">
+              <span class="product-points">{{ product.points }} pts</span>
+              <span class="product-stock">Stock: {{ product.stock }}</span>
+            </div>
+
+            <button
+              class="redeem-btn"
+              [disabled]="!canRedeem(product)"
+              (click)="openRedeemModal(product)"
+            >
+              {{ isOutOfStock(product) ? 'Out of Stock' : 
+                 (hasPendingRedemption(product) ? 'Pending Request' : 
+                 (userPoints() >= product.points ? 'Redeem Now' : 'Insufficient Points')) }}
+            </button>
           </div>
-
-          <button
-            class="redeem-btn"
-            [disabled]="!canRedeem(product)"
-            (click)="openRedeemModal(product)"
-          >
-            {{ isOutOfStock(product) ? 'Out of Stock' : 
-               (hasPendingRedemption(product) ? 'Pending Request' : 
-               (userPoints() >= product.points ? 'Redeem Now' : 'Insufficient Points')) }}
-          </button>
         </div>
       </div>
-    </div>
+    }
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="filteredProducts().length === 0" class="empty-state">
-    <span class="empty-icon">🔍</span>
-    <h3>No products found</h3>
-    <p>Try adjusting your filters or search query</p>
-  </div>
+  @if (filteredProducts().length === 0) {
+    <div class="empty-state">
+      <span class="empty-icon">🔍</span>
+      <h3>No products found</h3>
+      <p>Try adjusting your filters or search query</p>
+    </div>
+  }
 </div>
 
 <!-- Redeem Modal -->
-<div *ngIf="showRedeemModal() && selectedProduct()" class="modal-overlay" (click)="closeRedeemModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h2 class="modal-title">Redeem Product</h2>
-      <button class="close-btn" (click)="closeRedeemModal()">✕</button>
-    </div>
+@if (showRedeemModal() && selectedProduct()) {
+  <div class="modal-overlay" (click)="closeRedeemModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2 class="modal-title">Redeem Product</h2>
+        <button class="close-btn" (click)="closeRedeemModal()">✕</button>
+      </div>
 
-    <div class="modal-body">
-      <div class="product-summary">
-        <img [src]="selectedProduct()!.image" [alt]="selectedProduct()!.name" class="summary-image" />
-        <div class="summary-details">
-          <h3 class="summary-title">{{ selectedProduct()!.name }}</h3>
-          <p class="summary-category">{{ selectedProduct()!.category }}</p>
-          <p class="summary-points">{{ selectedProduct()!.points }} points each</p>
-          <p class="summary-stock">{{ selectedProduct()!.stock }} in stock</p>
+      <div class="modal-body">
+        <div class="product-summary">
+          <img [src]="selectedProduct()!.image" [alt]="selectedProduct()!.name" class="summary-image" />
+          <div class="summary-details">
+            <h3 class="summary-title">{{ selectedProduct()!.name }}</h3>
+            <p class="summary-category">{{ selectedProduct()!.category }}</p>
+            <p class="summary-points">{{ selectedProduct()!.points }} points each</p>
+            <p class="summary-stock">{{ selectedProduct()!.stock }} in stock</p>
+          </div>
+        </div>
+
+        <!-- Validation Errors -->
+        @if (redemptionValidationErrors().length > 0) {
+          <div class="error-list">
+            @for (error of redemptionValidationErrors(); track error) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+
+        <div class="form-group">
+          <label class="form-label">Quantity *</label>
+          <input
+            type="number"
+            [ngModel]="redemptionQuantity()"
+            (ngModelChange)="redemptionQuantity.set($event)"
+            min="1"
+            max="10"
+            class="form-input"
+          />
+          <small class="form-hint">Max 10 items per redemption</small>
+        </div>
+
+        <div class="points-summary">
+          <div class="summary-row">
+            <span>Current Points:</span>
+            <span class="current-points">{{ userPoints() }}</span>
+          </div>
+          <div class="summary-row">
+            <span>Product Cost ({{ redemptionQuantity() }} x {{ selectedProduct()!.points }}):</span>
+            <span class="product-cost">-{{ selectedProduct()!.points * redemptionQuantity() }}</span>
+          </div>
+          <div class="summary-row total">
+            <span>Remaining Points:</span>
+            <span class="remaining-points">{{ userPoints() - (selectedProduct()!.points * redemptionQuantity()) }}</span>
+          </div>
         </div>
       </div>
 
-      <!-- Validation Errors -->
-      <div class="error-list" *ngIf="redemptionValidationErrors().length > 0">
-        <div class="error" *ngFor="let error of redemptionValidationErrors()">{{ error }}</div>
+      <div class="modal-footer">
+        <button class="modal-btn cancel-btn" (click)="closeRedeemModal()">Cancel</button>
+        <button
+          class="modal-btn confirm-btn"
+          [disabled]="userPoints() < (selectedProduct()!.points * redemptionQuantity()) || redemptionQuantity() < 1 || redemptionQuantity() > 10 || redemptionQuantity() > selectedProduct()!.stock"
+          (click)="confirmRedeem()"
+        >
+          Confirm Redemption
+        </button>
       </div>
-
-      <div class="form-group">
-        <label class="form-label">Quantity *</label>
-        <input
-          type="number"
-          [ngModel]="redemptionQuantity()"
-          (ngModelChange)="redemptionQuantity.set($event)"
-          min="1"
-          max="10"
-          class="form-input"
-        />
-        <small class="form-hint">Max 10 items per redemption</small>
-      </div>
-
-      <div class="points-summary">
-        <div class="summary-row">
-          <span>Current Points:</span>
-          <span class="current-points">{{ userPoints() }}</span>
-        </div>
-        <div class="summary-row">
-          <span>Product Cost ({{ redemptionQuantity() }} x {{ selectedProduct()!.points }}):</span>
-          <span class="product-cost">-{{ selectedProduct()!.points * redemptionQuantity() }}</span>
-        </div>
-        <div class="summary-row total">
-          <span>Remaining Points:</span>
-          <span class="remaining-points">{{ userPoints() - (selectedProduct()!.points * redemptionQuantity()) }}</span>
-        </div>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <button class="modal-btn cancel-btn" (click)="closeRedeemModal()">Cancel</button>
-      <button
-        class="modal-btn confirm-btn"
-        [disabled]="userPoints() < (selectedProduct()!.points * redemptionQuantity()) || redemptionQuantity() < 1 || redemptionQuantity() > 10 || redemptionQuantity() > selectedProduct()!.stock"
-        (click)="confirmRedeem()"
-      >
-        Confirm Redemption
-      </button>
     </div>
   </div>
-</div>
+}

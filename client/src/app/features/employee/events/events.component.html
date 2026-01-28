@@ -47,7 +47,8 @@
 
   <!-- Events Grid -->
   <div class="events-grid">
-    <div *ngFor="let event of filteredEvents()" class="event-card">
+    @for (event of filteredEvents(); track event.id) {
+    <div class="event-card">
       <div class="event-image-container">
         <img [src]="event.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600'" [alt]="event.name" class="event-image" />
         <span class="event-badge" [ngClass]="getStatusBadgeClass(event.status)">
@@ -64,22 +65,26 @@
             <span class="meta-icon">📅</span>
             <span class="meta-text">{{ event.eventDate | date:'mediumDate' }}</span>
           </div>
-          <div class="meta-item" *ngIf="event.maxParticipants">
+          @if (event.maxParticipants) {
+          <div class="meta-item">
             <span class="meta-icon">👥</span>
             <span class="meta-text">
               {{ event.participantCount }} / {{ event.maxParticipants }} participants
             </span>
           </div>
+          }
         </div>
 
         <!-- Availability Bar -->
-        <div class="availability-bar" *ngIf="event.maxParticipants">
+        @if (event.maxParticipants) {
+        <div class="availability-bar">
           <div
             class="availability-fill"
             [style.width.%]="getAvailabilityPercentage(event)"
             [class.full]="isEventFull(event)"
           ></div>
         </div>
+        }
 
         <div class="event-footer">
           <span class="event-points">+{{ event.pointsPool }} points</span>
@@ -90,35 +95,42 @@
             </button>
 
             <!-- Show Register button if NOT registered and event is Upcoming -->
+            @if (!event.registered && event.status === 'Upcoming') {
             <button
-              *ngIf="!event.registered && event.status === 'Upcoming'"
               class="action-btn register-btn"
               [disabled]="isEventFull(event)"
               (click)="registerForEvent(event)"
             >
               {{ isEventFull(event) ? 'Event Full' : 'Register' }}
             </button>
+            }
 
             <!-- Show Registered badge if registered (cannot unregister once registered) -->
-            <span *ngIf="event.registered" class="registered-badge">
+            @if (event.registered) {
+            <span class="registered-badge">
               ✓ Registered
             </span>
+            }
           </div>
         </div>
       </div>
     </div>
+    }
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="filteredEvents().length === 0" class="empty-state">
+  @if (filteredEvents().length === 0) {
+  <div class="empty-state">
     <span class="empty-icon">🔍</span>
     <h3>No events found</h3>
     <p>Try adjusting your filters or search query</p>
   </div>
+  }
 </div>
 
 <!-- Event Details Modal -->
-<div *ngIf="showDetailsModal() && selectedEvent()" class="modal-overlay" (click)="closeDetailsModal()">
+@if (showDetailsModal() && selectedEvent()) {
+<div class="modal-overlay" (click)="closeDetailsModal()">
   <div class="modal-content" (click)="$event.stopPropagation()">
     <div class="modal-header">
       <h2 class="modal-title">{{ selectedEvent()!.name }}</h2>
@@ -141,12 +153,14 @@
               <span class="info-label">📅 Date:</span>
               <span class="info-value">{{ selectedEvent()!.eventDate | date:'fullDate' }}</span>
             </div>
-            <div class="info-item" *ngIf="selectedEvent()!.maxParticipants">
+            @if (selectedEvent()!.maxParticipants) {
+            <div class="info-item">
               <span class="info-label">👥 Participants:</span>
               <span class="info-value">
                 {{ selectedEvent()!.participantCount }} / {{ selectedEvent()!.maxParticipants }}
               </span>
             </div>
+            }
             <div class="info-item">
               <span class="info-label">🏆 Reward:</span>
               <span class="info-value">{{ selectedEvent()!.pointsPool }} points</span>
@@ -165,18 +179,22 @@
     <div class="modal-footer">
       <button class="modal-btn cancel-btn" (click)="closeDetailsModal()">Close</button>
 
+      @if (!selectedEvent()!.registered && selectedEvent()!.status === 'Upcoming') {
       <button
-        *ngIf="!selectedEvent()!.registered && selectedEvent()!.status === 'Upcoming'"
         class="modal-btn register-btn"
         [disabled]="isEventFull(selectedEvent()!)"
         (click)="registerForEvent(selectedEvent()!); closeDetailsModal()"
       >
         {{ isEventFull(selectedEvent()!) ? 'Event Full' : 'Register Now' }}
       </button>
+      }
 
-      <span *ngIf="selectedEvent()!.registered" class="registered-badge modal-registered">
+      @if (selectedEvent()!.registered) {
+      <span class="registered-badge modal-registered">
         ✓ Already Registered
       </span>
+      }
     </div>
   </div>
 </div>
+}

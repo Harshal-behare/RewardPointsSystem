@@ -1,16 +1,17 @@
 <div class="dashboard-container">
   <!-- KPI Cards Section -->
   <section class="kpi-section">
-    <app-kpi-card
-      *ngFor="let kpi of kpiData()"
-      [icon]="kpi.icon"
-      [label]="kpi.label"
-      [value]="kpi.value"
-      [trend]="kpi.trend"
-      (click)="navigateToPage(kpi.route)"
-      style="cursor: pointer;"
-      title="Click to view {{ kpi.label }}"
-    ></app-kpi-card>
+    @for (kpi of kpiData(); track kpi.label) {
+      <app-kpi-card
+        [icon]="kpi.icon"
+        [label]="kpi.label"
+        [value]="kpi.value"
+        [trend]="kpi.trend"
+        (click)="navigateToPage(kpi.route)"
+        style="cursor: pointer;"
+        title="Click to view {{ kpi.label }}"
+      ></app-kpi-card>
+    }
   </section>
 
   <!-- Quick Actions Section -->
@@ -63,12 +64,16 @@
             <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
-            <div class="bar-item" *ngFor="let value of chartData().pointsAwarded; let i = index">
-              <div class="bar" [style.height.%]="value > 0 ? (value / 6000) * 100 : 5">
-                <span class="bar-label" *ngIf="value > 0">{{ value }}</span>
+            @for (value of chartData().pointsAwarded; track $index; let i = $index) {
+              <div class="bar-item">
+                <div class="bar" [style.height.%]="value > 0 ? (value / 6000) * 100 : 5">
+                  @if (value > 0) {
+                    <span class="bar-label">{{ value }}</span>
+                  }
+                </div>
+                <span class="bar-month">{{ chartData().labels[i] }}</span>
               </div>
-              <span class="bar-month">{{ chartData().labels[i] }}</span>
-            </div>
+            }
           </div>
         </div>
       </app-card> -->
@@ -81,12 +86,16 @@
             <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
-            <div class="bar-item" *ngFor="let value of chartData().redemptions; let i = index">
-              <div class="bar redemption-bar" [style.height.%]="value > 0 ? (value / 3000) * 100 : 5">
-                <span class="bar-label" *ngIf="value > 0">{{ value }}</span>
+            @for (value of chartData().redemptions; track $index; let i = $index) {
+              <div class="bar-item">
+                <div class="bar redemption-bar" [style.height.%]="value > 0 ? (value / 3000) * 100 : 5">
+                  @if (value > 0) {
+                    <span class="bar-label">{{ value }}</span>
+                  }
+                </div>
+                <span class="bar-month">{{ chartData().labels[i] }}</span>
               </div>
-              <span class="bar-month">{{ chartData().labels[i] }}</span>
-            </div>
+            }
           </div>
         </div>
       </app-card> -->
@@ -96,39 +105,43 @@
   <!-- Recent Activity Section -->
   <section class="activity-section">
     <!-- <app-card title="Recent Activity">
-      <div class="activity-list" *ngIf="recentActivities().length > 0; else noActivities">
-        <div class="activity-item" *ngFor="let activity of recentActivities()">
-          <div class="activity-icon">
-            <app-badge [variant]="getActivityTypeClass(activity.type)">
-              {{ activity.type }}
-            </app-badge>
-          </div>
-          <div class="activity-content">
-            <p class="activity-description">{{ activity.description }}</p>
-            <div class="activity-meta">
-              <span class="activity-user">{{ activity.user }}</span>
-              <span class="activity-time">{{ activity.timestamp }}</span>
+      @if (recentActivities().length > 0) {
+        <div class="activity-list">
+          @for (activity of recentActivities(); track activity.id) {
+            <div class="activity-item">
+              <div class="activity-icon">
+                <app-badge [variant]="getActivityTypeClass(activity.type)">
+                  {{ activity.type }}
+                </app-badge>
+              </div>
+              <div class="activity-content">
+                <p class="activity-description">{{ activity.description }}</p>
+                <div class="activity-meta">
+                  <span class="activity-user">{{ activity.user }}</span>
+                  <span class="activity-time">{{ activity.timestamp }}</span>
+                </div>
+              </div>
             </div>
-          </div>
+          }
         </div>
-      </div>
-      <ng-template #noActivities>
+      } @else {
         <div class="no-data-message">
           <p>📋 No recent activity to display</p>
           <p class="no-data-hint">Activity will appear here as you create events, add products, and manage the system.</p>
         </div>
-      </ng-template>
+      }
     </app-card> -->
   </section>
 </div>
 
 <!-- Create Event Modal -->
-<div class="modal-overlay" *ngIf="showEventModal()" (click)="closeEventModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>📅 Create New Event</h3>
-      <button class="close-btn" (click)="closeEventModal()">✕</button>
-    </div>
+@if (showEventModal()) {
+  <div class="modal-overlay" (click)="closeEventModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📅 Create New Event</h3>
+        <button class="close-btn" (click)="closeEventModal()">✕</button>
+      </div>
 
     <div class="modal-body">
       <form>
@@ -190,16 +203,18 @@
         Create Event
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}
 
 <!-- Create Product Modal -->
-<div class="modal-overlay" *ngIf="showProductModal()" (click)="closeProductModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>🎁 Add New Product</h3>
-      <button class="close-btn" (click)="closeProductModal()">✕</button>
-    </div>
+@if (showProductModal()) {
+  <div class="modal-overlay" (click)="closeProductModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🎁 Add New Product</h3>
+        <button class="close-btn" (click)="closeProductModal()">✕</button>
+      </div>
 
     <div class="modal-body">
       <form>
@@ -291,5 +306,6 @@
         Add Product
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}

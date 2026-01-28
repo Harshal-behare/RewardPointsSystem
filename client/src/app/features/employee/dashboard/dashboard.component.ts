@@ -1,5 +1,4 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
 import { EventService, EventDto } from '../../../core/services/event.service';
@@ -50,7 +49,6 @@ interface Transaction {
 @Component({
   selector: 'app-employee-dashboard',
   standalone: true,
-  imports: [CommonModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

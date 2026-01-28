@@ -1,5 +1,4 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
@@ -35,14 +34,13 @@ interface DisplayCategory {
   selector: 'app-admin-products',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     CardComponent,
     ButtonComponent,
     BadgeComponent
   ],
   templateUrl: './products.component.html',
-  styleUrls: ['./products.component.scss']
+  styleUrl: './products.component.scss'
 })
 export class AdminProductsComponent implements OnInit {
     private destroyRef = inject(DestroyRef);

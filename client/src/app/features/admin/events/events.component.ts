@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
@@ -40,14 +40,14 @@ interface EventParticipant {
   selector: 'app-admin-events',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
     FormsModule,
     CardComponent,
     ButtonComponent,
     BadgeComponent
   ],
   templateUrl: './events.component.html',
-  styleUrls: ['./events.component.scss']
+  styleUrl: './events.component.scss'
 })
 export class AdminEventsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

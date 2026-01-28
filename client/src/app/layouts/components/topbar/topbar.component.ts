@@ -1,11 +1,9 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
-  imports: [CommonModule],
   template: `
     <header class="topbar">
       <div class="topbar-left">
@@ -32,14 +30,15 @@ import { Router } from '@angular/router';
             <div class="dropdown-header">
               <strong>Switch Role</strong>
             </div>
-            <button 
-              *ngIf="isAdmin"
-              class="dropdown-item" 
-              [class.active]="currentRole === 'Administrator'"
-              (click)="switchRole('admin')">
-              <span class="role-icon">👨‍💼</span>
-              <span>Admin Dashboard</span>
-            </button>
+            @if (isAdmin) {
+              <button 
+                class="dropdown-item" 
+                [class.active]="currentRole === 'Administrator'"
+                (click)="switchRole('admin')">
+                <span class="role-icon">👨‍💼</span>
+                <span>Admin Dashboard</span>
+              </button>
+            }
             <button 
               class="dropdown-item"
               [class.active]="currentRole === 'Employee'"

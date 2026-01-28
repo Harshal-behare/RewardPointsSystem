@@ -6,13 +6,16 @@
   </div>
 
   <!-- Loading State -->
-  <div *ngIf="isLoading()" class="loading-container">
+  @if (isLoading()) {
+  <div class="loading-container">
     <div class="spinner"></div>
     <p>Loading your account data...</p>
   </div>
+  }
 
   <!-- Summary Cards -->
-  <div *ngIf="!isLoading()" class="summary-section">
+  @if (!isLoading()) {
+  <div class="summary-section">
     <div class="summary-card earned">
       <div class="summary-icon"></div>
       <div class="summary-info">
@@ -45,9 +48,11 @@
       </div>
     </div>
   </div>
+  }
 
   <!-- Tabs -->
-  <div *ngIf="!isLoading()" class="tabs-container">
+  @if (!isLoading()) {
+  <div class="tabs-container">
     <div class="tabs-header">
       <button
         class="tab-btn"
@@ -66,15 +71,19 @@
     </div>
 
     <!-- Earning History Tab -->
-    <div *ngIf="activeTab === 'points'" class="tab-content">
+    @if (activeTab === 'points') {
+    <div class="tab-content">
       <!-- Empty State for Earnings -->
-      <div *ngIf="pointsHistory().length === 0" class="empty-state">
+      @if (pointsHistory().length === 0) {
+      <div class="empty-state">
         <span class="empty-icon">📊</span>
         <h3>No earnings yet</h3>
         <p>Your earned points will appear here once you participate in events or receive rewards.</p>
       </div>
+      }
 
-      <div *ngIf="pointsHistory().length > 0" class="table-container">
+      @if (pointsHistory().length > 0) {
+      <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
@@ -87,7 +96,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let transaction of pointsHistory()">
+            @for (transaction of pointsHistory(); track transaction.id) {
+            <tr>
               <td class="col-date">{{ transaction.date }}</td>
               <td class="col-description">{{ transaction.description }}</td>
               <td class="col-source">
@@ -96,32 +106,45 @@
                 </span>
               </td>
               <td class="col-event">
-                <span *ngIf="transaction.eventName" class="event-badge">{{ transaction.eventName }}</span>
-                <span *ngIf="!transaction.eventName" class="text-muted">-</span>
+                @if (transaction.eventName) {
+                <span class="event-badge">{{ transaction.eventName }}</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
               </td>
               <td class="col-rank">
-                <span *ngIf="transaction.rank" class="rank-badge">🏆 #{{ transaction.rank }}</span>
-                <span *ngIf="!transaction.rank" class="text-muted">-</span>
+                @if (transaction.rank) {
+                <span class="rank-badge">🏆 #{{ transaction.rank }}</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
               </td>
               <td class="col-points">
                 <span class="points-value positive">+{{ transaction.points }}</span>
               </td>
             </tr>
+            }
           </tbody>
         </table>
       </div>
+      }
     </div>
+    }
 
     <!-- Redemption History Tab -->
-    <div *ngIf="activeTab === 'redemptions'" class="tab-content">
+    @if (activeTab === 'redemptions') {
+    <div class="tab-content">
       <!-- Empty State for Redemptions -->
-      <div *ngIf="redemptionHistory().length === 0" class="empty-state">
+      @if (redemptionHistory().length === 0) {
+      <div class="empty-state">
         <span class="empty-icon"></span>
         <h3>No redemptions yet</h3>
         <p>Your product redemptions will appear here once you redeem your points.</p>
       </div>
+      }
 
-      <div *ngIf="redemptionHistory().length > 0" class="table-container">
+      @if (redemptionHistory().length > 0) {
+      <div class="table-container">
         <table class="data-table">
           <thead>
             <tr>
@@ -135,7 +158,8 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let redemption of redemptionHistory()">
+            @for (redemption of redemptionHistory(); track redemption.id) {
+            <tr>
               <td>{{ redemption.date }}</td>
               <td>
                 <span class="product-name">{{ redemption.productName }}</span>
@@ -145,9 +169,11 @@
                 <span class="points-value" [ngClass]="redemption.isRefunded ? 'refunded' : 'negative'">
                   {{ redemption.isRefunded ? '+' : '-' }}{{ redemption.points }}
                 </span>
-                <span *ngIf="redemption.isRefunded" class="refund-badge" title="Points refunded to your balance">
+                @if (redemption.isRefunded) {
+                <span class="refund-badge" title="Points refunded to your balance">
                   ↩ Refunded
                 </span>
+                }
               </td>
               <td>
                 <span class="status-badge" [ngClass]="getStatusClass(redemption.status)">
@@ -155,25 +181,34 @@
                 </span>
               </td>
               <td>
-                <span *ngIf="redemption.rejectionReason" class="rejection-reason">
+                @if (redemption.rejectionReason) {
+                <span class="rejection-reason">
                   {{ redemption.rejectionReason }}
                 </span>
-                <span *ngIf="!redemption.rejectionReason" class="text-muted">-</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
               </td>
               <td>
+                @if (redemption.status === 'pending') {
                 <button 
-                  *ngIf="redemption.status === 'pending'"
                   class="cancel-btn"
                   (click)="cancelRedemption(redemption)"
                 >
                   Cancel
                 </button>
-                <span *ngIf="redemption.status !== 'pending'" class="text-muted">-</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
               </td>
             </tr>
+            }
           </tbody>
         </table>
       </div>
+      }
     </div>
+    }
   </div>
+  }
 </div>

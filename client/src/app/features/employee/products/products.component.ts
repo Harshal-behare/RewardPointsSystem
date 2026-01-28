@@ -1,5 +1,4 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductService, ProductDto, CategoryDto } from '../../../core/services/product.service';
 import { RedemptionService, CreateRedemptionDto, RedemptionDto } from '../../../core/services/redemption.service';
@@ -21,7 +20,7 @@ interface Product {
 @Component({
   selector: 'app-employee-products',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })

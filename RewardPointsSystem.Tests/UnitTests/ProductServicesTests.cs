@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Products;
 using RewardPointsSystem.Application.DTOs.Products;
@@ -590,7 +591,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _inventoryService.CreateInventoryAsync(product.Id, 5, 2);
 
             // Act & Assert - Try to reserve more than available
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<InsufficientInventoryException>(async () =>
                 await _inventoryService.ReserveStockAsync(product.Id, 10));
         }
     }

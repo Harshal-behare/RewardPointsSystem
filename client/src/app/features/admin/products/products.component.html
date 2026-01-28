@@ -41,13 +41,14 @@
           (click)="onCategoryChange('all')">
           All Products
         </button>
-        <button
-          *ngFor="let category of categories().slice(1)"
-          class="filter-tab"
-          [class.active]="selectedCategory() === category"
-          (click)="onCategoryChange(category)">
-          {{ category }}
-        </button>
+        @for (category of categories().slice(1); track category) {
+          <button
+            class="filter-tab"
+            [class.active]="selectedCategory() === category"
+            (click)="onCategoryChange(category)">
+            {{ category }}
+          </button>
+        }
       </div>
 
       <!-- Status Filter -->
@@ -75,116 +76,129 @@
     </div>
 
     <!-- Grid View -->
-    <div *ngIf="viewMode() === 'grid'" class="products-grid">
-      <div class="product-card" *ngFor="let product of filteredProducts()">
-        <div class="product-image">
-          <img [src]="product.imageUrl" [alt]="product.name" />
-          <app-badge 
-            [variant]="getStatusVariant(product.status)" 
-            class="status-badge"
-          >
-            {{ product.status }}
-          </app-badge>
-        </div>
-        <div class="product-info">
-          <span class="product-category">{{ product.category }}</span>
-          <h3 class="product-name">{{ product.name }}</h3>
-          <p class="product-description">{{ product.description }}</p>
-          <div class="product-footer">
-            <div class="product-price">
-              <span class="points-label">Points:</span>
-              <span class="points-value">{{ product.pointsPrice }}</span>
-            </div>
-            <div class="product-stock">
-              <app-badge [variant]="getStockStatus(product.stock).variant" size="sm">
-                {{ getStockStatus(product.stock).label }}
-              </app-badge>
-              <span class="stock-count">{{ product.stock }} units</span>
-            </div>
-          </div>
-          <div class="product-actions">
-            <app-button size="sm" variant="secondary" (clicked)="openEditModal(product)">
-              ✏️ Edit
-            </app-button>
-            <button class="delete-icon-btn" (click)="deleteProduct(product.id)" title="Delete">
-              🗑️
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Table View -->
-    <div *ngIf="viewMode() === 'table'" class="table-container">
-      <table class="products-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Category</th>
-            <th>Points Price</th>
-            <th>Stock</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let product of filteredProducts()">
-            <td>
-              <div class="table-product">
-                <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" />
-                <div>
-                  <strong>{{ product.name }}</strong>
-                  <span class="table-description">{{ product.description }}</span>
-                </div>
-              </div>
-            </td>
-            <td>{{ product.category }}</td>
-            <td>
-              <span class="points-value">{{ product.pointsPrice }} pts</span>
-            </td>
-            <td>
-              <div class="stock-info">
-                <app-badge [variant]="getStockStatus(product.stock).variant" size="sm">
-                  {{ product.stock }} units
-                </app-badge>
-              </div>
-            </td>
-            <td>
-              <app-badge [variant]="getStatusVariant(product.status)">
+    @if (viewMode() === 'grid') {
+      <div class="products-grid">
+        @for (product of filteredProducts(); track product.id) {
+          <div class="product-card">
+            <div class="product-image">
+              <img [src]="product.imageUrl" [alt]="product.name" />
+              <app-badge 
+                [variant]="getStatusVariant(product.status)" 
+                class="status-badge"
+              >
                 {{ product.status }}
               </app-badge>
-            </td>
-            <td>
-              <div class="action-buttons">
-                <button class="action-btn edit-btn" (click)="openEditModal(product)" title="Edit">
-                  ✏️
-                </button>
-                <button class="action-btn delete-btn" (click)="deleteProduct(product.id)" title="Delete">
+            </div>
+            <div class="product-info">
+              <span class="product-category">{{ product.category }}</span>
+              <h3 class="product-name">{{ product.name }}</h3>
+              <p class="product-description">{{ product.description }}</p>
+              <div class="product-footer">
+                <div class="product-price">
+                  <span class="points-label">Points:</span>
+                  <span class="points-value">{{ product.pointsPrice }}</span>
+                </div>
+                <div class="product-stock">
+                  <app-badge [variant]="getStockStatus(product.stock).variant" size="sm">
+                    {{ getStockStatus(product.stock).label }}
+                  </app-badge>
+                  <span class="stock-count">{{ product.stock }} units</span>
+                </div>
+              </div>
+              <div class="product-actions">
+                <app-button size="sm" variant="secondary" (clicked)="openEditModal(product)">
+                  ✏️ Edit
+                </app-button>
+                <button class="delete-icon-btn" (click)="deleteProduct(product.id)" title="Delete">
                   🗑️
                 </button>
               </div>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+            </div>
+          </div>
+        }
+      </div>
+    }
+
+    <!-- Table View -->
+    @if (viewMode() === 'table') {
+      <div class="table-container">
+        <table class="products-table">
+          <thead>
+            <tr>
+              <th>Product</th>
+              <th>Category</th>
+              <th>Points Price</th>
+              <th>Stock</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (product of filteredProducts(); track product.id) {
+              <tr>
+                <td>
+                  <div class="table-product">
+                    <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" />
+                    <div>
+                      <strong>{{ product.name }}</strong>
+                      <span class="table-description">{{ product.description }}</span>
+                    </div>
+                  </div>
+                </td>
+                <td>{{ product.category }}</td>
+                <td>
+                  <span class="points-value">{{ product.pointsPrice }} pts</span>
+                </td>
+                <td>
+                  <div class="stock-info">
+                    <app-badge [variant]="getStockStatus(product.stock).variant" size="sm">
+                      {{ product.stock }} units
+                    </app-badge>
+                  </div>
+                </td>
+                <td>
+                  <app-badge [variant]="getStatusVariant(product.status)">
+                    {{ product.status }}
+                  </app-badge>
+                </td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="action-btn edit-btn" (click)="openEditModal(product)" title="Edit">
+                      ✏️
+                    </button>
+                    <button class="action-btn delete-btn" (click)="deleteProduct(product.id)" title="Delete">
+                      🗑️
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
   </app-card>
 </div>
 
 <!-- Product Modal -->
-<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ modalMode() === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
-      <button class="close-btn" (click)="closeModal()">✕</button>
-    </div>
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ modalMode() === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
 
-    <div class="modal-body">
-      <form>
-        <!-- Validation Errors -->
-        <div class="error-list" *ngIf="modalValidationErrors.length > 0">
-          <div class="error" *ngFor="let error of modalValidationErrors">{{ error }}</div>
-        </div>
+      <div class="modal-body">
+        <form>
+          <!-- Validation Errors -->
+          @if (modalValidationErrors.length > 0) {
+            <div class="error-list">
+              @for (error of modalValidationErrors; track $index) {
+                <div class="error">{{ error }}</div>
+              }
+            </div>
+          }
         
         <div class="form-group">
           <label for="productName">Product Name *</label>
@@ -222,7 +236,9 @@
               required
             >
               <option value="">Select a category</option>
-              <option *ngFor="let cat of dbCategories()" [value]="cat.id">{{ cat.name }}</option>
+              @for (cat of dbCategories(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
             </select>
           </div>
           <div class="form-group">
@@ -289,105 +305,117 @@
         {{ modalMode() === 'create' ? 'Add Product' : 'Save Changes' }}
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}
 
 <!-- Category Management Modal -->
-<div class="modal-overlay" *ngIf="showCategoryModal()" (click)="closeCategoryModal()">
-  <div class="modal-content category-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>📁 Manage Categories</h3>
-      <button class="close-btn" (click)="closeCategoryModal()">✕</button>
-    </div>
+@if (showCategoryModal()) {
+  <div class="modal-overlay" (click)="closeCategoryModal()">
+    <div class="modal-content category-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📁 Manage Categories</h3>
+        <button class="close-btn" (click)="closeCategoryModal()">✕</button>
+      </div>
 
-    <div class="modal-body">
-      <div class="category-actions">
-        <app-button (clicked)="openCreateCategoryForm()">
-          ➕ Add Category
+      <div class="modal-body">
+        <div class="category-actions">
+          <app-button (clicked)="openCreateCategoryForm()">
+            ➕ Add Category
+          </app-button>
+        </div>
+
+        @if (allCategories().length > 0) {
+          <div class="categories-list">
+            <table class="categories-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Order</th>
+                  <th>Products</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (category of allCategories(); track category.id) {
+                  <tr [class.inactive-row]="!category.isActive">
+                    <td>
+                      <strong>{{ category.name }}</strong>
+                    </td>
+                    <td class="description-cell">{{ category.description || '-' }}</td>
+                    <td>{{ category.displayOrder }}</td>
+                    <td>
+                      <app-badge [variant]="category.productCount > 0 ? 'info' : 'secondary'" size="sm">
+                        {{ category.productCount }}
+                      </app-badge>
+                    </td>
+                    <td>
+                      <app-badge [variant]="category.isActive ? 'success' : 'secondary'" size="sm">
+                        {{ category.isActive ? 'Active' : 'Inactive' }}
+                      </app-badge>
+                    </td>
+                    <td>
+                      <div class="category-action-buttons">
+                        <button class="action-btn edit-btn" (click)="openEditCategoryForm(category)" title="Edit">
+                          ✏️
+                        </button>
+                        <button 
+                          class="action-btn toggle-btn" 
+                          (click)="toggleCategoryStatus(category)" 
+                          [title]="category.isActive ? 'Deactivate' : 'Activate'">
+                          {{ category.isActive ? '🚫' : '✅' }}
+                        </button>
+                        <button 
+                          class="action-btn delete-btn" 
+                          (click)="deleteCategory(category)" 
+                          title="Delete"
+                          [disabled]="category.productCount > 0">
+                          🗑️
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="empty-categories">
+            <p>No categories found. Click "Add Category" to create one.</p>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <app-button variant="secondary" (clicked)="closeCategoryModal()">
+          Close
         </app-button>
       </div>
-
-      <div class="categories-list" *ngIf="allCategories().length > 0">
-        <table class="categories-table">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Order</th>
-              <th>Products</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let category of allCategories()" [class.inactive-row]="!category.isActive">
-              <td>
-                <strong>{{ category.name }}</strong>
-              </td>
-              <td class="description-cell">{{ category.description || '-' }}</td>
-              <td>{{ category.displayOrder }}</td>
-              <td>
-                <app-badge [variant]="category.productCount > 0 ? 'info' : 'secondary'" size="sm">
-                  {{ category.productCount }}
-                </app-badge>
-              </td>
-              <td>
-                <app-badge [variant]="category.isActive ? 'success' : 'secondary'" size="sm">
-                  {{ category.isActive ? 'Active' : 'Inactive' }}
-                </app-badge>
-              </td>
-              <td>
-                <div class="category-action-buttons">
-                  <button class="action-btn edit-btn" (click)="openEditCategoryForm(category)" title="Edit">
-                    ✏️
-                  </button>
-                  <button 
-                    class="action-btn toggle-btn" 
-                    (click)="toggleCategoryStatus(category)" 
-                    [title]="category.isActive ? 'Deactivate' : 'Activate'">
-                    {{ category.isActive ? '🚫' : '✅' }}
-                  </button>
-                  <button 
-                    class="action-btn delete-btn" 
-                    (click)="deleteCategory(category)" 
-                    title="Delete"
-                    [disabled]="category.productCount > 0">
-                    🗑️
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <div class="empty-categories" *ngIf="allCategories().length === 0">
-        <p>No categories found. Click "Add Category" to create one.</p>
-      </div>
-    </div>
-
-    <div class="modal-footer">
-      <app-button variant="secondary" (clicked)="closeCategoryModal()">
-        Close
-      </app-button>
     </div>
   </div>
-</div>
+}
 
 <!-- Category Form Modal (Add/Edit) -->
-<div class="modal-overlay" *ngIf="showCategoryFormModal()" (click)="closeCategoryFormModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ categoryModalMode() === 'create' ? '➕ Add New Category' : '✏️ Edit Category' }}</h3>
-      <button class="close-btn" (click)="closeCategoryFormModal()">✕</button>
-    </div>
+@if (showCategoryFormModal()) {
+  <div class="modal-overlay" (click)="closeCategoryFormModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ categoryModalMode() === 'create' ? '➕ Add New Category' : '✏️ Edit Category' }}</h3>
+        <button class="close-btn" (click)="closeCategoryFormModal()">✕</button>
+      </div>
 
-    <div class="modal-body">
-      <form>
-        <!-- Validation Errors -->
-        <div class="error-list" *ngIf="categoryValidationErrors.length > 0">
-          <div class="error" *ngFor="let error of categoryValidationErrors">{{ error }}</div>
-        </div>
+      <div class="modal-body">
+        <form>
+          <!-- Validation Errors -->
+          @if (categoryValidationErrors.length > 0) {
+            <div class="error-list">
+              @for (error of categoryValidationErrors; track $index) {
+                <div class="error">{{ error }}</div>
+              }
+            </div>
+          }
         
         <div class="form-group">
           <label for="categoryName">Category Name *</label>
@@ -430,17 +458,19 @@
             />
             <small class="form-hint">Lower numbers appear first</small>
           </div>
-          <div class="form-group" *ngIf="categoryModalMode() === 'edit'">
-            <label for="categoryStatus">Status</label>
-            <select
-              id="categoryStatus"
-              [(ngModel)]="selectedCategoryItem.isActive"
-              name="categoryStatus"
-            >
-              <option [ngValue]="true">Active</option>
-              <option [ngValue]="false">Inactive</option>
-            </select>
-          </div>
+          @if (categoryModalMode() === 'edit') {
+            <div class="form-group">
+              <label for="categoryStatus">Status</label>
+              <select
+                id="categoryStatus"
+                [(ngModel)]="selectedCategoryItem.isActive"
+                name="categoryStatus"
+              >
+                <option [ngValue]="true">Active</option>
+                <option [ngValue]="false">Inactive</option>
+              </select>
+            </div>
+          }
         </div>
       </form>
     </div>
@@ -453,5 +483,6 @@
         {{ categoryModalMode() === 'create' ? 'Add Category' : 'Save Changes' }}
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}

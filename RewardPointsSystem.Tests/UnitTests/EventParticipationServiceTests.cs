@@ -5,6 +5,7 @@ using FluentAssertions;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Core;
+using RewardPointsSystem.Domain.Exceptions;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
@@ -35,6 +36,8 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
+            // Events start in Draft status, must be published (-> Upcoming) for registration
+            await _eventService.PublishEventAsync(eventObj.Id);
 
             // Act
             await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id);
@@ -60,6 +63,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         {
             // Arrange
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
+            await _eventService.PublishEventAsync(eventObj.Id);
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(async () =>
@@ -72,6 +76,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _userService.DeactivateUserAsync(user.Id);
 
             // Act & Assert
@@ -87,8 +92,8 @@ namespace RewardPointsSystem.Tests.UnitTests
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
             await _eventService.DeleteEventAsync(eventObj.Id);
 
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            // Act & Assert - throws InvalidOperationException because deleted/draft events aren't "Upcoming"
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id));
         }
 
@@ -98,6 +103,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id);
 
             // Act & Assert
@@ -112,6 +118,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 100);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id);
 
             // Act

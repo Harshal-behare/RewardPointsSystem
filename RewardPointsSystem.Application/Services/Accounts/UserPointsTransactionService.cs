@@ -100,12 +100,14 @@ namespace RewardPointsSystem.Application.Services.Accounts
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
 
-            // Get current balance to calculate balance after
+            // Get current balance - this is already the post-deduction balance
+            // since DeductUserPointsAsync was called before this method
             var account = await _unitOfWork.UserPointsAccounts.SingleOrDefaultAsync(a => a.UserId == userId);
             if (account == null)
                 throw new InvalidOperationException($"User points account not found for user {userId}");
 
-            var balanceAfter = account.CurrentBalance - userPoints;
+            // The balance after is the current balance (deduction already happened)
+            var balanceAfter = account.CurrentBalance;
 
             var transaction = UserPointsTransaction.CreateRedeemed(
                 userId,

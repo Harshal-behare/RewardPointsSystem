@@ -1,20 +1,18 @@
 import { Component, computed } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { ToastService } from '../../../core/services/toast.service';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
-  imports: [CommonModule],
   template: `
     <div class="toast-container">
-      <div *ngFor="let toast of toasts()" 
-           class="toast toast-{{toast.type}}"
-           [@slideIn]>
-        <span class="toast-icon">{{ getIcon(toast.type) }}</span>
-        <span class="toast-message">{{ toast.message }}</span>
-        <button class="toast-close" (click)="close(toast.id)">✕</button>
-      </div>
+      @for (toast of toasts(); track toast.id) {
+        <div class="toast toast-{{toast.type}}">
+          <span class="toast-icon">{{ getIcon(toast.type) }}</span>
+          <span class="toast-message">{{ toast.message }}</span>
+          <button class="toast-close" (click)="close(toast.id)">✕</button>
+        </div>
+      }
     </div>
   `,
   styles: [`

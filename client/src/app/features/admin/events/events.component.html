@@ -85,44 +85,46 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let event of filteredEvents()">
-            <td>
-              <div class="event-name">
-                <strong>{{ event.name }}</strong>
-                <span class="event-description">{{ event.description }}</span>
-              </div>
-            </td>
-            <td>{{ event.eventDate | date: 'MMM dd, yyyy' }}</td>
-            <td>
-              <app-badge [variant]="getStatusVariant(event.status)">
-                {{ event.status }}
-              </app-badge>
-            </td>
-            <td>
-              <span class="points-value">{{ event.pointsPool }} pts</span>
-            </td>
-            <td>
-              <span class="points-value remaining-points" [class.low-points]="event.remainingPoints < event.pointsPool * 0.2">
-                {{ event.remainingPoints }} pts
-              </span>
-            </td>
-            <td>
-              <span class="participant-count">{{ event.participantCount }} users</span>
-            </td>
-            <td>
-              <div class="action-buttons">
-                <button class="action-btn edit-btn" (click)="openEditModal(event)" title="Edit">
-                  ✏️
-                </button>
-                <button class="action-btn participants-btn" (click)="openParticipantsModal(event)" title="View Participants">
-                  👥
-                </button>
-                <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
-                  🗑️
-                </button>
-              </div>
-            </td>
-          </tr>
+          @for (event of filteredEvents(); track event.id) {
+            <tr>
+              <td>
+                <div class="event-name">
+                  <strong>{{ event.name }}</strong>
+                  <span class="event-description">{{ event.description }}</span>
+                </div>
+              </td>
+              <td>{{ event.eventDate | date: 'MMM dd, yyyy' }}</td>
+              <td>
+                <app-badge [variant]="getStatusVariant(event.status)">
+                  {{ event.status }}
+                </app-badge>
+              </td>
+              <td>
+                <span class="points-value">{{ event.pointsPool }} pts</span>
+              </td>
+              <td>
+                <span class="points-value remaining-points" [class.low-points]="event.remainingPoints < event.pointsPool * 0.2">
+                  {{ event.remainingPoints }} pts
+                </span>
+              </td>
+              <td>
+                <span class="participant-count">{{ event.participantCount }} users</span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-btn edit-btn" (click)="openEditModal(event)" title="Edit">
+                    ✏️
+                  </button>
+                  <button class="action-btn participants-btn" (click)="openParticipantsModal(event)" title="View Participants">
+                    👥
+                  </button>
+                  <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
@@ -130,19 +132,24 @@
 </div>
 
 <!-- Event Modal -->
-<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
-      <button class="close-btn" (click)="closeModal()">✕</button>
-    </div>
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
 
     <div class="modal-body">
       <form>
         <!-- Validation Errors -->
-        <div class="error-list" *ngIf="eventModalValidationErrors.length > 0">
-          <div class="error" *ngFor="let error of eventModalValidationErrors">{{ error }}</div>
-        </div>
+        @if (eventModalValidationErrors.length > 0) {
+          <div class="error-list">
+            @for (error of eventModalValidationErrors; track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
         
         <div class="form-group">
           <label for="eventName">Event Name *</label>
@@ -252,26 +259,27 @@
         {{ modalMode() === 'create' ? 'Create Event' : 'Save Changes' }}
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}
 
 <!-- Participants Modal -->
-<div class="modal-overlay" *ngIf="showParticipantsModal()" (click)="closeParticipantsModal()">
-  <div class="modal-content participants-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <div>
-        <h3>{{ selectedEventForParticipants()?.name }} - Participants</h3>
-        <p class="participants-count">Total Participants: {{ filteredParticipants().length }}</p>
-        <p class="remaining-pool-info">
-          <strong>Remaining Points Pool:</strong> 
-          <span [class.low-points]="(selectedEventForParticipants()?.remainingPoints ?? 0) < (selectedEventForParticipants()?.pointsPool ?? 0) * 0.2">
-            {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool }} / {{ selectedEventForParticipants()?.pointsPool }} pts
-          </span>
-        </p>
+@if (showParticipantsModal()) {
+  <div class="modal-overlay" (click)="closeParticipantsModal()">
+    <div class="modal-content participants-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3>{{ selectedEventForParticipants()?.name }} - Participants</h3>
+          <p class="participants-count">Total Participants: {{ filteredParticipants().length }}</p>
+          <p class="remaining-pool-info">
+            <strong>Remaining Points Pool:</strong> 
+            <span [class.low-points]="(selectedEventForParticipants()?.remainingPoints ?? 0) < (selectedEventForParticipants()?.pointsPool ?? 0) * 0.2">
+              {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool }} / {{ selectedEventForParticipants()?.pointsPool }} pts
+            </span>
+          </p>
+        </div>
+        <button class="close-btn" (click)="closeParticipantsModal()">✕</button>
       </div>
-      <button class="close-btn" (click)="closeParticipantsModal()">✕</button>
-    </div>
-
     <div class="modal-body">
       <!-- Search Bar -->
       <div class="search-container">
@@ -298,116 +306,129 @@
               <th>Actions</th>
             </tr>
           </thead>
-          <tbody>
-            <tr *ngFor="let participant of filteredParticipants()" 
-                [class.awarded-row]="participant.pointsAwarded || participant.status === 'Awarded'">
-              <td>
-                <strong>{{ participant.userName }}</strong>
-              </td>
-              <td>{{ participant.userEmail }}</td>
-              <td>{{ participant.registeredAt | date: 'MMM dd, yyyy' }}</td>
-              <td>
-                <app-badge [variant]="getParticipantStatusVariant(participant.status)">
-                  {{ participant.pointsAwarded ? 'Awarded' : participant.status }}
-                </app-badge>
-              </td>
-              <td>
-                <span *ngIf="participant.eventRank" class="rank-badge">
-                  🏆 #{{ participant.eventRank }}
-                </span>
-                <span *ngIf="!participant.eventRank">-</span>
-              </td>
-              <td>
-                <span *ngIf="participant.pointsAwarded" class="points-awarded">
-                  {{ participant.pointsAwarded }} pts
-                </span>
-                <span *ngIf="!participant.pointsAwarded">-</span>
-              </td>
-              <td>
-                <button 
-                  class="select-winner-btn"
-                  (click)="openWinnerSelectionModal(participant)"
-                  [disabled]="participant.pointsAwarded || participant.status === 'Awarded'"
-                  [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded'"
-                  title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : 'Award points to this participant' }}">
-                  {{ (participant.pointsAwarded || participant.status === 'Awarded') ? '✓ Awarded' : '🏆 Award Points' }}
-                </button>
-              </td>
-            </tr>
-            <tr *ngIf="filteredParticipants().length === 0">
-              <td colspan="5" style="text-align: center; padding: 32px; color: #7A7A7A;">
-                No participants found
-              </td>
-            </tr>
-          </tbody>
-        </table>
+            <tbody>
+              @for (participant of filteredParticipants(); track participant.userId) {
+                <tr [class.awarded-row]="participant.pointsAwarded || participant.status === 'Awarded'">
+                  <td>
+                    <strong>{{ participant.userName }}</strong>
+                  </td>
+                  <td>{{ participant.userEmail }}</td>
+                  <td>{{ participant.registeredAt | date: 'MMM dd, yyyy' }}</td>
+                  <td>
+                    <app-badge [variant]="getParticipantStatusVariant(participant.status)">
+                      {{ participant.pointsAwarded ? 'Awarded' : participant.status }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    @if (participant.eventRank) {
+                      <span class="rank-badge">
+                        🏆 #{{ participant.eventRank }}
+                      </span>
+                    } @else {
+                      <span>-</span>
+                    }
+                  </td>
+                  <td>
+                    @if (participant.pointsAwarded) {
+                      <span class="points-awarded">
+                        {{ participant.pointsAwarded }} pts
+                      </span>
+                    } @else {
+                      <span>-</span>
+                    }
+                  </td>
+                  <td>
+                    <button 
+                      class="select-winner-btn"
+                      (click)="openWinnerSelectionModal(participant)"
+                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded'"
+                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded'"
+                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : 'Award points to this participant' }}">
+                      {{ (participant.pointsAwarded || participant.status === 'Awarded') ? '✓ Awarded' : '🏆 Award Points' }}
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (filteredParticipants().length === 0) {
+                <tr>
+                  <td colspan="5" style="text-align: center; padding: 32px; color: #7A7A7A;">
+                    No participants found
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-</div>
-
+}
 <!-- Winner Selection Modal -->
-<div class="modal-overlay" *ngIf="showWinnerModal()" (click)="closeWinnerModal()">
-  <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>🏆 Award Points</h3>
-      <button class="close-btn" (click)="closeWinnerModal()">✕</button>
-    </div>
-
-    <div class="modal-body">
-      <div class="winner-info">
-        <p><strong>Participant:</strong> {{ selectedParticipant()?.userName }}</p>
-        <p><strong>Email:</strong> {{ selectedParticipant()?.userEmail }}</p>
-        <p><strong>Event:</strong> {{ selectedEventForParticipants()?.name }}</p>
+@if (showWinnerModal()) {
+  <div class="modal-overlay" (click)="closeWinnerModal()">
+    <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🏆 Award Points</h3>
+        <button class="close-btn" (click)="closeWinnerModal()">✕</button>
       </div>
 
-      <div class="form-row">
-        <div class="form-group">
-          <label for="winnerRank">Rank Position *</label>
-          <input
-            id="winnerRank"
-            type="number"
-            [ngModel]="winnerRank()"
-            (ngModelChange)="winnerRank.set($event)"
-            name="winnerRank"
-            placeholder="Enter rank (1, 2, 3...)"
-            min="1"
-            required
-          />
-          <span class="input-hint">Winner's rank position (1st, 2nd, 3rd, etc.)</span>
+      <div class="modal-body">
+        <div class="winner-info">
+          <p><strong>Participant:</strong> {{ selectedParticipant()?.userName }}</p>
+          <p><strong>Email:</strong> {{ selectedParticipant()?.userEmail }}</p>
+          <p><strong>Event:</strong> {{ selectedEventForParticipants()?.name }}</p>
         </div>
 
-        <div class="form-group">
-          <label for="pointsToAward">Points to Award *</label>
-          <input
-            id="pointsToAward"
-            type="number"
-            [ngModel]="pointsToAward()"
-            (ngModelChange)="pointsToAward.set($event)"
-            name="pointsToAward"
-            placeholder="Enter points"
-            min="1"
-            [max]="selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0"
-            required
-          />
-          <span class="input-hint">
-            Remaining pool: {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0 }} / {{ selectedEventForParticipants()?.pointsPool ?? 0 }} points
-          </span>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="winnerRank">Rank Position *</label>
+            <input
+              id="winnerRank"
+              type="number"
+              [ngModel]="winnerRank()"
+              (ngModelChange)="winnerRank.set($event)"
+              name="winnerRank"
+              placeholder="Enter rank (1, 2, 3...)"
+              min="1"
+              required
+            />
+            <span class="input-hint">Winner's rank position (1st, 2nd, 3rd, etc.)</span>
+          </div>
+
+          <div class="form-group">
+            <label for="pointsToAward">Points to Award *</label>
+            <input
+              id="pointsToAward"
+              type="number"
+              [ngModel]="pointsToAward()"
+              (ngModelChange)="pointsToAward.set($event)"
+              name="pointsToAward"
+              placeholder="Enter points"
+              min="1"
+              [max]="selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0"
+              required
+            />
+            <span class="input-hint">
+              Remaining pool: {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0 }} / {{ selectedEventForParticipants()?.pointsPool ?? 0 }} points
+            </span>
+          </div>
         </div>
+
+        @if (winnerValidationError()) {
+          <div class="error-message-box">
+            {{ winnerValidationError() }}
+          </div>
+        }
       </div>
 
-      <div *ngIf="winnerValidationError()" class="error-message-box">
-        {{ winnerValidationError() }}
+      <div class="modal-footer">
+        <app-button variant="secondary" (clicked)="closeWinnerModal()">
+          Cancel
+        </app-button>
+        <app-button (clicked)="confirmWinnerSelection()">
+          Confirm & Award Points
+        </app-button>
       </div>
-    </div>
-
-    <div class="modal-footer">
-      <app-button variant="secondary" (clicked)="closeWinnerModal()">
-        Cancel
-      </app-button>
-      <app-button (clicked)="confirmWinnerSelection()">
-        Confirm & Award Points
-      </app-button>
     </div>
   </div>
-</div>
+}

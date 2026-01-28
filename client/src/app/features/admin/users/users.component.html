@@ -38,63 +38,68 @@
           </tr>
         </thead>
         <tbody>
-          <tr *ngFor="let user of users()" [class.inactive-row]="user.status === 'Inactive'">
-            <td>
-              <div class="user-name">
-                <div class="user-avatar">
-                  {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+          @for (user of users(); track user.id) {
+            <tr [class.inactive-row]="user.status === 'Inactive'">
+              <td>
+                <div class="user-name">
+                  <div class="user-avatar">
+                    {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                  </div>
+                  <strong>{{ user.firstName }} {{ user.lastName }}</strong>
                 </div>
-                <strong>{{ user.firstName }} {{ user.lastName }}</strong>
-              </div>
-            </td>
-            <td>{{ user.email }}</td>
-            <td>
-              <app-badge [variant]="getRoleBadgeVariant(user.role)">
-                {{ user.role }}
-              </app-badge>
-            </td>
-            <td>
-              <app-badge [variant]="getStatusVariant(user.status)">
-                {{ user.status }}
-              </app-badge>
-            </td>
-            <td>
-              <span class="points-value" *ngIf="user.pointsBalance !== undefined">
-                {{ user.pointsBalance }} pts
-              </span>
-              <span class="no-points" *ngIf="user.pointsBalance === undefined">
-                N/A
-              </span>
-            </td>
-            <td>{{ user.createdAt | date: 'MMM dd, yyyy' }}</td>
-            <td>
-              <div class="action-buttons">
-                <button 
-                  class="action-btn edit-btn" 
-                  (click)="openEditModal(user)" 
-                  title="Edit"
-                >
-                  ✏️
-                </button>
-                <button 
-                  class="action-btn" 
-                  [class.toggle-active]="user.status === 'Active'"
-                  [class.toggle-inactive]="user.status === 'Inactive'"
-                  (click)="toggleUserStatus(user)" 
-                  [title]="user.status === 'Active' ? 'Deactivate' : 'Activate'"
-                >
-                  {{ user.status === 'Active' ? '🔒' : '✅' }}
-                </button>
-                <button 
-                  class="action-btn delete-btn" 
-                  (click)="deleteUser(user.id)" 
-                  title="Delete"
-                >
-                  🗑️
-                </button>
-              </div>
-            </td>
-          </tr>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                <app-badge [variant]="getRoleBadgeVariant(user.role)">
+                  {{ user.role }}
+                </app-badge>
+              </td>
+              <td>
+                <app-badge [variant]="getStatusVariant(user.status)">
+                  {{ user.status }}
+                </app-badge>
+              </td>
+              <td>
+                @if (user.pointsBalance !== undefined) {
+                  <span class="points-value">
+                    {{ user.pointsBalance }} pts
+                  </span>
+                } @else {
+                  <span class="no-points">
+                    N/A
+                  </span>
+                }
+              </td>
+              <td>{{ user.createdAt | date: 'MMM dd, yyyy' }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button 
+                    class="action-btn edit-btn" 
+                    (click)="openEditModal(user)" 
+                    title="Edit"
+                  >
+                    ✏️
+                  </button>
+                  <button 
+                    class="action-btn" 
+                    [class.toggle-active]="user.status === 'Active'"
+                    [class.toggle-inactive]="user.status === 'Inactive'"
+                    (click)="toggleUserStatus(user)" 
+                    [title]="user.status === 'Active' ? 'Deactivate' : 'Activate'"
+                  >
+                    {{ user.status === 'Active' ? '🔒' : '✅' }}
+                  </button>
+                  <button 
+                    class="action-btn delete-btn" 
+                    (click)="deleteUser(user.id)" 
+                    title="Delete"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
     </div>
@@ -102,19 +107,24 @@
 </div>
 
 <!-- User Modal -->
-<div class="modal-overlay" *ngIf="showModal()" (click)="closeModal()">
-  <div class="modal-content" (click)="$event.stopPropagation()">
-    <div class="modal-header">
-      <h3>{{ modalMode() === 'create' ? 'Add New User' : 'Edit User' }}</h3>
-      <button class="close-btn" (click)="closeModal()">✕</button>
-    </div>
+@if (showModal()) {
+  <div class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ modalMode() === 'create' ? 'Add New User' : 'Edit User' }}</h3>
+        <button class="close-btn" (click)="closeModal()">✕</button>
+      </div>
 
     <div class="modal-body">
       <form>
         <!-- Validation Errors -->
-        <div class="error-list" *ngIf="modalValidationErrors.length > 0">
-          <div class="error" *ngFor="let error of modalValidationErrors">{{ error }}</div>
-        </div>
+        @if (modalValidationErrors.length > 0) {
+          <div class="error-list">
+            @for (error of modalValidationErrors; track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
         
         <div class="form-row">
           <div class="form-group">
@@ -190,23 +200,27 @@
           </div>
         </div>
 
-        <div class="form-group" *ngIf="modalMode() === 'create'">
-          <label for="password">Initial Password *</label>
-          <input
-            id="password"
-            type="password"
-            [(ngModel)]="selectedUser.password"
-            placeholder="Enter initial password"
-            name="password"
-            required
-            minlength="8"
-          />
-          <small class="form-help">Min 8 characters, must include: uppercase, lowercase, number, and special character</small>
-        </div>
+        @if (modalMode() === 'create') {
+          <div class="form-group">
+            <label for="password">Initial Password *</label>
+            <input
+              id="password"
+              type="password"
+              [(ngModel)]="selectedUser.password"
+              placeholder="Enter initial password"
+              name="password"
+              required
+              minlength="8"
+            />
+            <small class="form-help">Min 8 characters, must include: uppercase, lowercase, number, and special character</small>
+          </div>
+        }
 
-        <div class="info-box" *ngIf="modalMode() === 'edit'">
-          <strong>ℹ️ Note:</strong> User's password cannot be changed from here. Use the password reset feature.
-        </div>
+        @if (modalMode() === 'edit') {
+          <div class="info-box">
+            <strong>ℹ️ Note:</strong> User's password cannot be changed from here. Use the password reset feature.
+          </div>
+        }
       </form>
     </div>
 
@@ -218,5 +232,6 @@
         {{ modalMode() === 'create' ? 'Create User' : 'Save Changes' }}
       </app-button>
     </div>
+    </div>
   </div>
-</div>
+}

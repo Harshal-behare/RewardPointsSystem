@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter } from 'rxjs';
@@ -26,14 +26,14 @@ interface DisplayUser {
   selector: 'app-admin-users',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
     FormsModule,
     CardComponent,
     ButtonComponent,
     BadgeComponent
   ],
   templateUrl: './users.component.html',
-  styleUrls: ['./users.component.scss']
+  styleUrl: './users.component.scss'
 })
 export class AdminUsersComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

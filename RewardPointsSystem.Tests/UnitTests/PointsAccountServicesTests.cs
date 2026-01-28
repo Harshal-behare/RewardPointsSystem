@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using RewardPointsSystem.Domain.Entities.Accounts;
+using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Core;
@@ -50,7 +51,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         public async Task CreateAccountAsync_WithNonExistentUser_ShouldThrowException()
         {
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<UserNotFoundException>(async () =>
                 await _accountService.CreateAccountAsync(Guid.NewGuid()));
         }
 
@@ -62,7 +63,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.CreateAccountAsync(user.Id);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<InvalidUserPointsOperationException>(async () =>
                 await _accountService.CreateAccountAsync(user.Id));
         }
 
@@ -92,7 +93,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.CreateAccountAsync(user.Id);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await Assert.ThrowsAsync<InvalidUserPointsOperationException>(async () =>
                 await _accountService.AddUserPointsAsync(user.Id, amount));
         }
 
@@ -121,7 +122,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.AddUserPointsAsync(user.Id, 100);
 
             // Act & Assert
-            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+            await Assert.ThrowsAsync<InsufficientUserPointsBalanceException>(async () =>
                 await _accountService.DeductUserPointsAsync(user.Id, 200));
         }
 
@@ -135,7 +136,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _accountService.CreateAccountAsync(user.Id);
 
             // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await Assert.ThrowsAsync<InvalidUserPointsOperationException>(async () =>
                 await _accountService.DeductUserPointsAsync(user.Id, amount));
         }
 
@@ -230,6 +231,9 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             await _accountService.CreateAccountAsync(user.Id);
+            
+            // Add points to the account first so balance is sufficient for redemption
+            await _accountService.AddUserPointsAsync(user.Id, 300);
 
             await _transactionService.RecordEarnedUserPointsAsync(user.Id, 100, Guid.NewGuid(), "Earned 1");
             await _transactionService.RecordEarnedUserPointsAsync(user.Id, 200, Guid.NewGuid(), "Earned 2");

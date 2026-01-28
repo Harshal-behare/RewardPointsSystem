@@ -1,6 +1,6 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { DatePipe, NgClass } from '@angular/common';
 import { EventService } from '../../../core/services/event.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -21,7 +21,7 @@ interface DisplayEvent {
 @Component({
   selector: 'app-employee-events',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, DatePipe, NgClass],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss'
 })

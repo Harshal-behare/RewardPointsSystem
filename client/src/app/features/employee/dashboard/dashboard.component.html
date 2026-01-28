@@ -52,31 +52,37 @@
         </div>
 
         <div class="events-list">
-          <div *ngFor="let event of upcomingEvents()" class="event-item">
-            <img [src]="event.image" [alt]="event.name" class="event-image" />
-            <div class="event-details">
-              <h3 class="event-name">{{ event.name }}</h3>
-              <p class="event-meta">
-                <span class="event-date">📅 {{ event.date }}</span>
-                <span class="event-location">📍 {{ event.location }}</span>
-              </p>
-              <div class="event-footer">
-                <span class="event-points">+{{ event.points }} points</span>
-                <button
-                  *ngIf="!event.registered"
-                  class="register-btn"
-                  (click)="registerForEvent(event)"
-                >
-                  Register
-                </button>
-                <span *ngIf="event.registered" class="registered-badge">✓ Registered</span>
+          @for (event of upcomingEvents(); track event.id) {
+            <div class="event-item">
+              <img [src]="event.image" [alt]="event.name" class="event-image" />
+              <div class="event-details">
+                <h3 class="event-name">{{ event.name }}</h3>
+                <p class="event-meta">
+                  <span class="event-date">📅 {{ event.date }}</span>
+                  <span class="event-location">📍 {{ event.location }}</span>
+                </p>
+                <div class="event-footer">
+                  <span class="event-points">+{{ event.points }} points</span>
+                  @if (!event.registered) {
+                    <button
+                      class="register-btn"
+                      (click)="registerForEvent(event)"
+                    >
+                      Register
+                    </button>
+                  } @else {
+                    <span class="registered-badge">✓ Registered</span>
+                  }
+                </div>
               </div>
             </div>
-          </div>
+          }
 
-          <div *ngIf="upcomingEvents().length === 0 && !isLoading()" class="empty-state">
-            <p>No upcoming events at the moment</p>
-          </div>
+          @if (upcomingEvents().length === 0 && !isLoading()) {
+            <div class="empty-state">
+              <p>No upcoming events at the moment</p>
+            </div>
+          }
         </div>
       </div>
 
@@ -88,29 +94,31 @@
         </div>
 
         <div class="products-grid">
-          <div *ngFor="let product of featuredProducts()" class="product-card">
-            <img [src]="product.image" [alt]="product.name" class="product-image" />
-            <div class="product-info">
-              <span class="product-category">{{ product.category }}</span>
-              <h3 class="product-name">{{ product.name }}</h3>
-              <div class="product-footer">
-                <span class="product-points">{{ product.points }} pts</span>
-                <span
-                  class="product-stock"
-                  [class.low-stock]="product.stock < 10"
+          @for (product of featuredProducts(); track product.id) {
+            <div class="product-card">
+              <img [src]="product.image" [alt]="product.name" class="product-image" />
+              <div class="product-info">
+                <span class="product-category">{{ product.category }}</span>
+                <h3 class="product-name">{{ product.name }}</h3>
+                <div class="product-footer">
+                  <span class="product-points">{{ product.points }} pts</span>
+                  <span
+                    class="product-stock"
+                    [class.low-stock]="product.stock < 10"
+                  >
+                    {{ product.stock }} left
+                  </span>
+                </div>
+                <button
+                  class="redeem-btn"
+                  [disabled]="pointsBalance().available < product.points"
+                  (click)="redeemProduct(product)"
                 >
-                  {{ product.stock }} left
-                </span>
+                  {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
+                </button>
               </div>
-              <button
-                class="redeem-btn"
-                [disabled]="pointsBalance().available < product.points"
-                (click)="redeemProduct(product)"
-              >
-                {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
-              </button>
             </div>
-          </div>
+          }
         </div>
       </div>
     </div>
@@ -125,39 +133,52 @@
         </div>
 
         <div class="transactions-list">
-          <div
-            *ngFor="let transaction of recentTransactions()"
-            class="transaction-item"
-            [class.earned]="transaction.type === 'earned'"
-            [class.redeemed]="transaction.type === 'redeemed'"
-          >
-            <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
-              <span *ngIf="transaction.type === 'earned'">📈</span>
-              <span *ngIf="transaction.type === 'redeemed'">🛒</span>
-            </div>
-            <div class="transaction-details">
-              <span class="transaction-description">{{ transaction.description }}</span>
-              <div class="transaction-meta">
-                <span class="transaction-date">{{ transaction.date }}</span>
-                <span *ngIf="transaction.source" class="transaction-source" [ngClass]="'source-' + transaction.source.toLowerCase()">
-                  {{ transaction.source }}
-                </span>
+          @for (transaction of recentTransactions(); track transaction.id) {
+            <div
+              class="transaction-item"
+              [class.earned]="transaction.type === 'earned'"
+              [class.redeemed]="transaction.type === 'redeemed'"
+            >
+              <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
+                @if (transaction.type === 'earned') {
+                  <span>📈</span>
+                }
+                @if (transaction.type === 'redeemed') {
+                  <span>🛒</span>
+                }
               </div>
-              <div *ngIf="transaction.eventName" class="transaction-event">
-                <span class="event-name">🎉 {{ transaction.eventName }}</span>
-                <span *ngIf="transaction.eventRank" class="event-rank">🏆 #{{ transaction.eventRank }}</span>
+              <div class="transaction-details">
+                <span class="transaction-description">{{ transaction.description }}</span>
+                <div class="transaction-meta">
+                  <span class="transaction-date">{{ transaction.date }}</span>
+                  @if (transaction.source) {
+                    <span class="transaction-source" [class]="'source-' + transaction.source.toLowerCase()">
+                      {{ transaction.source }}
+                    </span>
+                  }
+                </div>
+                @if (transaction.eventName) {
+                  <div class="transaction-event">
+                    <span class="event-name">🎉 {{ transaction.eventName }}</span>
+                    @if (transaction.eventRank) {
+                      <span class="event-rank">🏆 #{{ transaction.eventRank }}</span>
+                    }
+                  </div>
+                }
+              </div>
+              <div class="transaction-amount" 
+                   [class.positive]="transaction.points > 0"
+                   [class.negative]="transaction.points < 0">
+                {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
               </div>
             </div>
-            <div class="transaction-amount" 
-                 [class.positive]="transaction.points > 0"
-                 [class.negative]="transaction.points < 0">
-              {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
-            </div>
-          </div>
+          }
 
-          <div *ngIf="recentTransactions().length === 0 && !isLoading()" class="empty-state">
-            <p>No transactions yet</p>
-          </div>
+          @if (recentTransactions().length === 0 && !isLoading()) {
+            <div class="empty-state">
+              <p>No transactions yet</p>
+            </div>
+          }
         </div>
       </div>
 

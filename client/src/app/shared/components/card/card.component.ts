@@ -1,22 +1,26 @@
 import { Component, Input } from '@angular/core';
-import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-card',
   standalone: true,
-  imports: [CommonModule],
   template: `
     <div [class]="getCardClasses()">
-      <div class="card-header" *ngIf="title || hasHeaderContent">
-        <h3 *ngIf="title">{{ title }}</h3>
-        <ng-content select="[header]"></ng-content>
-      </div>
+      @if (title || hasHeaderContent) {
+        <div class="card-header">
+          @if (title) {
+            <h3>{{ title }}</h3>
+          }
+          <ng-content select="[header]"></ng-content>
+        </div>
+      }
       <div class="card-body">
         <ng-content></ng-content>
       </div>
-      <div class="card-footer" *ngIf="hasFooterContent">
-        <ng-content select="[footer]"></ng-content>
-      </div>
+      @if (hasFooterContent) {
+        <div class="card-footer">
+          <ng-content select="[footer]"></ng-content>
+        </div>
+      }
     </div>
   `,
   styles: [`

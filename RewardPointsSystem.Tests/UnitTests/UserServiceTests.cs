@@ -5,6 +5,7 @@ using FluentAssertions;
 using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
@@ -51,7 +52,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         }
 
         [Fact]
-        public async Task CreateUserAsync_WithDuplicateEmail_ShouldThrowInvalidOperationException()
+        public async Task CreateUserAsync_WithDuplicateEmail_ShouldThrowDuplicateUserEmailException()
         {
             // Arrange
             var email = "duplicate@example.com";
@@ -61,7 +62,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             Func<Task> act = async () => await _userService.CreateUserAsync(email, "Second", "User");
 
             // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<DuplicateUserEmailException>()
                 .WithMessage($"*{email}*already exists*");
         }
 
@@ -81,7 +82,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("*First name*required*");
+                .WithMessage("*firstName*required*");
         }
 
         [Theory]
@@ -100,7 +101,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
             // Assert
             await act.Should().ThrowAsync<ArgumentException>()
-                .WithMessage("*Last name*required*");
+                .WithMessage("*lastName*required*");
         }
 
         [Theory]
@@ -151,7 +152,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         }
 
         [Fact]
-        public async Task UpdateUserAsync_WithDuplicateEmail_ShouldThrowInvalidOperationException()
+        public async Task UpdateUserAsync_WithDuplicateEmail_ShouldThrowDuplicateUserEmailException()
         {
             // Arrange
             var user1 = await _userService.CreateUserAsync("user1@example.com", "User", "One");
@@ -166,12 +167,12 @@ namespace RewardPointsSystem.Tests.UnitTests
             Func<Task> act = async () => await _userService.UpdateUserAsync(user2.Id, updateDto);
 
             // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<DuplicateUserEmailException>()
                 .WithMessage("*user1@example.com*already exists*");
         }
 
         [Fact]
-        public async Task UpdateUserAsync_WithNonExistentUserId_ShouldThrowInvalidOperationException()
+        public async Task UpdateUserAsync_WithNonExistentUserId_ShouldThrowUserNotFoundException()
         {
             // Arrange
             var nonExistentId = Guid.NewGuid();
@@ -181,7 +182,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             Func<Task> act = async () => await _userService.UpdateUserAsync(nonExistentId, updateDto);
 
             // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<UserNotFoundException>()
                 .WithMessage($"*{nonExistentId}*not found*");
         }
 
@@ -289,7 +290,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         }
 
         [Fact]
-        public async Task DeactivateUserAsync_WithNonExistentId_ShouldThrowInvalidOperationException()
+        public async Task DeactivateUserAsync_WithNonExistentId_ShouldThrowUserNotFoundException()
         {
             // Arrange
             var nonExistentId = Guid.NewGuid();
@@ -298,7 +299,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             Func<Task> act = async () => await _userService.DeactivateUserAsync(nonExistentId);
 
             // Assert
-            await act.Should().ThrowAsync<InvalidOperationException>()
+            await act.Should().ThrowAsync<UserNotFoundException>()
                 .WithMessage($"*{nonExistentId}*not found*");
         }
 

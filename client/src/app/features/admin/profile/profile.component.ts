@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -18,13 +18,13 @@ interface UserProfileResponse {
   selector: 'app-admin-profile',
   standalone: true,
   imports: [
-    CommonModule,
+    DatePipe,
     FormsModule,
     CardComponent,
     ButtonComponent
   ],
   templateUrl: './profile.component.html',
-  styleUrls: ['./profile.component.scss']
+  styleUrl: './profile.component.scss'
 })
 export class AdminProfileComponent implements OnInit {
   isLoading = true;

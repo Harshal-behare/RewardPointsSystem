@@ -241,6 +241,8 @@ namespace RewardPointsSystem.Tests.IntegrationTests
             await _inventoryService.CreateInventoryAsync(product.Id, 5, 1);
 
             var redemptionResult = await _redemptionOrchestrator.ProcessRedemptionAsync(employee.Id, product.Id);
+            redemptionResult.Success.Should().BeTrue($"Redemption should succeed, but failed with: {redemptionResult.Message}");
+            redemptionResult.Redemption.Should().NotBeNull("Redemption object should not be null");
             redemptionResult.Redemption.Status.Should().Be(RedemptionStatus.Pending);
 
             // Act: Admin approves
@@ -272,6 +274,8 @@ namespace RewardPointsSystem.Tests.IntegrationTests
             await _inventoryService.CreateInventoryAsync(product.Id, 10, 2);
 
             var redemptionResult = await _redemptionOrchestrator.ProcessRedemptionAsync(employee.Id, product.Id);
+            redemptionResult.Success.Should().BeTrue($"Redemption should succeed, but failed with: {redemptionResult.Message}");
+            redemptionResult.Redemption.Should().NotBeNull("Redemption object should not be null");
             await _redemptionOrchestrator.ApproveRedemptionAsync(redemptionResult.Redemption.Id, _adminUserId);
 
             // Act: Mark as delivered

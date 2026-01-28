@@ -4,21 +4,26 @@
     <div class="sidebar-header">
       <div class="logo">
         <span class="logo-icon">🏆</span>
-        <span class="logo-text" *ngIf="!isSidebarCollapsed">Rewards Portal</span>
+        @if (!isSidebarCollapsed) {
+          <span class="logo-text">Rewards Portal</span>
+        }
       </div>
     </div>
 
     <nav class="sidebar-nav">
-      <a
-        *ngFor="let item of menuItems"
-        [routerLink]="item.route"
-        routerLinkActive="active"
-        class="nav-item"
-        (click)="setActiveMenu(item)"
-      >
-        <span class="nav-icon">{{ item.icon }}</span>
-        <span class="nav-text" *ngIf="!isSidebarCollapsed">{{ item.name }}</span>
-      </a>
+      @for (item of menuItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+          (click)="setActiveMenu(item)"
+        >
+          <span class="nav-icon">{{ item.icon }}</span>
+          @if (!isSidebarCollapsed) {
+            <span class="nav-text">{{ item.name }}</span>
+          }
+        </a>
+      }
     </nav>
 
     <div class="sidebar-footer">
@@ -49,21 +54,25 @@
           </div>
           <span class="dropdown-arrow">▼</span>
 
-          <div class="dropdown-menu" *ngIf="showProfileDropdown">
-            <a *ngIf="isAdmin" (click)="switchToAdmin()" class="dropdown-item admin-switch">
-              <span>👨‍💼</span> Switch to Admin
-            </a>
-            <a [routerLink]="['/employee/profile']" class="dropdown-item">
-              <span>👤</span> My Profile
-            </a>
-            <a [routerLink]="['/employee/account']" class="dropdown-item">
-              <span>💰</span> My Points
-            </a>
-            <hr />
-            <a (click)="logout()" class="dropdown-item logout">
-              <span>🚪</span> Logout
-            </a>
-          </div>
+          @if (showProfileDropdown) {
+            <div class="dropdown-menu">
+              @if (isAdmin) {
+                <a (click)="switchToAdmin()" class="dropdown-item admin-switch">
+                  <span>👨‍💼</span> Switch to Admin
+                </a>
+              }
+              <a [routerLink]="['/employee/profile']" class="dropdown-item">
+                <span>👤</span> My Profile
+              </a>
+              <a [routerLink]="['/employee/account']" class="dropdown-item">
+                <span>💰</span> My Points
+              </a>
+              <hr />
+              <a (click)="logout()" class="dropdown-item logout">
+                <span>🚪</span> Logout
+              </a>
+            </div>
+          }
         </div>
       </div>
     </header>

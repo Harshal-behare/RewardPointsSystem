@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { NgClass, TitleCasePipe } from '@angular/common';
 import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -33,7 +33,7 @@ interface RedemptionRecord {
 @Component({
   selector: 'app-employee-account',
   standalone: true,
-  imports: [CommonModule],
+  imports: [NgClass, TitleCasePipe],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss'
 })

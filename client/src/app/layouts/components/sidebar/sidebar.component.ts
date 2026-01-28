@@ -1,11 +1,10 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [CommonModule, RouterModule],
+  imports: [RouterModule],
   template: `
     <aside class="sidebar">
       <div class="sidebar-header">
@@ -13,15 +12,16 @@ import { RouterModule } from '@angular/router';
       </div>
       
       <nav class="sidebar-nav">
-        <a 
-          *ngFor="let item of menuItems" 
-          [routerLink]="item.route"
-          routerLinkActive="active"
-          class="nav-item"
-        >
-          <span class="nav-icon">{{ item.icon }}</span>
-          <span class="nav-label">{{ item.label }}</span>
-        </a>
+        @for (item of menuItems; track item.route) {
+          <a 
+            [routerLink]="item.route"
+            routerLinkActive="active"
+            class="nav-item"
+          >
+            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-label">{{ item.label }}</span>
+          </a>
+        }
       </nav>
     </aside>
   `,

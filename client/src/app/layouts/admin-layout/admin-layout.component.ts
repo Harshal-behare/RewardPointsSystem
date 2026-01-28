@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { RouterModule } from '@angular/router';
 import { SidebarComponent } from '../components/sidebar/sidebar.component';
 import { TopbarComponent } from '../components/topbar/topbar.component';
@@ -7,7 +6,7 @@ import { TopbarComponent } from '../components/topbar/topbar.component';
 @Component({
   selector: 'app-admin-layout',
   standalone: true,
-  imports: [CommonModule, RouterModule, SidebarComponent, TopbarComponent],
+  imports: [RouterModule, SidebarComponent, TopbarComponent],
   template: `
     <div class="admin-layout">
       <app-sidebar></app-sidebar>

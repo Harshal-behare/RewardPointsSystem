@@ -4,6 +4,7 @@ using FluentAssertions;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Core;
+using RewardPointsSystem.Domain.Exceptions;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
@@ -36,6 +37,8 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 1000);
+            // Event lifecycle: Draft -> Upcoming (Publish) -> Active (Activate) -> Completed (Complete)
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);
             await _eventService.CompleteEventAsync(eventObj.Id);
@@ -64,6 +67,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         {
             // Arrange
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 1000);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);
             await _eventService.CompleteEventAsync(eventObj.Id);
 
@@ -80,6 +84,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 1000);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);
             await _eventService.CompleteEventAsync(eventObj.Id);
 
@@ -94,6 +99,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 500);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);
             await _eventService.CompleteEventAsync(eventObj.Id);
 
@@ -120,6 +126,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             // Arrange
             var user = await _userService.CreateUserAsync("user@test.com", "John", "Doe");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 1000);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);
             await _eventService.CompleteEventAsync(eventObj.Id);
@@ -137,6 +144,7 @@ namespace RewardPointsSystem.Tests.UnitTests
             var user1 = await _userService.CreateUserAsync("user1@test.com", "John", "Doe");
             var user2 = await _userService.CreateUserAsync("user2@test.com", "Jane", "Smith");
             var eventObj = await _eventService.CreateEventAsync("Event", "Description", DateTime.UtcNow.AddDays(1), 1000);
+            await _eventService.PublishEventAsync(eventObj.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user1.Id);
             await _participationService.RegisterParticipantAsync(eventObj.Id, user2.Id);
             await _eventService.ActivateEventAsync(eventObj.Id);

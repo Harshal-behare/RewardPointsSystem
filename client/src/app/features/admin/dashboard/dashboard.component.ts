@@ -1,5 +1,4 @@
 import { Component, OnInit, signal, computed, effect, model, DestroyRef, inject } from '@angular/core';
-import { CommonModule } from '@angular/common';
 import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter, takeUntil } from 'rxjs';
@@ -32,14 +31,13 @@ interface RecentActivity {
   selector: 'app-admin-dashboard',
   standalone: true,
   imports: [
-    CommonModule,
     FormsModule,
     CardComponent,
     ButtonComponent,
     KpiCardComponent
   ],
   templateUrl: './dashboard.component.html',
-  styleUrls: ['./dashboard.component.scss']
+  styleUrl: './dashboard.component.scss'
 })
 export class AdminDashboardComponent implements OnInit {
   private destroyRef = inject(DestroyRef);

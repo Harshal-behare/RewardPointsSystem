@@ -1,5 +1,5 @@
 import { Component, OnInit, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { TitleCasePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { UserService, UserDto, UpdateUserDto } from '../../../core/services/user.service';
@@ -29,7 +29,7 @@ interface UserProfile {
 @Component({
   selector: 'app-employee-profile',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [FormsModule, TitleCasePipe],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
