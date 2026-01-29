@@ -1,10 +1,12 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RewardPointsSystem.Application.DTOs;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Events;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Events;
+using RewardPointsSystem.Infrastructure.Data;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -16,15 +18,18 @@ namespace RewardPointsSystem.Api.Controllers
         private readonly IEventService _eventService;
         private readonly IEventParticipationService _participationService;
         private readonly ILogger<EventsController> _logger;
+        private readonly RewardPointsDbContext _context;
 
         public EventsController(
             IEventService eventService,
             IEventParticipationService participationService,
-            ILogger<EventsController> logger)
+            ILogger<EventsController> logger,
+            RewardPointsDbContext context)
         {
             _eventService = eventService;
             _participationService = participationService;
             _logger = logger;
+            _context = context;
         }
 
         /// <summary>
@@ -44,7 +49,50 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
-        /// Get all events
+        /// Maps an Event entity to EventResponseDto
+        /// </summary>
+        private EventResponseDto MapToEventResponseDto(Event e)
+        {
+            var winners = e.Participants?
+                .Where(p => p.PointsAwarded.HasValue && p.EventRank.HasValue)
+                .OrderBy(p => p.EventRank)
+                .Take(3)
+                .Select(p => new EventWinnerDto
+                {
+                    UserId = p.UserId,
+                    UserName = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Unknown",
+                    Rank = p.EventRank!.Value,
+                    PointsAwarded = p.PointsAwarded!.Value
+                })
+                .ToList() ?? new List<EventWinnerDto>();
+
+            return new EventResponseDto
+            {
+                Id = e.Id,
+                Name = e.Name,
+                Description = e.Description,
+                EventDate = e.EventDate,
+                EventEndDate = e.EventEndDate,
+                Status = MapEventStatusToFrontend(e.Status),
+                TotalPointsPool = e.TotalPointsPool,
+                RemainingPoints = e.GetAvailablePointsPool(),
+                ParticipantsCount = e.Participants?.Count ?? 0,
+                MaxParticipants = e.MaxParticipants,
+                RegistrationStartDate = e.RegistrationStartDate,
+                RegistrationEndDate = e.RegistrationEndDate,
+                Location = e.Location,
+                VirtualLink = e.VirtualLink,
+                BannerImageUrl = e.BannerImageUrl,
+                CreatedAt = e.CreatedAt,
+                FirstPlacePoints = e.FirstPlacePoints,
+                SecondPlacePoints = e.SecondPlacePoints,
+                ThirdPlacePoints = e.ThirdPlacePoints,
+                Winners = winners
+            };
+        }
+
+        /// <summary>
+        /// Get all visible events for employees (Upcoming, Active, Completed - excludes Draft)
         /// </summary>
         [HttpGet]
         [ProducesResponseType(typeof(ApiResponse<IEnumerable<EventResponseDto>>), StatusCodes.Status200OK)]
@@ -52,19 +100,15 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var events = await _eventService.GetUpcomingEventsAsync();
-                var eventDtos = events.Select(e => new EventResponseDto
-                {
-                    Id = e.Id,
-                    Name = e.Name,
-                    Description = e.Description,
-                    EventDate = e.EventDate,
-                    Status = MapEventStatusToFrontend(e.Status),
-                    TotalPointsPool = e.TotalPointsPool,
-                    RemainingPoints = e.GetAvailablePointsPool(),
-                    ParticipantsCount = e.Participants?.Count ?? 0,
-                    CreatedAt = e.CreatedAt
-                });
+                // Get events visible to employees: Upcoming, Active, Completed (excludes Draft)
+                // Use DbContext directly with ThenInclude to load User data for winners
+                var events = await _context.Events
+                    .Include(e => e.Participants)
+                        .ThenInclude(p => p.User)
+                    .Where(e => e.Status != EventStatus.Draft)
+                    .ToListAsync();
+                    
+                var eventDtos = events.Select(e => MapToEventResponseDto(e));
 
                 return Success(eventDtos);
             }
@@ -85,22 +129,16 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var ev = await _eventService.GetEventByIdAsync(id);
+                // Use DbContext with ThenInclude to load User data for winners
+                var ev = await _context.Events
+                    .Include(e => e.Participants)
+                        .ThenInclude(p => p.User)
+                    .FirstOrDefaultAsync(e => e.Id == id);
+                    
                 if (ev == null)
                     return NotFoundError($"Event with ID {id} not found");
 
-                var eventDto = new EventResponseDto
-                {
-                    Id = ev.Id,
-                    Name = ev.Name,
-                    Description = ev.Description,
-                    EventDate = ev.EventDate,
-                    Status = MapEventStatusToFrontend(ev.Status),
-                    TotalPointsPool = ev.TotalPointsPool,
-                    RemainingPoints = ev.GetAvailablePointsPool(),
-                    ParticipantsCount = ev.Participants?.Count ?? 0,
-                    CreatedAt = ev.CreatedAt
-                };
+                var eventDto = MapToEventResponseDto(ev);
 
                 return Success(eventDto);
             }
@@ -122,20 +160,23 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var ev = await _eventService.CreateEventAsync(dto.Name, dto.Description, dto.EventDate, dto.TotalPointsPool);
+                var ev = await _eventService.CreateEventAsync(
+                    dto.Name, 
+                    dto.Description, 
+                    dto.EventDate, 
+                    dto.TotalPointsPool,
+                    dto.MaxParticipants,
+                    dto.RegistrationStartDate,
+                    dto.RegistrationEndDate,
+                    dto.Location,
+                    dto.VirtualLink,
+                    dto.BannerImageUrl,
+                    dto.EventEndDate,
+                    dto.FirstPlacePoints,
+                    dto.SecondPlacePoints,
+                    dto.ThirdPlacePoints);
 
-                var eventDto = new EventResponseDto
-                {
-                    Id = ev.Id,
-                    Name = ev.Name,
-                    Description = ev.Description,
-                    EventDate = ev.EventDate,
-                    Status = MapEventStatusToFrontend(ev.Status),
-                    TotalPointsPool = ev.TotalPointsPool,
-                    RemainingPoints = ev.GetAvailablePointsPool(),
-                    ParticipantsCount = 0,
-                    CreatedAt = ev.CreatedAt
-                };
+                var eventDto = MapToEventResponseDto(ev);
 
                 return Created(eventDto, "Event created successfully");
             }
@@ -169,18 +210,7 @@ namespace RewardPointsSystem.Api.Controllers
 
                 var ev = await _eventService.UpdateEventAsync(id, dto);
 
-                var eventDto = new EventResponseDto
-                {
-                    Id = ev.Id,
-                    Name = ev.Name,
-                    Description = ev.Description,
-                    EventDate = ev.EventDate,
-                    Status = MapEventStatusToFrontend(ev.Status),
-                    TotalPointsPool = ev.TotalPointsPool,
-                    RemainingPoints = ev.GetAvailablePointsPool(),
-                    ParticipantsCount = ev.Participants?.Count ?? 0,
-                    CreatedAt = ev.CreatedAt
-                };
+                var eventDto = MapToEventResponseDto(ev);
 
                 return Success(eventDto, "Event updated successfully");
             }
@@ -281,18 +311,7 @@ namespace RewardPointsSystem.Api.Controllers
 
                 var ev = await _eventService.GetEventByIdAsync(id);
 
-                var eventDto = new EventResponseDto
-                {
-                    Id = ev.Id,
-                    Name = ev.Name,
-                    Description = ev.Description,
-                    EventDate = ev.EventDate,
-                    Status = MapEventStatusToFrontend(ev.Status),
-                    TotalPointsPool = ev.TotalPointsPool,
-                    RemainingPoints = ev.GetAvailablePointsPool(),
-                    ParticipantsCount = ev.Participants?.Count ?? 0,
-                    CreatedAt = ev.CreatedAt
-                };
+                var eventDto = MapToEventResponseDto(ev);
 
                 return Success(eventDto, $"Event status changed to {dto.Status}");
             }
@@ -404,18 +423,7 @@ namespace RewardPointsSystem.Api.Controllers
             try
             {
                 var events = await _eventService.GetAllEventsAsync();
-                var eventDtos = events.Select(e => new EventResponseDto
-                {
-                    Id = e.Id,
-                    Name = e.Name,
-                    Description = e.Description,
-                    EventDate = e.EventDate,
-                    Status = MapEventStatusToFrontend(e.Status),
-                    TotalPointsPool = e.TotalPointsPool,
-                    RemainingPoints = e.GetAvailablePointsPool(),
-                    ParticipantsCount = e.Participants?.Count ?? 0,
-                    CreatedAt = e.CreatedAt
-                });
+                var eventDtos = events.Select(e => MapToEventResponseDto(e));
 
                 return Success(eventDtos);
             }

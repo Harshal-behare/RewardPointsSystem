@@ -3,18 +3,41 @@ import { Observable } from 'rxjs';
 import { ApiService } from './api.service';
 import { ApiResponse } from '../models/api-response.model';
 
+// Event Winner DTO
+export interface EventWinnerDto {
+  userId: string;
+  userName: string;
+  rank: number;
+  pointsAwarded: number;
+}
+
 // Event Interfaces - Status: Draft (admin only), Upcoming (employees can register), Active (ongoing), Completed (finished)
 export interface EventDto {
   id: string;
   name: string;
   description: string;
   eventDate: string;
+  eventEndDate?: string;
   status: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
   totalPointsPool: number;
   remainingPoints?: number;
   participantCount?: number;
+  maxParticipants?: number;
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  location?: string;
+  virtualLink?: string;
+  bannerImageUrl?: string;
   createdAt: string;
   createdBy?: string;
+  
+  // Prize distribution
+  firstPlacePoints?: number;
+  secondPlacePoints?: number;
+  thirdPlacePoints?: number;
+  
+  // Winners (for completed events)
+  winners?: EventWinnerDto[];
 }
 
 export interface EventDetailsDto extends EventDto {
@@ -38,15 +61,39 @@ export interface CreateEventDto {
   name: string;
   description: string;
   eventDate: string;
+  eventEndDate?: string;
   totalPointsPool: number;
+  maxParticipants?: number;
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  location?: string;
+  virtualLink?: string;
+  bannerImageUrl?: string;
+  
+  // Prize distribution
+  firstPlacePoints?: number;
+  secondPlacePoints?: number;
+  thirdPlacePoints?: number;
 }
 
 export interface UpdateEventDto {
   name?: string;
   description?: string;
   eventDate?: string;
+  eventEndDate?: string;
   totalPointsPool?: number;
   status?: 'Draft' | 'Upcoming' | 'Active' | 'Completed';
+  maxParticipants?: number;
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  location?: string;
+  virtualLink?: string;
+  bannerImageUrl?: string;
+  
+  // Prize distribution
+  firstPlacePoints?: number;
+  secondPlacePoints?: number;
+  thirdPlacePoints?: number;
 }
 
 export interface ChangeEventStatusDto {

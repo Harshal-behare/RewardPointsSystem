@@ -17,12 +17,20 @@ interface DisplayEvent {
   name: string;
   description: string;
   eventDate: string;
+  eventEndDate?: string;
   status: string;
   pointsPool: number;
   remainingPoints: number;  // Track remaining points from pool
   participantCount: number;
   maxParticipants?: number;
   imageUrl?: string;
+  location?: string;
+  virtualLink?: string;
+  registrationStartDate?: string;
+  registrationEndDate?: string;
+  firstPlacePoints?: number;
+  secondPlacePoints?: number;
+  thirdPlacePoints?: number;
 }
 
 interface EventParticipant {
@@ -71,11 +79,19 @@ export class AdminEventsComponent implements OnInit {
     name: '',
     description: '',
     eventDate: '',
+    eventEndDate: '',
     pointsPool: 0,
     remainingPoints: 0,
     status: 'Draft',  // New events start as Draft
     imageUrl: '',
-    maxParticipants: 0
+    maxParticipants: 0,
+    location: '',
+    virtualLink: '',
+    registrationStartDate: '',
+    registrationEndDate: '',
+    firstPlacePoints: 0,
+    secondPlacePoints: 0,
+    thirdPlacePoints: 0
   };
 
   // Participants Modal
@@ -141,12 +157,20 @@ export class AdminEventsComponent implements OnInit {
       name: event.name || event.title,
       description: event.description || '',
       eventDate: event.eventDate || event.startDate,
+      eventEndDate: event.eventEndDate,
       status: this.mapEventStatus(event.status),
       pointsPool: totalPool,
       remainingPoints: remainingPoints,
       participantCount: event.participantsCount || event.participantCount || event.currentParticipants || 0,
       maxParticipants: event.maxParticipants,
-      imageUrl: event.imageUrl
+      imageUrl: event.imageUrl || event.bannerImageUrl,
+      location: event.location,
+      virtualLink: event.virtualLink,
+      registrationStartDate: event.registrationStartDate,
+      registrationEndDate: event.registrationEndDate,
+      firstPlacePoints: event.firstPlacePoints,
+      secondPlacePoints: event.secondPlacePoints,
+      thirdPlacePoints: event.thirdPlacePoints
     };
   }
 
@@ -303,11 +327,19 @@ export class AdminEventsComponent implements OnInit {
       name: '',
       description: '',
       eventDate: '',
+      eventEndDate: '',
       status: 'Draft',  // New events start as Draft
       pointsPool: 0,
       remainingPoints: 0,
       maxParticipants: 0,
-      imageUrl: ''
+      imageUrl: '',
+      location: '',
+      virtualLink: '',
+      registrationStartDate: '',
+      registrationEndDate: '',
+      firstPlacePoints: 0,
+      secondPlacePoints: 0,
+      thirdPlacePoints: 0
     };
     this.showModal.set(true);
   }
@@ -320,12 +352,20 @@ export class AdminEventsComponent implements OnInit {
       name: event.name,
       description: event.description,
       eventDate: this.formatDateForInput(event.eventDate),
+      eventEndDate: event.eventEndDate ? this.formatDateForInput(event.eventEndDate) : '',
       status: event.status,
       pointsPool: event.pointsPool,
       remainingPoints: event.remainingPoints,
       participantCount: event.participantCount,
       maxParticipants: event.maxParticipants,
-      imageUrl: event.imageUrl
+      imageUrl: event.imageUrl,
+      location: event.location || '',
+      virtualLink: event.virtualLink || '',
+      registrationStartDate: event.registrationStartDate ? this.formatDateForInput(event.registrationStartDate) : '',
+      registrationEndDate: event.registrationEndDate ? this.formatDateForInput(event.registrationEndDate) : '',
+      firstPlacePoints: event.firstPlacePoints || 0,
+      secondPlacePoints: event.secondPlacePoints || 0,
+      thirdPlacePoints: event.thirdPlacePoints || 0
     };
     this.showModal.set(true);
   }
@@ -412,7 +452,17 @@ export class AdminEventsComponent implements OnInit {
         name: this.selectedEvent.name || '',
         description: this.selectedEvent.description || '',
         eventDate: this.formatDateForAPI(this.selectedEvent.eventDate || ''),
-        totalPointsPool: this.selectedEvent.pointsPool || 0
+        totalPointsPool: this.selectedEvent.pointsPool || 0,
+        eventEndDate: this.selectedEvent.eventEndDate ? this.formatDateForAPI(this.selectedEvent.eventEndDate) : undefined,
+        maxParticipants: this.selectedEvent.maxParticipants || undefined,
+        registrationStartDate: this.selectedEvent.registrationStartDate ? this.formatDateForAPI(this.selectedEvent.registrationStartDate) : undefined,
+        registrationEndDate: this.selectedEvent.registrationEndDate ? this.formatDateForAPI(this.selectedEvent.registrationEndDate) : undefined,
+        location: this.selectedEvent.location || undefined,
+        virtualLink: this.selectedEvent.virtualLink || undefined,
+        bannerImageUrl: this.selectedEvent.imageUrl || undefined,
+        firstPlacePoints: this.selectedEvent.firstPlacePoints || undefined,
+        secondPlacePoints: this.selectedEvent.secondPlacePoints || undefined,
+        thirdPlacePoints: this.selectedEvent.thirdPlacePoints || undefined
       };
 
       this.eventService.createEvent(createData).subscribe({
@@ -437,7 +487,17 @@ export class AdminEventsComponent implements OnInit {
         description: this.selectedEvent.description,
         eventDate: this.formatDateForAPI(this.selectedEvent.eventDate || ''),
         totalPointsPool: this.selectedEvent.pointsPool,
-        status: this.selectedEvent.status as 'Draft' | 'Upcoming' | 'Active' | 'Completed'
+        status: this.selectedEvent.status as 'Draft' | 'Upcoming' | 'Active' | 'Completed',
+        eventEndDate: this.selectedEvent.eventEndDate ? this.formatDateForAPI(this.selectedEvent.eventEndDate) : undefined,
+        maxParticipants: this.selectedEvent.maxParticipants || undefined,
+        registrationStartDate: this.selectedEvent.registrationStartDate ? this.formatDateForAPI(this.selectedEvent.registrationStartDate) : undefined,
+        registrationEndDate: this.selectedEvent.registrationEndDate ? this.formatDateForAPI(this.selectedEvent.registrationEndDate) : undefined,
+        location: this.selectedEvent.location || undefined,
+        virtualLink: this.selectedEvent.virtualLink || undefined,
+        bannerImageUrl: this.selectedEvent.imageUrl || undefined,
+        firstPlacePoints: this.selectedEvent.firstPlacePoints || undefined,
+        secondPlacePoints: this.selectedEvent.secondPlacePoints || undefined,
+        thirdPlacePoints: this.selectedEvent.thirdPlacePoints || undefined
       };
 
       this.eventService.updateEvent(this.selectedEvent.id!, updateData).subscribe({

@@ -12,11 +12,37 @@ namespace RewardPointsSystem.Application.DTOs.Events
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTime EventDate { get; set; }
+        public DateTime? EventEndDate { get; set; }
         public string Status { get; set; }
         public int TotalPointsPool { get; set; }
         public int RemainingPoints { get; set; }
         public int ParticipantsCount { get; set; }
+        public int? MaxParticipants { get; set; }
+        public DateTime? RegistrationStartDate { get; set; }
+        public DateTime? RegistrationEndDate { get; set; }
+        public string? Location { get; set; }
+        public string? VirtualLink { get; set; }
+        public string? BannerImageUrl { get; set; }
         public DateTime CreatedAt { get; set; }
+        
+        // Prize distribution for ranks
+        public int? FirstPlacePoints { get; set; }
+        public int? SecondPlacePoints { get; set; }
+        public int? ThirdPlacePoints { get; set; }
+        
+        // Winners (populated when event is completed)
+        public List<EventWinnerDto> Winners { get; set; }
+    }
+    
+    /// <summary>
+    /// DTO for event winner information
+    /// </summary>
+    public class EventWinnerDto
+    {
+        public Guid UserId { get; set; }
+        public string UserName { get; set; }
+        public int Rank { get; set; }
+        public int PointsAwarded { get; set; }
     }
 
     /// <summary>

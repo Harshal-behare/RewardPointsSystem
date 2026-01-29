@@ -11,7 +11,19 @@ namespace RewardPointsSystem.Application.DTOs
         public string Name { get; set; }
         public string Description { get; set; }
         public DateTime EventDate { get; set; }
+        public DateTime? EventEndDate { get; set; }
         public int TotalPointsPool { get; set; }
+        public int? MaxParticipants { get; set; }
+        public DateTime? RegistrationStartDate { get; set; }
+        public DateTime? RegistrationEndDate { get; set; }
+        public string? Location { get; set; }
+        public string? VirtualLink { get; set; }
+        public string? BannerImageUrl { get; set; }
+        
+        // Prize distribution for ranks
+        public int? FirstPlacePoints { get; set; }
+        public int? SecondPlacePoints { get; set; }
+        public int? ThirdPlacePoints { get; set; }
     }
 
     /// <summary>
@@ -22,8 +34,20 @@ namespace RewardPointsSystem.Application.DTOs
         public string? Name { get; set; }
         public string? Description { get; set; }
         public DateTime? EventDate { get; set; }
+        public DateTime? EventEndDate { get; set; }
         public int? TotalPointsPool { get; set; }
         public string? Status { get; set; }  // Added: Draft, Upcoming, Active, Completed
+        public int? MaxParticipants { get; set; }
+        public DateTime? RegistrationStartDate { get; set; }
+        public DateTime? RegistrationEndDate { get; set; }
+        public string? Location { get; set; }
+        public string? VirtualLink { get; set; }
+        public string? BannerImageUrl { get; set; }
+        
+        // Prize distribution for ranks
+        public int? FirstPlacePoints { get; set; }
+        public int? SecondPlacePoints { get; set; }
+        public int? ThirdPlacePoints { get; set; }
     }
 
     /// <summary>

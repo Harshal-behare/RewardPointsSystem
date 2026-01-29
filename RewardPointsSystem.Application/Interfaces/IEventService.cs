@@ -14,10 +14,29 @@ namespace RewardPointsSystem.Application.Interfaces
     /// </summary>
     public interface IEventService
     {
-        Task<Event> CreateEventAsync(string name, string description, DateTime date, int pointsPool);
+        Task<Event> CreateEventAsync(
+            string name, 
+            string description, 
+            DateTime date, 
+            int pointsPool,
+            int? maxParticipants = null,
+            DateTime? registrationStartDate = null,
+            DateTime? registrationEndDate = null,
+            string? location = null,
+            string? virtualLink = null,
+            string? bannerImageUrl = null,
+            DateTime? eventEndDate = null,
+            int? firstPlacePoints = null,
+            int? secondPlacePoints = null,
+            int? thirdPlacePoints = null);
         Task<Event> UpdateEventAsync(Guid id, UpdateEventDto updates);
         Task<IEnumerable<Event>> GetUpcomingEventsAsync();
         Task<IEnumerable<Event>> GetAllEventsAsync();
+        
+        /// <summary>
+        /// Get visible events for employees (Upcoming, Active, Completed - excludes Draft)
+        /// </summary>
+        Task<IEnumerable<Event>> GetVisibleEventsAsync();
         Task<Event> GetEventByIdAsync(Guid id);
         
         /// <summary>

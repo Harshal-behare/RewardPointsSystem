@@ -25,10 +25,10 @@ namespace RewardPointsSystem.Domain.Entities.Core
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
-        // Navigation Properties - Encapsulated collection
+       
         public virtual IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
 
-        // EF Core requires a parameterless constructor
+       
         private Role()
         {
             _userRoles = new List<UserRole>();

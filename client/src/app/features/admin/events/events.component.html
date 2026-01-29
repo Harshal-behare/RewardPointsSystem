@@ -92,7 +92,7 @@
             <th class="sortable" (click)="toggleSort('pointsPool')">
               Points Pool <span class="sort-icon">{{ getSortIcon('pointsPool') }}</span>
             </th>
-            <th>Remaining Points</th>
+            <th>Prizes</th>
             <th class="sortable" (click)="toggleSort('participantCount')">
               Participants <span class="sort-icon">{{ getSortIcon('participantCount') }}</span>
             </th>
@@ -118,9 +118,21 @@
                 <span class="points-value">{{ event.pointsPool }} pts</span>
               </td>
               <td>
-                <span class="points-value remaining-points" [class.low-points]="event.remainingPoints < event.pointsPool * 0.2">
-                  {{ event.remainingPoints }} pts
-                </span>
+                @if (event.firstPlacePoints || event.secondPlacePoints || event.thirdPlacePoints) {
+                  <div class="prize-badges">
+                    @if (event.firstPlacePoints) {
+                      <span class="prize-badge gold">🥇 {{ event.firstPlacePoints }}</span>
+                    }
+                    @if (event.secondPlacePoints) {
+                      <span class="prize-badge silver">🥈 {{ event.secondPlacePoints }}</span>
+                    }
+                    @if (event.thirdPlacePoints) {
+                      <span class="prize-badge bronze">🥉 {{ event.thirdPlacePoints }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="no-prizes">-</span>
+                }
               </td>
               <td>
                 <span class="participant-count">{{ event.participantCount }} users</span>
@@ -212,7 +224,7 @@
 
         <div class="form-row">
           <div class="form-group">
-            <label for="eventDate">Event Date *</label>
+            <label for="eventDate">Event Start Date *</label>
             <input
               id="eventDate"
               type="date"
@@ -224,6 +236,20 @@
             <small class="form-hint">Must be a future date</small>
           </div>
 
+          <div class="form-group">
+            <label for="eventEndDate">Event End Date</label>
+            <input
+              id="eventEndDate"
+              type="date"
+              [(ngModel)]="selectedEvent.eventEndDate"
+              name="eventEndDate"
+              placeholder="YYYY-MM-DD"
+            />
+            <small class="form-hint">Leave empty for single-day events</small>
+          </div>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label for="eventStatus">Status *</label>
             <select
@@ -237,6 +263,18 @@
               <option value="Active">Active</option>
               <option value="Completed">Completed</option>
             </select>
+          </div>
+
+          <div class="form-group">
+            <label for="maxParticipants">Max Participants</label>
+            <input
+              id="maxParticipants"
+              type="number"
+              [(ngModel)]="selectedEvent.maxParticipants"
+              name="maxParticipants"
+              placeholder="0 (unlimited)"
+              min="0"
+            />
           </div>
         </div>
 
@@ -255,16 +293,104 @@
             />
             <small class="form-hint">Must be greater than 0, max 1,000,000</small>
           </div>
+        </div>
+
+        <!-- Prize Distribution Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">🏆 Prize Distribution (Optional)</h4>
+          <p class="form-section-hint">Set point rewards for top performers</p>
+          
+          <div class="form-row prize-row">
+            <div class="form-group prize-input first-place">
+              <label for="firstPlacePoints">🥇 1st Place</label>
+              <input
+                id="firstPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.firstPlacePoints"
+                name="firstPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group prize-input second-place">
+              <label for="secondPlacePoints">🥈 2nd Place</label>
+              <input
+                id="secondPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.secondPlacePoints"
+                name="secondPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group prize-input third-place">
+              <label for="thirdPlacePoints">🥉 3rd Place</label>
+              <input
+                id="thirdPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.thirdPlacePoints"
+                name="thirdPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Registration Period Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">📅 Registration Period (Optional)</h4>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="registrationStartDate">Registration Opens</label>
+              <input
+                id="registrationStartDate"
+                type="date"
+                [(ngModel)]="selectedEvent.registrationStartDate"
+                name="registrationStartDate"
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="registrationEndDate">Registration Closes</label>
+              <input
+                id="registrationEndDate"
+                type="date"
+                [(ngModel)]="selectedEvent.registrationEndDate"
+                name="registrationEndDate"
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="form-section">
+          <h4 class="form-section-title">📍 Event Location (Optional)</h4>
+          
+          <div class="form-group">
+            <label for="location">Physical Location</label>
+            <input
+              id="location"
+              type="text"
+              [(ngModel)]="selectedEvent.location"
+              name="location"
+              placeholder="e.g., Conference Room A, Building 1"
+            />
+          </div>
 
           <div class="form-group">
-            <label for="maxParticipants">Max Participants</label>
+            <label for="virtualLink">Virtual Meeting Link</label>
             <input
-              id="maxParticipants"
-              type="number"
-              [(ngModel)]="selectedEvent.maxParticipants"
-              name="maxParticipants"
-              placeholder="0 (unlimited)"
-              min="0"
+              id="virtualLink"
+              type="url"
+              [(ngModel)]="selectedEvent.virtualLink"
+              name="virtualLink"
+              placeholder="https://zoom.us/j/meeting-id"
             />
           </div>
         </div>

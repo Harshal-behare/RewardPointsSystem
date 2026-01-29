@@ -25,7 +25,21 @@ namespace RewardPointsSystem.Application.Services.Events
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
-        public async Task<Event> CreateEventAsync(string name, string description, DateTime date, int pointsPool)
+        public async Task<Event> CreateEventAsync(
+            string name, 
+            string description, 
+            DateTime date, 
+            int pointsPool,
+            int? maxParticipants = null,
+            DateTime? registrationStartDate = null,
+            DateTime? registrationEndDate = null,
+            string? location = null,
+            string? virtualLink = null,
+            string? bannerImageUrl = null,
+            DateTime? eventEndDate = null,
+            int? firstPlacePoints = null,
+            int? secondPlacePoints = null,
+            int? thirdPlacePoints = null)
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new InvalidEventDataException("Event name is required");
@@ -48,7 +62,17 @@ namespace RewardPointsSystem.Application.Services.Events
                 date,
                 pointsPool,
                 systemUser.Id,
-                description.Trim());
+                description.Trim(),
+                maxParticipants,
+                registrationStartDate,
+                registrationEndDate,
+                location,
+                virtualLink,
+                bannerImageUrl,
+                eventEndDate,
+                firstPlacePoints,
+                secondPlacePoints,
+                thirdPlacePoints);
 
             await _unitOfWork.Events.AddAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
@@ -89,8 +113,32 @@ namespace RewardPointsSystem.Application.Services.Events
             var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
             var eventDate = updates.EventDate ?? eventEntity.EventDate;
             var pointsPool = updates.TotalPointsPool ?? eventEntity.TotalPointsPool;
+            var maxParticipants = updates.MaxParticipants ?? eventEntity.MaxParticipants;
+            var location = updates.Location ?? eventEntity.Location;
+            var virtualLink = updates.VirtualLink ?? eventEntity.VirtualLink;
+            var bannerImageUrl = updates.BannerImageUrl ?? eventEntity.BannerImageUrl;
+            var eventEndDate = updates.EventEndDate ?? eventEntity.EventEndDate;
+            var registrationStartDate = updates.RegistrationStartDate ?? eventEntity.RegistrationStartDate;
+            var registrationEndDate = updates.RegistrationEndDate ?? eventEntity.RegistrationEndDate;
+            var firstPlacePoints = updates.FirstPlacePoints ?? eventEntity.FirstPlacePoints;
+            var secondPlacePoints = updates.SecondPlacePoints ?? eventEntity.SecondPlacePoints;
+            var thirdPlacePoints = updates.ThirdPlacePoints ?? eventEntity.ThirdPlacePoints;
 
-            eventEntity.UpdateDetails(name, eventDate, pointsPool, description);
+            eventEntity.UpdateDetails(
+                name, 
+                eventDate, 
+                pointsPool, 
+                description, 
+                maxParticipants, 
+                location, 
+                virtualLink, 
+                bannerImageUrl,
+                eventEndDate,
+                registrationStartDate,
+                registrationEndDate,
+                firstPlacePoints,
+                secondPlacePoints,
+                thirdPlacePoints);
 
             // Handle status change if provided
             if (!string.IsNullOrWhiteSpace(updates.Status))
@@ -149,6 +197,19 @@ namespace RewardPointsSystem.Application.Services.Events
             // Include participants so we can count them
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => true,  // All events
+                e => e.Participants);
+            return events;
+        }
+
+        /// <summary>
+        /// Get visible events for employees (Upcoming, Active, Completed - excludes Draft)
+        /// </summary>
+        public async Task<IEnumerable<Event>> GetVisibleEventsAsync()
+        {
+            // Include participants so we can count them
+            // Return events visible to employees: Upcoming, Active, Completed (not Draft)
+            var events = await _unitOfWork.Events.FindWithIncludesAsync(
+                e => e.Status != EventStatus.Draft,
                 e => e.Participants);
             return events;
         }

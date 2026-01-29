@@ -78,6 +78,19 @@ namespace RewardPointsSystem.Domain.Entities.Events
         public DateTime CreatedAt { get; private set; }
         public DateTime? CompletedAt { get; private set; }
 
+        // Event End Date - when the event ends (EventDate is when it starts)
+        public DateTime? EventEndDate { get; private set; }
+
+        // Prize Distribution for ranks (points to award for 1st, 2nd, 3rd place)
+        [Range(0, int.MaxValue, ErrorMessage = "First place points cannot be negative")]
+        public int? FirstPlacePoints { get; private set; }
+        
+        [Range(0, int.MaxValue, ErrorMessage = "Second place points cannot be negative")]
+        public int? SecondPlacePoints { get; private set; }
+        
+        [Range(0, int.MaxValue, ErrorMessage = "Third place points cannot be negative")]
+        public int? ThirdPlacePoints { get; private set; }
+
         // Navigation Properties - Encapsulated collection
         public virtual User? Creator { get; private set; }
         public virtual IReadOnlyCollection<EventParticipant> Participants => _participants.AsReadOnly();
@@ -100,7 +113,11 @@ namespace RewardPointsSystem.Domain.Entities.Events
             DateTime? registrationEndDate = null,
             string? location = null,
             string? virtualLink = null,
-            string? bannerImageUrl = null) : this()
+            string? bannerImageUrl = null,
+            DateTime? eventEndDate = null,
+            int? firstPlacePoints = null,
+            int? secondPlacePoints = null,
+            int? thirdPlacePoints = null) : this()
         {
             Id = Guid.NewGuid();
             Name = ValidateName(name);
@@ -113,6 +130,10 @@ namespace RewardPointsSystem.Domain.Entities.Events
             Location = location;
             VirtualLink = virtualLink;
             BannerImageUrl = bannerImageUrl;
+            EventEndDate = eventEndDate;
+            FirstPlacePoints = firstPlacePoints;
+            SecondPlacePoints = secondPlacePoints;
+            ThirdPlacePoints = thirdPlacePoints;
             CreatedBy = createdBy;
             Status = EventStatus.Draft;
             CreatedAt = DateTime.UtcNow;
@@ -134,12 +155,17 @@ namespace RewardPointsSystem.Domain.Entities.Events
             DateTime? registrationEndDate = null,
             string? location = null,
             string? virtualLink = null,
-            string? bannerImageUrl = null)
+            string? bannerImageUrl = null,
+            DateTime? eventEndDate = null,
+            int? firstPlacePoints = null,
+            int? secondPlacePoints = null,
+            int? thirdPlacePoints = null)
         {
             return new Event(
                 name, eventDate, totalPointsPool, createdBy, 
                 description, maxParticipants, registrationStartDate, 
-                registrationEndDate, location, virtualLink, bannerImageUrl);
+                registrationEndDate, location, virtualLink, bannerImageUrl,
+                eventEndDate, firstPlacePoints, secondPlacePoints, thirdPlacePoints);
         }
 
         /// <summary>
@@ -153,7 +179,13 @@ namespace RewardPointsSystem.Domain.Entities.Events
             int? maxParticipants = null,
             string? location = null,
             string? virtualLink = null,
-            string? bannerImageUrl = null)
+            string? bannerImageUrl = null,
+            DateTime? eventEndDate = null,
+            DateTime? registrationStartDate = null,
+            DateTime? registrationEndDate = null,
+            int? firstPlacePoints = null,
+            int? secondPlacePoints = null,
+            int? thirdPlacePoints = null)
         {
             if (Status == EventStatus.Completed)
                 throw new InvalidEventStateException(Id, "Cannot update completed events.");
@@ -166,6 +198,12 @@ namespace RewardPointsSystem.Domain.Entities.Events
             Location = location;
             VirtualLink = virtualLink;
             BannerImageUrl = bannerImageUrl;
+            EventEndDate = eventEndDate;
+            RegistrationStartDate = registrationStartDate;
+            RegistrationEndDate = registrationEndDate;
+            FirstPlacePoints = firstPlacePoints;
+            SecondPlacePoints = secondPlacePoints;
+            ThirdPlacePoints = thirdPlacePoints;
         }
 
         /// <summary>
