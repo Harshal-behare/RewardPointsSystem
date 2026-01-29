@@ -8,6 +8,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 interface DisplayProduct {
   id: string;
@@ -121,7 +122,8 @@ export class AdminProductsComponent implements OnInit {
   constructor(
     private router: Router,
     private productService: ProductService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmDialog: ConfirmDialogService
   ) {
     // Subscribe to route changes with automatic cleanup
     this.router.events.pipe(
@@ -352,8 +354,10 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  deleteProduct(productId: string): void {
-    if (confirm('Are you sure you want to delete this product?')) {
+  async deleteProduct(productId: string): Promise<void> {
+    const product = this.products().find(p => p.id === productId);
+    const confirmed = await this.confirmDialog.confirmDelete(`product "${product?.name}"`);
+    if (confirmed) {
       this.productService.deleteProduct(productId).subscribe({
         next: (response) => {
           if (response.success) {
@@ -523,13 +527,14 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  deleteCategory(category: DisplayCategory): void {
+  async deleteCategory(category: DisplayCategory): Promise<void> {
     if (category.productCount > 0) {
       this.toast.error(`Cannot delete category '${category.name}' because it has ${category.productCount} product(s). Please reassign or remove the products first.`);
       return;
     }
 
-    if (confirm(`Are you sure you want to delete the category '${category.name}'?`)) {
+    const confirmed = await this.confirmDialog.confirmDelete(`category "${category.name}"`);
+    if (confirmed) {
       this.productService.deleteCategory(category.id).subscribe({
         next: (response) => {
           if (response.success) {

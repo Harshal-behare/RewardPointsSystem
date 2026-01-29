@@ -10,7 +10,16 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../auth/auth.service';
+import { ApiService } from '../../../core/services/api.service';
+
+// Role interface for dynamic roles
+export interface RoleDto {
+  id: string;
+  name: string;
+  description?: string;
+}
 
 interface DisplayUser {
   id: string;
@@ -49,6 +58,9 @@ export class AdminUsersComponent implements OnInit {
   // Admin protection
   adminCount = signal(0);
   currentUserId = signal<string>('');
+  
+  // Dynamic roles from database
+  roles = signal<RoleDto[]>([]);
 
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
@@ -62,7 +74,9 @@ export class AdminUsersComponent implements OnInit {
     private userService: UserService,
     private adminService: AdminService,
     private authService: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private apiService: ApiService,
+    private confirmDialog: ConfirmDialogService
   ) {
     // Get current user ID from token
     const decoded = this.authService.getDecodedToken();
@@ -86,12 +100,13 @@ export class AdminUsersComponent implements OnInit {
   loadUsers(): void {
     this.isLoading.set(true);
     
-    // Load users and admin count in parallel
+    // Load users, admin count, and roles in parallel
     forkJoin({
       users: this.userService.getUsers(this.currentPage(), this.pageSize()),
-      adminCount: this.adminService.getAdminCount()
+      adminCount: this.adminService.getAdminCount(),
+      roles: this.apiService.get<RoleDto[]>('Roles')
     }).subscribe({
-      next: ({ users, adminCount }) => {
+      next: ({ users, adminCount, roles }) => {
         if (users.success && users.data) {
           this.users.set(this.mapUsersToDisplay(users.data.items || []));
           this.totalUsers.set(users.data.totalCount || 0);
@@ -101,6 +116,17 @@ export class AdminUsersComponent implements OnInit {
         
         if (adminCount.success && adminCount.data) {
           this.adminCount.set(adminCount.data.count);
+        }
+        
+        // Set roles from database
+        if (roles.success && roles.data) {
+          this.roles.set(roles.data);
+        } else {
+          // Fallback roles if API fails
+          this.roles.set([
+            { id: '1', name: 'Admin' },
+            { id: '2', name: 'Employee' }
+          ]);
         }
         
         this.isLoading.set(false);
@@ -207,39 +233,55 @@ export class AdminUsersComponent implements OnInit {
     this.modalValidationErrors = [];
     
     // First name validation
-    const firstName = (this.selectedUser.firstName || '').trim();
+    const firstNameRaw = this.selectedUser.firstName || '';
+    const firstName = firstNameRaw.trim();
     if (!firstName) {
       this.modalValidationErrors.push('First name is required');
     } else {
-      if (!/^[a-zA-Z ]+$/.test(firstName)) {
-        this.modalValidationErrors.push('First name can only contain letters and spaces');
+      // Check for leading whitespace (before trim)
+      if (firstNameRaw.startsWith(' ')) {
+        this.modalValidationErrors.push('First name cannot start with a space');
       }
-      if (firstName.length < 1 || firstName.length > 100) {
-        this.modalValidationErrors.push('First name must be between 1 and 100 characters');
+      // Must start with a letter, then letters and spaces only
+      if (!/^[a-zA-Z][a-zA-Z ]*$/.test(firstName)) {
+        this.modalValidationErrors.push('First name must start with a letter and contain only letters and spaces');
+      }
+      if (firstName.length > 20) {
+        this.modalValidationErrors.push('First name cannot exceed 20 characters');
       }
     }
     
     // Last name validation
-    const lastName = (this.selectedUser.lastName || '').trim();
+    const lastNameRaw = this.selectedUser.lastName || '';
+    const lastName = lastNameRaw.trim();
     if (!lastName) {
       this.modalValidationErrors.push('Last name is required');
     } else {
-      if (!/^[a-zA-Z ]+$/.test(lastName)) {
-        this.modalValidationErrors.push('Last name can only contain letters and spaces');
+      // Check for leading whitespace (before trim)
+      if (lastNameRaw.startsWith(' ')) {
+        this.modalValidationErrors.push('Last name cannot start with a space');
       }
-      if (lastName.length < 1 || lastName.length > 100) {
-        this.modalValidationErrors.push('Last name must be between 1 and 100 characters');
+      // Must start with a letter, then letters and spaces only
+      if (!/^[a-zA-Z][a-zA-Z ]*$/.test(lastName)) {
+        this.modalValidationErrors.push('Last name must start with a letter and contain only letters and spaces');
+      }
+      if (lastName.length > 20) {
+        this.modalValidationErrors.push('Last name cannot exceed 20 characters');
       }
     }
     
-    // Email validation
-    const email = (this.selectedUser.email || '').trim();
+    // Email validation - must be @agdata.com domain
+    const email = (this.selectedUser.email || '').trim().toLowerCase();
     if (!email) {
       this.modalValidationErrors.push('Email is required');
     } else {
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         this.modalValidationErrors.push('Invalid email format');
+      }
+      // Must be @agdata.com domain
+      if (!email.endsWith('@agdata.com')) {
+        this.modalValidationErrors.push('Email must be an @agdata.com address');
       }
       if (email.length > 255) {
         this.modalValidationErrors.push('Email cannot exceed 255 characters');
@@ -331,7 +373,7 @@ export class AdminUsersComponent implements OnInit {
     }
   }
 
-  toggleUserStatus(user: DisplayUser): void {
+  async toggleUserStatus(user: DisplayUser): Promise<void> {
     // Check if this is the last admin
     if (this.isAdminActionDisabled(user) && user.status === 'Active') {
       this.toast.error('Cannot deactivate the last admin in the system');
@@ -339,7 +381,11 @@ export class AdminUsersComponent implements OnInit {
     }
     
     const action = user.status === 'Active' ? 'deactivate' : 'activate';
-    if (confirm(`Are you sure you want to ${action} this user?`)) {
+    const confirmed = user.status === 'Active' 
+      ? await this.confirmDialog.confirmDeactivate(`user ${user.firstName} ${user.lastName}`)
+      : await this.confirmDialog.confirmActivate(`user ${user.firstName} ${user.lastName}`);
+    
+    if (confirmed) {
       const updateData: UpdateUserDto = {
         isActive: user.status !== 'Active'
       };
@@ -374,7 +420,7 @@ export class AdminUsersComponent implements OnInit {
     }
   }
 
-  deleteUser(userId: string): void {
+  async deleteUser(userId: string): Promise<void> {
     const user = this.users().find(u => u.id === userId);
     
     // Check if this is the last admin
@@ -383,7 +429,8 @@ export class AdminUsersComponent implements OnInit {
       return;
     }
     
-    if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
+    const confirmed = await this.confirmDialog.confirmDelete(`user ${user?.firstName} ${user?.lastName}`);
+    if (confirmed) {
       this.userService.deleteUser(userId).subscribe({
         next: (response) => {
           if (response.success) {

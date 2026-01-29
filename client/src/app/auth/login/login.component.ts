@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { AuthService } from '../auth.service';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -13,16 +13,17 @@ import { extractValidationErrors } from '../../core/models/api-response.model';
 })
 export class LoginComponent implements OnInit {
   form!: FormGroup;
-  loading = false;
-  errorMsg: string | null = null;
-  validationErrors: string[] = [];
+  loading = signal(false);
+  errorMsg = signal<string | null>(null);
+  validationErrors = signal<string[]>([]);
   private returnUrl: string = '/dashboard';
 
   constructor(
     private fb: FormBuilder,
     private auth: AuthService,
     private router: Router,
-    private route: ActivatedRoute
+    private route: ActivatedRoute,
+    private cdr: ChangeDetectorRef
   ) {}
 
   // Static validators
@@ -52,14 +53,14 @@ export class LoginComponent implements OnInit {
 
   onSubmit(): void {
     if (this.form.invalid) return;
-    this.loading = true;
-    this.errorMsg = null;
-    this.validationErrors = [];
+    this.loading.set(true);
+    this.errorMsg.set(null);
+    this.validationErrors.set([]);
 
     this.auth.login(this.form.value).subscribe({
       next: res => {
         console.log('login response', res);
-        this.loading = false;
+        this.loading.set(false);
         if (res && res.data && res.data.accessToken) {
           // Token is already stored by AuthService.login() via tap()
           
@@ -83,15 +84,19 @@ export class LoginComponent implements OnInit {
             this.router.navigateByUrl(this.returnUrl);
           }
         } else {
-          this.errorMsg = res.message || 'Login failed';
+          this.errorMsg.set(res.message || 'Login failed');
+          this.cdr.detectChanges();
         }
       },
       error: err => {
         console.error('login error', err);
-        this.loading = false;
-        // Extract and display all validation errors
-        this.validationErrors = extractValidationErrors(err);
-        this.errorMsg = this.validationErrors[0] || 'Login request failed';
+        this.loading.set(false);
+        // Extract and display all validation errors immediately
+        const errors = extractValidationErrors(err);
+        this.validationErrors.set(errors);
+        this.errorMsg.set(errors[0] || 'Login request failed');
+        // Force change detection to show errors immediately
+        this.cdr.detectChanges();
       }
     });
   }

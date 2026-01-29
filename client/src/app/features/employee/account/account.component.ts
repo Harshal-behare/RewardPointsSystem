@@ -4,6 +4,7 @@ import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 interface PointTransaction {
   id: string;
@@ -61,7 +62,8 @@ export class EmployeeAccountComponent implements OnInit {
     private pointsService: PointsService,
     private redemptionService: RedemptionService,
     private authService: AuthService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmDialog: ConfirmDialogService
   ) {
     // Extract user ID from JWT token
     const token = this.authService.getToken();
@@ -335,13 +337,14 @@ export class EmployeeAccountComponent implements OnInit {
     this.activeTab = tab;
   }
 
-  cancelRedemption(redemption: RedemptionRecord): void {
+  async cancelRedemption(redemption: RedemptionRecord): Promise<void> {
     if (redemption.status !== 'pending') {
       this.toast.warning('Only pending redemptions can be cancelled');
       return;
     }
 
-    if (confirm('Are you sure you want to cancel this redemption? Your points will be refunded.')) {
+    const confirmed = await this.confirmDialog.confirmCancellation('Are you sure you want to cancel this redemption? Your points will be refunded.');
+    if (confirmed) {
       this.redemptionService.cancelRedemption(redemption.id, { cancellationReason: 'Cancelled by employee' }).subscribe({
         next: (response) => {
           if (response.success) {

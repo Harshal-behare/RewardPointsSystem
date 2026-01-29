@@ -5,10 +5,10 @@
       <span class="action-icon">➕</span>
       <span>Add New User</span>
     </button>
-    <button class="quick-action-btn secondary" (click)="loadUsers()">
+    <!-- <button class="quick-action-btn secondary" (click)="loadUsers()">
       <span class="action-icon">🔄</span>
       <span>Refresh</span>
-    </button>
+    </button> -->
   </div>
 
   <app-card>
@@ -140,10 +140,10 @@
               name="firstName"
               placeholder="Enter first name"
               required
-              maxlength="100"
-              pattern="^[a-zA-Z ]+$"
+              maxlength="20"
+              pattern="^[a-zA-Z][a-zA-Z ]*$"
             />
-            <small class="form-hint">Only letters and spaces allowed (1-100 characters)</small>
+            <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
           </div>
 
           <div class="form-group">
@@ -155,10 +155,10 @@
               name="lastName"
               placeholder="Enter last name"
               required
-              maxlength="100"
-              pattern="^[a-zA-Z ]+$"
+              maxlength="20"
+              pattern="^[a-zA-Z][a-zA-Z ]*$"
             />
-            <small class="form-hint">Only letters and spaces allowed (1-100 characters)</small>
+            <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
           </div>
         </div>
 
@@ -173,7 +173,7 @@
             required
             maxlength="255"
           />
-          <small class="form-hint">Must be a valid email address (max 255 characters)</small>
+          <small class="form-hint">Must be an @agdata.com email address</small>
         </div>
 
         <div class="form-row">
@@ -185,8 +185,9 @@
               name="role"
               required
             >
-              <option value="Employee">Employee</option>
-              <option value="Admin">Admin</option>
+              @for (role of roles(); track role.id) {
+                <option [value]="role.name">{{ role.name }}</option>
+              }
             </select>
           </div>
 

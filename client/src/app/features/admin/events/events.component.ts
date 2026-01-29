@@ -10,6 +10,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { EventService, CreateEventDto, UpdateEventDto } from '../../../core/services/event.service';
 import { PointsService } from '../../../core/services/points.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
 interface DisplayEvent {
   id: string;
@@ -94,7 +95,8 @@ export class AdminEventsComponent implements OnInit {
     private router: Router,
     private eventService: EventService,
     private pointsService: PointsService,
-    private toast: ToastService
+    private toast: ToastService,
+    private confirmDialog: ConfirmDialogService
   ) {
     // Subscribe to route changes with automatic cleanup
     this.router.events.pipe(
@@ -404,8 +406,10 @@ export class AdminEventsComponent implements OnInit {
     }
   }
 
-  deleteEvent(eventId: string): void {
-    if (confirm('Are you sure you want to delete this event?')) {
+  async deleteEvent(eventId: string): Promise<void> {
+    const event = this.events().find(e => e.id === eventId);
+    const confirmed = await this.confirmDialog.confirmDelete(`event "${event?.name}"`);
+    if (confirmed) {
       this.eventService.deleteEvent(eventId).subscribe({
         next: (response) => {
           if (response.success) {

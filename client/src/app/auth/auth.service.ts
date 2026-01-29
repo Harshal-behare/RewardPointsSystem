@@ -130,7 +130,25 @@ export class AuthService {
 
   isAuthenticated(): boolean {
     if (!this.isBrowser) return false;
-    return !!this.getToken();
+    const token = this.getToken();
+    if (!token) return false;
+    
+    // Check if token is expired
+    const payload = this.getDecodedToken();
+    if (!payload || !payload.exp) return false;
+    
+    // exp is in seconds, Date.now() is in milliseconds
+    const expirationTime = payload.exp * 1000;
+    const currentTime = Date.now();
+    
+    // Token is valid if not expired
+    if (currentTime >= expirationTime) {
+      // Token expired, clear it
+      this.clearLocal();
+      return false;
+    }
+    
+    return true;
   }
 
   /**

@@ -27,7 +27,7 @@
                 <span>Email cannot exceed 255 characters</span>
               }
               @if (form.get('email')?.errors?.['agdataEmail']) {
-                <span>Only @agdata.com email can login</span>
+                <span>  Only @agdata.com email can login</span>
               }
             </div>
           }
@@ -52,21 +52,21 @@
         </div>
 
         <!-- Show all validation errors from backend -->
-        @if (validationErrors.length > 0) {
+        @if (validationErrors().length > 0) {
           <div class="error-list">
-            @for (error of validationErrors; track error) {
+            @for (error of validationErrors(); track error) {
               <div class="error">{{ error }}</div>
             }
           </div>
         }
 
         <!-- Fallback single error message -->
-        @if (errorMsg && validationErrors.length === 0) {
-          <div class="error">{{ errorMsg }}</div>
+        @if (errorMsg() && validationErrors().length === 0) {
+          <div class="error">{{ errorMsg() }}</div>
         }
 
-        <button class="login-btn" type="submit" [disabled]="loading">
-          {{ loading ? 'Signing in...' : 'Login' }}
+        <button class="login-btn" type="submit" [disabled]="loading()">
+          {{ loading() ? 'Signing in...' : 'Login' }}
         </button>
 
         <!-- <a class="forgot-link" href="#">Forgot password?</a> -->

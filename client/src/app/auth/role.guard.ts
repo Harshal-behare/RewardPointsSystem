@@ -1,4 +1,5 @@
-import { inject } from '@angular/core';
+import { inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Router, CanActivateFn } from '@angular/router';
 import { AuthService } from './auth.service';
 
@@ -44,8 +45,14 @@ function getUserRoles(authService: AuthService): string[] {
  */
 export function createRoleGuard(allowedRoles: string[], redirectTo: string = '/employee/dashboard'): CanActivateFn {
   return (route, state) => {
+    const platformId = inject(PLATFORM_ID);
     const authService = inject(AuthService);
     const router = inject(Router);
+
+    // During SSR, allow navigation and let client-side hydration handle auth
+    if (!isPlatformBrowser(platformId)) {
+      return true;
+    }
 
     // First check if authenticated
     if (!authService.isAuthenticated()) {
