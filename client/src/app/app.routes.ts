@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/auth.guard';
+import { adminGuard, employeeGuard } from './auth/role.guard';
 
 export const routes: Routes = [
 	{
@@ -9,12 +10,12 @@ export const routes: Routes = [
 	{
 		path: 'admin',
 		loadChildren: () => import('./features/admin/admin.routes').then(m => m.adminRoutes),
-		canActivate: [authGuard]
+		canActivate: [adminGuard]  // Only Admin role can access admin routes
 	},
 	{
 		path: 'employee',
 		loadChildren: () => import('./features/employee/employee.routes').then(m => m.employeeRoutes),
-		canActivate: [authGuard]
+		canActivate: [employeeGuard]  // Employee, Admin can access employee routes
 	},
 	{
 		path: 'dashboard',

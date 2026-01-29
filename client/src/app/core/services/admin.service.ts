@@ -74,4 +74,9 @@ export class AdminService {
   getPointsAlerts(): Observable<ApiResponse<any[]>> {
     return this.api.get<any[]>('Admin/alerts/points');
   }
+
+  // Admin count
+  getAdminCount(): Observable<ApiResponse<{ count: number }>> {
+    return this.api.get<{ count: number }>('Admin/admin-count');
+  }
 }

@@ -132,4 +132,64 @@ export class AuthService {
     if (!this.isBrowser) return false;
     return !!this.getToken();
   }
+
+  /**
+   * Decodes and returns the JWT payload
+   */
+  getDecodedToken(): any {
+    const token = this.getToken();
+    if (!token) return null;
+    
+    try {
+      const payload = token.split('.')[1];
+      return JSON.parse(atob(payload));
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Gets user roles from the JWT token
+   */
+  getUserRoles(): string[] {
+    const payload = this.getDecodedToken();
+    if (!payload) return [];
+
+    // Check both standard claim and short form
+    const roleClaim = payload.role || payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+    
+    if (Array.isArray(roleClaim)) {
+      return roleClaim;
+    } else if (typeof roleClaim === 'string') {
+      return [roleClaim];
+    }
+    
+    return [];
+  }
+
+  /**
+   * Checks if current user has Admin role
+   */
+  isAdmin(): boolean {
+    const roles = this.getUserRoles();
+    return roles.some(r => r.toLowerCase() === 'admin' || r.toLowerCase() === 'administrator');
+  }
+
+  /**
+   * Checks if current user has a specific role
+   */
+  hasRole(role: string): boolean {
+    const roles = this.getUserRoles();
+    return roles.some(r => r.toLowerCase() === role.toLowerCase());
+  }
+
+  /**
+   * Updates user name in local state (for UI consistency after profile update)
+   * Note: This doesn't persist to localStorage as name is stored in JWT
+   */
+  updateUserName(firstName: string, lastName: string): void {
+    // The name is stored in the JWT, so we can't update it locally
+    // The UI should refresh from the API to get updated info
+    // This method is a placeholder for potential future state management
+  }
 }

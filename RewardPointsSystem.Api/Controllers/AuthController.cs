@@ -70,7 +70,7 @@ namespace RewardPointsSystem.Api.Controllers
                 // Hash and set password
                 var passwordHash = _passwordHasher.HashPassword(dto.Password);
                 user.SetPasswordHash(passwordHash);
-                var updateDto = new UserUpdateDto
+                var updateDto = new Application.Interfaces.UserUpdateDto
                 {
                     Email = user.Email,
                     FirstName = user.FirstName,
@@ -315,6 +315,66 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error getting current user");
                 return Error("Failed to get user information");
+            }
+        }
+
+        /// <summary>
+        /// Change user password
+        /// </summary>
+        /// <param name="dto">Current and new password</param>
+        /// <response code="200">Password changed successfully</response>
+        /// <response code="400">Invalid current password or validation failed</response>
+        /// <response code="401">User not authenticated</response>
+        [HttpPost("change-password")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto dto)
+        {
+            try
+            {
+                // Validate input
+                if (string.IsNullOrEmpty(dto.CurrentPassword) || string.IsNullOrEmpty(dto.NewPassword))
+                    return Error("Current password and new password are required", 400);
+
+                if (dto.NewPassword.Length < 8)
+                    return Error("New password must be at least 8 characters long", 400);
+
+                // Get user ID from JWT claims
+                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                    return UnauthorizedError("Invalid user");
+
+                // Fetch user from database
+                var user = await _userService.GetUserByIdAsync(userId);
+                if (user == null)
+                    return NotFoundError("User not found");
+
+                // Verify current password
+                if (!user.HasPassword() || !_passwordHasher.VerifyPassword(dto.CurrentPassword, user.PasswordHash!))
+                    return Error("Current password is incorrect", 400);
+
+                // Hash and set new password
+                var newPasswordHash = _passwordHasher.HashPassword(dto.NewPassword);
+                user.SetPasswordHash(newPasswordHash);
+
+                // Update user to save new password hash
+                var updateDto = new Application.Interfaces.UserUpdateDto
+                {
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName
+                };
+                await _userService.UpdateUserAsync(user.Id, updateDto);
+
+                _logger.LogInformation("User {UserId} changed their password", userId);
+                return Success<object>(null, "Password changed successfully");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error changing password");
+                return Error("Failed to change password");
             }
         }
     }

@@ -32,10 +32,8 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
         public DateTime LastUpdatedAt { get; private set; }
         public Guid? UpdatedBy { get; private set; }
 
-        // Navigation Properties
         public virtual User? User { get; private set; }
 
-        // EF Core requires a parameterless constructor
         private UserPointsAccount()
         {
         }

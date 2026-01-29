@@ -5,6 +5,7 @@ import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../auth/auth.service';
 
 interface UserProfileResponse {
   userId: string;
@@ -28,12 +29,14 @@ interface UserProfileResponse {
 })
 export class AdminProfileComponent implements OnInit {
   isLoading = true;
+  isSaving = false;
+  
+  userId = '';
   
   profileData = {
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
     role: '',
     joinedDate: ''
   };
@@ -50,7 +53,8 @@ export class AdminProfileComponent implements OnInit {
 
   constructor(
     private api: ApiService,
-    private toast: ToastService
+    private toast: ToastService,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -63,11 +67,11 @@ export class AdminProfileComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           const user = response.data;
+          this.userId = user.userId;
           this.profileData = {
             firstName: user.firstName || '',
             lastName: user.lastName || '',
             email: user.email || '',
-            phone: '',
             role: user.roles?.[0] || 'Administrator',
             joinedDate: ''
           };
@@ -83,7 +87,32 @@ export class AdminProfileComponent implements OnInit {
   }
 
   updateProfile(): void {
-    this.toast.info('Profile update feature coming soon');
+    if (!this.profileData.firstName.trim() || !this.profileData.lastName.trim()) {
+      this.toast.error('First name and last name are required');
+      return;
+    }
+
+    this.isSaving = true;
+    this.api.put(`Users/${this.userId}`, {
+      firstName: this.profileData.firstName.trim(),
+      lastName: this.profileData.lastName.trim()
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          this.toast.success('Profile updated successfully!');
+          // Update auth service with new name
+          this.authService.updateUserName(this.profileData.firstName, this.profileData.lastName);
+        } else {
+          this.toast.error(response.message || 'Failed to update profile');
+        }
+        this.isSaving = false;
+      },
+      error: (error) => {
+        console.error('Error updating profile:', error);
+        this.toast.showValidationErrors(error);
+        this.isSaving = false;
+      }
+    });
   }
 
   changePassword(): void {
@@ -97,12 +126,41 @@ export class AdminProfileComponent implements OnInit {
       return;
     }
 
-    this.toast.info('Password change feature coming soon');
-    this.passwordData = {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
-    };
+    // Validate password strength
+    if (!/[A-Z]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one number');
+      return;
+    }
+
+    this.api.post('Auth/change-password', {
+      currentPassword: this.passwordData.currentPassword,
+      newPassword: this.passwordData.newPassword
+    }).subscribe({
+      next: (response: any) => {
+        if (response.success) {
+          this.toast.success('Password changed successfully!');
+          this.passwordData = {
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          };
+        } else {
+          this.toast.error(response.message || 'Failed to change password');
+        }
+      },
+      error: (error) => {
+        console.error('Error changing password:', error);
+        this.toast.showValidationErrors(error);
+      }
+    });
   }
 
   togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {

@@ -84,15 +84,19 @@
                     class="action-btn" 
                     [class.toggle-active]="user.status === 'Active'"
                     [class.toggle-inactive]="user.status === 'Inactive'"
+                    [class.disabled]="isAdminActionDisabled(user) && user.status === 'Active'"
                     (click)="toggleUserStatus(user)" 
-                    [title]="user.status === 'Active' ? 'Deactivate' : 'Activate'"
+                    [title]="getAdminActionTooltip(user)"
+                    [disabled]="isAdminActionDisabled(user) && user.status === 'Active'"
                   >
                     {{ user.status === 'Active' ? '🔒' : '✅' }}
                   </button>
                   <button 
                     class="action-btn delete-btn" 
+                    [class.disabled]="isAdminActionDisabled(user)"
                     (click)="deleteUser(user.id)" 
-                    title="Delete"
+                    [title]="isAdminActionDisabled(user) ? 'Cannot delete the last admin' : 'Delete'"
+                    [disabled]="isAdminActionDisabled(user)"
                   >
                     🗑️
                   </button>

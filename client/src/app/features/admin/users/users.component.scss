@@ -167,6 +167,16 @@
   &:hover {
     background-color: #F4F6F7;
   }
+  
+  &.disabled,
+  &:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    
+    &:hover {
+      background-color: transparent;
+    }
+  }
 }
 
 .edit-btn:hover {

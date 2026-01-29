@@ -55,4 +55,13 @@ namespace RewardPointsSystem.Application.DTOs.Auth
         public string RefreshToken { get; set; }
         public DateTime ExpiresAt { get; set; }
     }
+
+    /// <summary>
+    /// DTO for change password request
+    /// </summary>
+    public class ChangePasswordRequestDto
+    {
+        public string CurrentPassword { get; set; }
+        public string NewPassword { get; set; }
+    }
 }

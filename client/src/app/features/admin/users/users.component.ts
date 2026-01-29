@@ -2,13 +2,15 @@ import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
-import { filter } from 'rxjs';
+import { filter, forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
+import { AdminService } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../auth/auth.service';
 
 interface DisplayUser {
   id: string;
@@ -43,6 +45,10 @@ export class AdminUsersComponent implements OnInit {
   currentPage = signal(1);
   pageSize = signal(10);
   totalUsers = signal(0);
+  
+  // Admin protection
+  adminCount = signal(0);
+  currentUserId = signal<string>('');
 
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
@@ -54,8 +60,16 @@ export class AdminUsersComponent implements OnInit {
   constructor(
     private router: Router,
     private userService: UserService,
+    private adminService: AdminService,
+    private authService: AuthService,
     private toast: ToastService
   ) {
+    // Get current user ID from token
+    const decoded = this.authService.getDecodedToken();
+    if (decoded) {
+      this.currentUserId.set(decoded.sub || decoded.nameid || '');
+    }
+    
     // Subscribe to route changes with automatic cleanup
     this.router.events.pipe(
       filter(event => event instanceof NavigationEnd),
@@ -71,14 +85,24 @@ export class AdminUsersComponent implements OnInit {
 
   loadUsers(): void {
     this.isLoading.set(true);
-    this.userService.getUsers(this.currentPage(), this.pageSize()).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          this.users.set(this.mapUsersToDisplay(response.data.items || []));
-          this.totalUsers.set(response.data.totalCount || 0);
+    
+    // Load users and admin count in parallel
+    forkJoin({
+      users: this.userService.getUsers(this.currentPage(), this.pageSize()),
+      adminCount: this.adminService.getAdminCount()
+    }).subscribe({
+      next: ({ users, adminCount }) => {
+        if (users.success && users.data) {
+          this.users.set(this.mapUsersToDisplay(users.data.items || []));
+          this.totalUsers.set(users.data.totalCount || 0);
         } else {
           this.useFallbackData();
         }
+        
+        if (adminCount.success && adminCount.data) {
+          this.adminCount.set(adminCount.data.count);
+        }
+        
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -117,6 +141,30 @@ export class AdminUsersComponent implements OnInit {
 
   getRoleBadgeVariant(role: string): 'info' | 'warning' {
     return role === 'Admin' ? 'warning' : 'info';
+  }
+
+  /**
+   * Check if admin actions (deactivate/delete) should be disabled for a user
+   * This protects the last admin from being removed from the system
+   */
+  isAdminActionDisabled(user: DisplayUser): boolean {
+    // Only protect admins
+    if (user.role !== 'Admin') {
+      return false;
+    }
+    
+    // If there's only one admin, disable actions for that admin
+    return this.adminCount() <= 1;
+  }
+
+  /**
+   * Get tooltip message for disabled admin actions
+   */
+  getAdminActionTooltip(user: DisplayUser): string {
+    if (this.isAdminActionDisabled(user)) {
+      return 'Cannot deactivate or delete the last admin in the system';
+    }
+    return user.status === 'Active' ? 'Deactivate' : 'Activate';
   }
 
   openCreateModal(): void {
@@ -284,6 +332,12 @@ export class AdminUsersComponent implements OnInit {
   }
 
   toggleUserStatus(user: DisplayUser): void {
+    // Check if this is the last admin
+    if (this.isAdminActionDisabled(user) && user.status === 'Active') {
+      this.toast.error('Cannot deactivate the last admin in the system');
+      return;
+    }
+    
     const action = user.status === 'Active' ? 'deactivate' : 'activate';
     if (confirm(`Are you sure you want to ${action} this user?`)) {
       const updateData: UpdateUserDto = {
@@ -299,6 +353,15 @@ export class AdminUsersComponent implements OnInit {
             );
             this.users.set(updatedUsers);
             this.toast.success(`User ${action}d successfully!`);
+            
+            // Reload admin count if an admin was activated/deactivated
+            if (user.role === 'Admin') {
+              this.adminService.getAdminCount().subscribe(res => {
+                if (res.success && res.data) {
+                  this.adminCount.set(res.data.count);
+                }
+              });
+            }
           } else {
             this.toast.error(`Failed to ${action} user`);
           }
@@ -312,6 +375,14 @@ export class AdminUsersComponent implements OnInit {
   }
 
   deleteUser(userId: string): void {
+    const user = this.users().find(u => u.id === userId);
+    
+    // Check if this is the last admin
+    if (user && this.isAdminActionDisabled(user)) {
+      this.toast.error('Cannot delete the last admin in the system');
+      return;
+    }
+    
     if (confirm('Are you sure you want to delete this user? This action cannot be undone.')) {
       this.userService.deleteUser(userId).subscribe({
         next: (response) => {

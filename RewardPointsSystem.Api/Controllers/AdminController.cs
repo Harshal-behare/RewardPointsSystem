@@ -276,5 +276,41 @@ namespace RewardPointsSystem.Api.Controllers
                 return Error("Failed to retrieve points pool alerts");
             }
         }
+
+        /// <summary>
+        /// Get count of active admin users
+        /// </summary>
+        /// <response code="200">Returns admin count</response>
+        [HttpGet("admin-count")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetAdminCount()
+        {
+            try
+            {
+                // Get admin role
+                var adminRole = await _unitOfWork.Roles.GetAllAsync();
+                var admin = adminRole.FirstOrDefault(r => r.Name.ToLower() == "admin");
+                
+                if (admin == null)
+                {
+                    return Success(new { count = 0 });
+                }
+
+                // Get all user roles with admin role
+                var userRoles = await _unitOfWork.UserRoles.GetAllAsync();
+                var adminUserIds = userRoles.Where(ur => ur.RoleId == admin.Id).Select(ur => ur.UserId).ToList();
+
+                // Get active admin users
+                var users = await _userService.GetActiveUsersAsync();
+                var activeAdminCount = users.Count(u => adminUserIds.Contains(u.Id) && u.IsActive);
+
+                return Success(new { count = activeAdminCount });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving admin count");
+                return Error("Failed to retrieve admin count");
+            }
+        }
     }
 }

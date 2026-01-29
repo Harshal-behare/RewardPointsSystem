@@ -41,13 +41,13 @@ namespace RewardPointsSystem.Domain.Entities.Core
         public DateTime? UpdatedAt { get; private set; }
         public Guid? UpdatedBy { get; private set; }
 
-        // Navigation Properties - Encapsulated collections
+        
         public virtual IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
         public virtual UserPointsAccount? UserPointsAccount { get; private set; }
         public virtual IReadOnlyCollection<EventParticipant> EventParticipations => _eventParticipations.AsReadOnly();
         public virtual IReadOnlyCollection<Redemption> Redemptions => _redemptions.AsReadOnly();
 
-        // EF Core requires a parameterless constructor
+       
         private User()
         {
             _userRoles = new List<UserRole>();

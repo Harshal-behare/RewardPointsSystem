@@ -45,7 +45,7 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         [StringLength(500, ErrorMessage = "Rejection reason cannot exceed 500 characters")]
         public string? RejectionReason { get; private set; }
 
-        // Navigation Properties
+       
         public virtual User? User { get; private set; }
         public virtual Product? Product { get; private set; }
         public virtual User? Approver { get; private set; }

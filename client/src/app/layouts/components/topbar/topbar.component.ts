@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { AuthService } from '../../../auth/auth.service';
 
 @Component({
   selector: 'app-topbar',
@@ -244,9 +245,11 @@ export class TopbarComponent implements OnInit {
   userInitials = 'AU';
   showDropdown = false;
   isAdmin = false;
+  userRoles: string[] = [];
 
   constructor(
-    private router: Router
+    private router: Router,
+    private authService: AuthService
   ) {}
 
   ngOnInit(): void {
@@ -263,41 +266,28 @@ export class TopbarComponent implements OnInit {
   }
 
   loadUserInfo(): void {
-    // Try to get stored user data
+    // Get roles from AuthService (decoded from JWT)
+    this.userRoles = this.authService.getUserRoles();
+    this.isAdmin = this.authService.isAdmin();
+
+    // Try to get stored user data for display info
     const userDataStr = localStorage.getItem('user');
     if (userDataStr) {
       try {
         const userData = JSON.parse(userDataStr);
         this.userName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User';
-        this.userRole = userData.role || 'User';
-        // Check if user is admin
-        this.isAdmin = userData.role === 'Admin' || userData.role === 'Administrator' || 
-                       userData.roles?.includes('Admin') || userData.roles?.includes('Administrator');
-        
-        // Set current role based on current route
-        if (this.router.url.includes('/admin')) {
-          this.currentRole = 'Administrator';
-        } else {
-          this.currentRole = 'Employee';
-        }
+        this.userRole = userData.role || (this.userRoles.length > 0 ? this.userRoles[0] : 'User');
         this.userInitials = this.getInitials(userData.firstName, userData.lastName);
       } catch (e) {
         console.error('Error parsing user data', e);
       }
     }
-    
-    // Also try the token storage key
-    const accessToken = localStorage.getItem('rp_access_token');
-    if (accessToken) {
-      // Decode JWT to get user info
-      try {
-        const payload = JSON.parse(atob(accessToken.split('.')[1]));
-        if (payload.role) {
-          this.isAdmin = payload.role === 'Admin' || payload.role === 'Administrator';
-        }
-      } catch (e) {
-        console.error('Error decoding token', e);
-      }
+
+    // Set current role based on current route
+    if (this.router.url.includes('/admin')) {
+      this.currentRole = 'Administrator';
+    } else {
+      this.currentRole = 'Employee';
     }
   }
 
@@ -315,6 +305,11 @@ export class TopbarComponent implements OnInit {
     this.showDropdown = false;
     
     if (role === 'admin') {
+      // Double-check admin permission before navigating
+      if (!this.isAdmin) {
+        console.warn('Access denied: User does not have Admin role');
+        return;
+      }
       this.currentRole = 'Administrator';
       this.router.navigate(['/admin/dashboard']);
     } else {
