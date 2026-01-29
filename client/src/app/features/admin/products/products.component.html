@@ -109,9 +109,6 @@
                 <app-button size="sm" variant="secondary" (clicked)="openEditModal(product)">
                   ✏️ Edit
                 </app-button>
-                <button class="delete-icon-btn" (click)="deleteProduct(product.id)" title="Delete">
-                  🗑️
-                </button>
               </div>
             </div>
           </div>
@@ -165,9 +162,6 @@
                   <div class="action-buttons">
                     <button class="action-btn edit-btn" (click)="openEditModal(product)" title="Edit">
                       ✏️
-                    </button>
-                    <button class="action-btn delete-btn" (click)="deleteProduct(product.id)" title="Delete">
-                      🗑️
                     </button>
                   </div>
                 </td>

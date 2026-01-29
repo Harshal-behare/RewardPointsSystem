@@ -170,8 +170,8 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
             if (redemption == null)
                 throw new ArgumentException($"Redemption with ID {redemptionId} not found");
 
-            if (redemption.Status == RedemptionStatus.Cancelled)
-                throw new InvalidOperationException("Redemption is already cancelled");
+            if (redemption.Status == RedemptionStatus.Cancelled || redemption.Status == RedemptionStatus.Rejected)
+                throw new InvalidOperationException("Redemption is already cancelled or rejected");
 
             // Release reserved stock using the actual quantity from redemption
             await _inventoryService.ReleaseReservationAsync(redemption.ProductId, redemption.Quantity);
@@ -204,9 +204,14 @@ namespace RewardPointsSystem.Application.Services.Orchestrators
 
             // Record refund transaction with Redemption source (not Event)
             await _transactionService.RecordRedemptionRefundAsync(redemption.UserId, redemption.PointsSpent,
-                redemption.Id, "Points refunded - Redemption rejected");
+                redemption.Id, "Points refunded - Redemption rejected by administrator");
 
-            redemption.Cancel(reason ?? "Rejected by administrator");
+            // Use Reject method which sets status to Rejected (not Cancelled)
+            var rejectionReason = string.IsNullOrWhiteSpace(reason) 
+                ? "Rejected by administrator" 
+                : reason;
+                
+            redemption.Reject(rejectionReason);
             await _unitOfWork.SaveChangesAsync();
         }
     }

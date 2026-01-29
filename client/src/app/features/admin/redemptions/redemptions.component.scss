@@ -252,6 +252,15 @@
   }
 }
 
+.deliver-btn {
+  background-color: #9B59B6;
+  color: white;
+
+  &:hover {
+    background-color: #8E44AD;
+  }
+}
+
 .view-btn {
   background-color: #3498DB;
   color: white;
@@ -518,6 +527,41 @@
   }
 }
 
+.rejection-section {
+  h4 {
+    color: #E74C3C;
+  }
+}
+
+.rejection-box {
+  background-color: #FFEBEE;
+  border: 1px solid #FFCDD2;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #C62828;
+
+  p {
+    margin: 0;
+    line-height: 1.6;
+  }
+}
+
+.info-box {
+  background-color: #E3F2FD;
+  border: 1px solid #BBDEFB;
+  padding: 12px;
+  border-radius: 8px;
+  margin-top: 16px;
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    color: #1565C0;
+    line-height: 1.5;
+  }
+}
+
 // Buttons
 .btn {
   padding: 10px 24px;
@@ -549,6 +593,15 @@
 
   &:hover {
     background-color: #229954;
+  }
+}
+
+.btn-primary {
+  background-color: #3498DB;
+  color: white;
+
+  &:hover {
+    background-color: #2980B9;
   }
 }
 

@@ -354,27 +354,6 @@ export class AdminProductsComponent implements OnInit {
     }
   }
 
-  async deleteProduct(productId: string): Promise<void> {
-    const product = this.products().find(p => p.id === productId);
-    const confirmed = await this.confirmDialog.confirmDelete(`product "${product?.name}"`);
-    if (confirmed) {
-      this.productService.deleteProduct(productId).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.toast.success('Product deleted successfully!');
-            this.loadProducts();
-          } else {
-            this.toast.error(response.message || 'Failed to delete product');
-          }
-        },
-        error: (error) => {
-          console.error('Error deleting product:', error);
-          this.toast.showApiError(error, 'Failed to delete product');
-        }
-      });
-    }
-  }
-
   toggleViewMode(): void {
     this.viewMode.set(this.viewMode() === 'grid' ? 'table' : 'grid');
   }
@@ -528,19 +507,19 @@ export class AdminProductsComponent implements OnInit {
   }
 
   async deleteCategory(category: DisplayCategory): Promise<void> {
-    if (category.productCount > 0) {
-      this.toast.error(`Cannot delete category '${category.name}' because it has ${category.productCount} product(s). Please reassign or remove the products first.`);
-      return;
-    }
-
-    const confirmed = await this.confirmDialog.confirmDelete(`category "${category.name}"`);
+    const warningMessage = category.productCount > 0 
+      ? `category "${category.name}" (${category.productCount} product(s) will become uncategorized)`
+      : `category "${category.name}"`;
+    
+    const confirmed = await this.confirmDialog.confirmDelete(warningMessage);
     if (confirmed) {
       this.productService.deleteCategory(category.id).subscribe({
         next: (response) => {
           if (response.success) {
-            this.toast.success(`Category '${category.name}' deleted successfully!`);
+            this.toast.success(response.message || `Category '${category.name}' deleted successfully!`);
             this.loadAllCategories();
             this.loadCategories(); // Refresh the filter tabs
+            this.loadProducts(); // Refresh products as some may now be uncategorized
           } else {
             this.toast.error(response.message || 'Failed to delete category');
           }

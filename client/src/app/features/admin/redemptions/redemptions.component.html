@@ -23,10 +23,24 @@
       </div>
     </div>
     <div class="stat-card">
+      <div class="stat-icon" style="background-color: #E8F5E9;">📦</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats().delivered }}</div>
+        <div class="stat-label">Delivered</div>
+      </div>
+    </div>
+    <div class="stat-card">
       <div class="stat-icon" style="background-color: #FFEBEE;">✗</div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().rejected }}</div>
         <div class="stat-label">Rejected</div>
+      </div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon" style="background-color: #F5F5F5;">🚫</div>
+      <div class="stat-content">
+        <div class="stat-value">{{ stats().cancelled }}</div>
+        <div class="stat-label">Cancelled</div>
       </div>
     </div>
   </div>
@@ -62,9 +76,21 @@
       </button>
       <button 
         class="tab-button" 
+        [class.active]="currentFilter() === 'Delivered'"
+        (click)="setFilter('Delivered')">
+        Delivered ({{ stats().delivered }})
+      </button>
+      <button 
+        class="tab-button" 
         [class.active]="currentFilter() === 'Rejected'"
         (click)="setFilter('Rejected')">
         Rejected ({{ stats().rejected }})
+      </button>
+      <button 
+        class="tab-button" 
+        [class.active]="currentFilter() === 'Cancelled'"
+        (click)="setFilter('Cancelled')">
+        Cancelled ({{ stats().cancelled }})
       </button>
     </div>
 
@@ -126,6 +152,14 @@
                       (click)="openRejectModal(request)"
                       title="Reject">
                       ✗ Reject
+                    </button>
+                  }
+                  @if (request.status === 'Approved') {
+                    <button 
+                      class="action-btn deliver-btn" 
+                      (click)="openDeliverModal(request)"
+                      title="Mark as Delivered">
+                      📦 Deliver
                     </button>
                   }
                   <button 
@@ -294,7 +328,28 @@
               <span class="detail-value">{{ selectedRequest()?.approvedAt | date: 'MMM dd, yyyy HH:mm' }}</span>
             </div>
           }
+          @if (selectedRequest()?.deliveredAt) {
+            <div class="detail-row">
+              <span class="detail-label">Delivered At:</span>
+              <span class="detail-value">{{ selectedRequest()?.deliveredAt | date: 'MMM dd, yyyy HH:mm' }}</span>
+            </div>
+          }
         </div>
+
+        @if (selectedRequest()?.rejectionReason) {
+          <div class="details-section rejection-section">
+            <h4>
+              @if (selectedRequest()?.status === 'Rejected') {
+                ❌ Rejection Reason
+              } @else {
+                ℹ️ Cancellation Reason
+              }
+            </h4>
+            <div class="rejection-box">
+              <p>{{ selectedRequest()?.rejectionReason }}</p>
+            </div>
+          </div>
+        }
 
         @if (selectedRequest()?.notes) {
           <div class="details-section">
@@ -309,6 +364,42 @@
       <div class="modal-footer">
         <button class="btn btn-secondary" (click)="closeDetailsModal()">
           Close
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Deliver Confirmation Modal -->
+@if (showDeliverModal()) {
+  <div class="modal-overlay" (click)="closeDeliverModal()">
+    <div class="modal-content deliver-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📦 Mark as Delivered</h3>
+        <button class="close-btn" (click)="closeDeliverModal()">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <div class="confirmation-message">
+          <p><strong>Are you sure you want to mark this redemption as delivered?</strong></p>
+          <div class="request-summary">
+            <p><strong>Employee:</strong> {{ selectedRequest()?.userName }}</p>
+            <p><strong>Product:</strong> {{ selectedRequest()?.productName }}</p>
+            <p><strong>Quantity:</strong> {{ selectedRequest()?.quantity || 1 }}</p>
+            <p><strong>Points:</strong> {{ selectedRequest()?.pointsSpent }} pts</p>
+          </div>
+          <div class="info-box">
+            <p>ℹ️ This confirms that the product has been delivered to the employee. This action will update the inventory.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" (click)="closeDeliverModal()">
+          Cancel
+        </button>
+        <button class="btn btn-primary" (click)="confirmDeliver()">
+          Confirm Delivery
         </button>
       </div>
     </div>

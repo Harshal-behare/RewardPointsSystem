@@ -11,7 +11,8 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         Pending,
         Approved,
         Delivered,
-        Cancelled
+        Cancelled,
+        Rejected
     }
 
     /// <summary>
@@ -122,20 +123,38 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         }
 
         /// <summary>
-        /// Cancels the redemption (Pending/Approved → Cancelled)
+        /// Cancels the redemption (Pending/Approved → Cancelled) - Used for user cancellations
         /// </summary>
         public void Cancel(string reason)
         {
-            if (Status == RedemptionStatus.Cancelled)
-                throw new InvalidRedemptionStateException(Id, "Redemption is already cancelled.");
+            if (Status == RedemptionStatus.Cancelled || Status == RedemptionStatus.Rejected)
+                throw new InvalidRedemptionStateException(Id, "Redemption is already cancelled or rejected.");
 
             if (string.IsNullOrWhiteSpace(reason))
                 throw new ArgumentException("Cancellation reason is required.", nameof(reason));
 
             if (reason.Length > 500)
-                throw new ArgumentException("Rejection reason cannot exceed 500 characters.", nameof(reason));
+                throw new ArgumentException("Cancellation reason cannot exceed 500 characters.", nameof(reason));
 
             Status = RedemptionStatus.Cancelled;
+            RejectionReason = reason.Trim();
+        }
+
+        /// <summary>
+        /// Rejects the redemption (Pending → Rejected) - Used for admin rejections
+        /// </summary>
+        public void Reject(string reason)
+        {
+            if (Status != RedemptionStatus.Pending)
+                throw new InvalidRedemptionStateException(Id, $"Only pending redemptions can be rejected. Current status: {Status}");
+
+            if (string.IsNullOrWhiteSpace(reason))
+                throw new ArgumentException("Rejection reason is required.", nameof(reason));
+
+            if (reason.Length > 500)
+                throw new ArgumentException("Rejection reason cannot exceed 500 characters.", nameof(reason));
+
+            Status = RedemptionStatus.Rejected;
             RejectionReason = reason.Trim();
         }
 
@@ -152,7 +171,7 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         /// </summary>
         public bool IsInFinalState()
         {
-            return Status == RedemptionStatus.Delivered || Status == RedemptionStatus.Cancelled;
+            return Status == RedemptionStatus.Delivered || Status == RedemptionStatus.Cancelled || Status == RedemptionStatus.Rejected;
         }
 
         /// <summary>

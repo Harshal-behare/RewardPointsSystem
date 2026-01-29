@@ -366,6 +366,11 @@
               color: #21618c;
             }
 
+            &.status-delivered {
+              background-color: #27ae60;
+              color: #ffffff;
+            }
+
             &.status-rejected {
               background-color: #f8d7da;
               color: #721c24;

@@ -14,12 +14,13 @@ export interface RedemptionDto {
   productCategory?: string;
   pointsSpent: number;
   quantity?: number;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered';
   requestedAt: string;
   approvedAt?: string;
   approvedBy?: string;
   approvedByName?: string;
   processedAt?: string;
+  deliveredAt?: string;
   rejectionReason?: string;
 }
 
@@ -85,5 +86,10 @@ export class RedemptionService {
   // Cancel redemption
   cancelRedemption(id: string, data: CancelRedemptionDto): Observable<ApiResponse<RedemptionDto>> {
     return this.api.patch<RedemptionDto>(`Redemptions/${id}/cancel`, data);
+  }
+
+  // Deliver redemption (admin marks as delivered)
+  deliverRedemption(id: string): Observable<ApiResponse<RedemptionDto>> {
+    return this.api.patch<RedemptionDto>(`Redemptions/${id}/deliver`, {});
   }
 }

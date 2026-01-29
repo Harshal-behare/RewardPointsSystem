@@ -2,13 +2,13 @@
   <!-- Sidebar -->
   <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
     <div class="sidebar-header">
-      <div class="logo">
-        <span class="logo-icon">🏆</span>
-        @if (!isSidebarCollapsed) {
-          <span class="logo-text">Rewards Portal</span>
-        }
-      </div>
-    </div>
+  <img
+    src="assets/Agdata_logo.png"
+    alt="AGDATA Logo"
+    class="sidebar-logo"
+    [class.collapsed]="isSidebarCollapsed"
+  />
+</div>
 
     <nav class="sidebar-nav">
       @for (item of menuItems; track item.route) {

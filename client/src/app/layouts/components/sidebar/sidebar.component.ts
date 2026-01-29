@@ -7,13 +7,19 @@ import { RouterModule } from '@angular/router';
   imports: [RouterModule],
   template: `
     <aside class="sidebar">
+      <!-- Sidebar Header with Logo only -->
       <div class="sidebar-header">
-        <h2>{{ appName }}</h2>
+        <img
+          src="assets/Agdata_logo.png"
+          alt="AGDATA Logo"
+          class="sidebar-logo"
+        />
       </div>
-      
+
+      <!-- Navigation -->
       <nav class="sidebar-nav">
         @for (item of menuItems; track item.route) {
-          <a 
+          <a
             [routerLink]="item.route"
             routerLinkActive="active"
             class="nav-item"
@@ -40,15 +46,18 @@ import { RouterModule } from '@angular/router';
     }
 
     .sidebar-header {
-      padding: 24px;
+      height: 90px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       border-bottom: 1px solid #F4F6F7;
+      padding: 12px;
     }
 
-    .sidebar-header h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #27AE60;
+    .sidebar-logo {
+      max-height: 60px;
+      max-width: 100%;
+      object-fit: contain;
     }
 
     .sidebar-nav {
@@ -90,7 +99,6 @@ import { RouterModule } from '@angular/router';
   `]
 })
 export class SidebarComponent {
-  appName = 'RPS Admin';
   menuItems = [
     { icon: '📊', label: 'Dashboard', route: '/admin/dashboard' },
     { icon: '📅', label: 'Events', route: '/admin/events' },

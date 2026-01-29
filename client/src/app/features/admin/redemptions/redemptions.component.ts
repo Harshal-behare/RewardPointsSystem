@@ -18,11 +18,12 @@ interface RedemptionRequest {
   productName: string;
   pointsSpent: number;
   quantity: number;
-  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled';
+  status: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered';
   requestedAt: Date;
   approvedAt?: Date;
+  deliveredAt?: Date;
   notes?: string;
-  rejectionReason?: string;  // Add rejection reason field
+  rejectionReason?: string;
 }
 
 interface Stats {
@@ -30,6 +31,8 @@ interface Stats {
   pending: number;
   approved: number;
   rejected: number;
+  cancelled: number;
+  delivered: number;
 }
 
 @Component({
@@ -48,20 +51,23 @@ export class AdminRedemptionsComponent implements OnInit {
   private destroyRef = inject(DestroyRef);
   
   // Filter state
-  currentFilter = signal<'All' | 'Pending' | 'Approved' | 'Rejected'>('All');
+  currentFilter = signal<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered'>('All');
   
   // Stats
   stats = signal<Stats>({
     total: 0,
     pending: 0,
     approved: 0,
-    rejected: 0
+    rejected: 0,
+    cancelled: 0,
+    delivered: 0
   });
 
   // Modal states
   showApproveModal = signal(false);
   showRejectModal = signal(false);
   showDetailsModal = signal(false);
+  showDeliverModal = signal(false);
   selectedRequest = signal<RedemptionRequest | null>(null);
   
   // Form fields
@@ -125,14 +131,9 @@ export class AdminRedemptionsComponent implements OnInit {
   }
 
   private mapRedemptionToDisplay(redemption: any): RedemptionRequest {
-    // Determine if this is a rejected redemption (Cancelled with rejectionReason)
-    let status = this.mapRedemptionStatus(redemption.status);
+    // Map status - now backend has separate Rejected status
+    const status = this.mapRedemptionStatus(redemption.status);
     const rejectionReason = redemption.rejectionReason || redemption.cancellationReason;
-    
-    // If status is Cancelled but has a rejection reason, treat it as Rejected
-    if (status === 'Cancelled' && rejectionReason) {
-      status = 'Rejected';
-    }
     
     return {
       id: redemption.id || redemption.redemptionId,
@@ -146,25 +147,29 @@ export class AdminRedemptionsComponent implements OnInit {
       status: status,
       requestedAt: new Date(redemption.requestedAt || redemption.createdAt),
       approvedAt: redemption.approvedAt ? new Date(redemption.approvedAt) : undefined,
+      deliveredAt: redemption.processedAt ? new Date(redemption.processedAt) : undefined,
       notes: redemption.notes || redemption.adminNotes,
       rejectionReason: rejectionReason
     };
   }
 
-  private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' {
+  private mapRedemptionStatus(status: string | number): 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered' {
     if (typeof status === 'number') {
-      // Backend enum: Pending=0, Approved=1, Cancelled=2
-      const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' } = {
+      // Backend enum: Pending=0, Approved=1, Delivered=2, Cancelled=3, Rejected=4
+      const statusMap: { [key: number]: 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered' } = {
         0: 'Pending',
         1: 'Approved',
-        2: 'Cancelled'
+        2: 'Delivered',
+        3: 'Cancelled',
+        4: 'Rejected'
       };
       return statusMap[status] || 'Pending';
     }
-    // String mapping - treat Cancelled with RejectionReason as Rejected
+    // String mapping
     const statusStr = (status || '').toLowerCase();
     if (statusStr === 'pending') return 'Pending';
     if (statusStr === 'approved') return 'Approved';
+    if (statusStr === 'delivered') return 'Delivered';
     if (statusStr === 'cancelled') return 'Cancelled';
     if (statusStr === 'rejected') return 'Rejected';
     return 'Pending';
@@ -220,11 +225,13 @@ export class AdminRedemptionsComponent implements OnInit {
       total: requests.length,
       pending: requests.filter(r => r.status === 'Pending').length,
       approved: requests.filter(r => r.status === 'Approved').length,
-      rejected: requests.filter(r => r.status === 'Rejected' || r.status === 'Cancelled').length
+      rejected: requests.filter(r => r.status === 'Rejected').length,
+      cancelled: requests.filter(r => r.status === 'Cancelled').length,
+      delivered: requests.filter(r => r.status === 'Delivered').length
     });
   }
 
-  setFilter(filter: 'All' | 'Pending' | 'Approved' | 'Rejected'): void {
+  setFilter(filter: 'All' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered'): void {
     this.currentFilter.set(filter);
     this.filterRequests();
   }
@@ -235,12 +242,6 @@ export class AdminRedemptionsComponent implements OnInit {
     
     if (filter === 'All') {
       this.filteredRequests.set([...requests]);
-    } else if (filter === 'Approved') {
-      this.filteredRequests.set(requests.filter(r => r.status === 'Approved'));
-    } else if (filter === 'Rejected') {
-      this.filteredRequests.set(requests.filter(r => 
-        r.status === 'Rejected' || r.status === 'Cancelled'
-      ));
     } else {
       this.filteredRequests.set(requests.filter(r => r.status === filter));
     }
@@ -253,7 +254,8 @@ export class AdminRedemptionsComponent implements OnInit {
   getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'danger' | 'secondary' {
     const variantMap: { [key: string]: 'success' | 'warning' | 'info' | 'danger' | 'secondary' } = {
       'Pending': 'warning',
-      'Approved': 'success',
+      'Approved': 'info',
+      'Delivered': 'success',
       'Rejected': 'danger',
       'Cancelled': 'secondary'
     };
@@ -373,6 +375,53 @@ export class AdminRedemptionsComponent implements OnInit {
         }
       });
     }
+  }
+
+  // Deliver Modal Methods
+  openDeliverModal(request: RedemptionRequest): void {
+    this.selectedRequest.set(request);
+    this.showDeliverModal.set(true);
+  }
+
+  closeDeliverModal(): void {
+    this.showDeliverModal.set(false);
+    this.selectedRequest.set(null);
+  }
+
+  confirmDeliver(): void {
+    const request = this.selectedRequest();
+    if (request) {
+      this.redemptionService.deliverRedemption(request.id).subscribe({
+        next: (response) => {
+          if (response.success) {
+            const updatedRequest = {
+              ...request,
+              status: 'Delivered' as const,
+              deliveredAt: new Date()
+            };
+            
+            // Update the request in the list
+            const updatedRequests = this.redemptionRequests().map(r => 
+              r.id === request.id ? updatedRequest : r
+            );
+            this.redemptionRequests.set(updatedRequests);
+            
+            // Recalculate stats and filter
+            this.calculateStats();
+            this.filterRequests();
+            
+            this.toast.success(`Redemption marked as delivered for ${request.userName}.`);
+          } else {
+            this.toast.error(response.message || 'Failed to mark redemption as delivered');
+          }
+        },
+        error: (error) => {
+          console.error('Error delivering redemption:', error);
+          this.toast.showValidationErrors(error);
+        }
+      });
+    }
+    this.closeDeliverModal();
   }
 
   // Details Modal Methods

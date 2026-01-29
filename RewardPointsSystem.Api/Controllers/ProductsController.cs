@@ -395,16 +395,16 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
-        /// Delete/Deactivate a product (Admin only)
+        /// Deactivate a product (Admin only). Products cannot be permanently deleted, only deactivated.
         /// </summary>
         /// <param name="id">Product ID</param>
         /// <response code="200">Product deactivated successfully</response>
         /// <response code="404">Product not found</response>
-        [HttpDelete("{id}")]
+        [HttpPatch("{id}/deactivate")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteProduct(Guid id)
+        public async Task<IActionResult> DeactivateProduct(Guid id)
         {
             try
             {
@@ -618,18 +618,37 @@ namespace RewardPointsSystem.Api.Controllers
                     dto.Description ?? category.Description
                 );
 
+                // Fetch products for both deactivation logic and response
+                var products = await _unitOfWork.Products.GetAllAsync();
+
                 // Handle IsActive changes
                 if (dto.IsActive.HasValue && dto.IsActive.Value != category.IsActive)
                 {
                     if (dto.IsActive.Value)
+                    {
                         category.Activate();
+                    }
                     else
+                    {
                         category.Deactivate();
+                        
+                        // Set products in this category to uncategorized when category is deactivated
+                        var productsInCategory = products.Where(p => p.CategoryId == category.Id).ToList();
+                        foreach (var product in productsInCategory)
+                        {
+                            product.UpdateCategory(null); // Set to uncategorized
+                        }
+                        
+                        if (productsInCategory.Any())
+                        {
+                            _logger.LogInformation("Set {Count} product(s) to uncategorized when deactivating category '{Name}'", 
+                                productsInCategory.Count, category.Name);
+                        }
+                    }
                 }
 
                 await _unitOfWork.SaveChangesAsync();
 
-                var products = await _unitOfWork.Products.GetAllAsync();
                 var response = new CategoryResponseDto
                 {
                     Id = category.Id,
@@ -661,14 +680,12 @@ namespace RewardPointsSystem.Api.Controllers
         /// Delete a product category (Admin only)
         /// </summary>
         /// <remarks>
-        /// This will permanently delete the category if no products are assigned to it.
-        /// Products in this category will have their CategoryId set to null (handled by FK ON DELETE SET NULL).
+        /// This will permanently delete the category. Products in this category will become "Uncategorized" (CategoryId set to null).
         /// </remarks>
         [HttpDelete("categories/{id}")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status422UnprocessableEntity)]
         public async Task<IActionResult> DeleteCategory(Guid id)
         {
             try
@@ -677,22 +694,30 @@ namespace RewardPointsSystem.Api.Controllers
                 if (category == null)
                     return NotFoundError($"Category with ID {id} not found");
 
-                // Check if any products are using this category
+                // Find all products using this category and set them to uncategorized
                 var products = await _unitOfWork.Products.GetAllAsync();
                 var productsInCategory = products.Where(p => p.CategoryId == id).ToList();
 
+                foreach (var product in productsInCategory)
+                {
+                    product.UpdateCategory(null); // Set to uncategorized
+                }
+                
                 if (productsInCategory.Any())
                 {
-                    return ValidationError(new[] { 
-                        $"Cannot delete category '{category.Name}' because it has {productsInCategory.Count} product(s) assigned. " +
-                        "Please reassign or remove the products first, or deactivate the category instead."
-                    });
+                    await _unitOfWork.SaveChangesAsync();
+                    _logger.LogInformation("Set {Count} product(s) to uncategorized before deleting category '{Name}'", 
+                        productsInCategory.Count, category.Name);
                 }
 
                 await _unitOfWork.ProductCategories.DeleteAsync(category);
                 await _unitOfWork.SaveChangesAsync();
 
-                return Success<object>(null, $"Category '{category.Name}' deleted successfully");
+                var message = productsInCategory.Any() 
+                    ? $"Category '{category.Name}' deleted successfully. {productsInCategory.Count} product(s) are now uncategorized."
+                    : $"Category '{category.Name}' deleted successfully";
+
+                return Success<object>(null, message);
             }
             catch (Exception ex)
             {

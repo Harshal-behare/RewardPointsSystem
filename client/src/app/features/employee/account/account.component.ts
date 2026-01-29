@@ -25,7 +25,7 @@ interface RedemptionRecord {
   productName: string;
   points: number;
   quantity: number;
-  status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+  status: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'delivered';
   trackingNumber?: string;
   rejectionReason?: string;
   isRefunded?: boolean;  // Indicates if points were refunded (for cancelled/rejected)
@@ -266,21 +266,8 @@ export class EmployeeAccountComponent implements OnInit {
                              (response.data as any).items || [];
           
           const mappedRedemptions: RedemptionRecord[] = redemptions.map((r: RedemptionDto) => {
-            // Map the backend status to frontend status
-            let displayStatus = this.mapRedemptionStatus(r.status);
-            
-            // The backend has Cancelled status for both user cancellations and admin rejections
-            // We need to distinguish between them based on the rejection reason
-            if (displayStatus === 'cancelled' && r.rejectionReason) {
-              const reason = r.rejectionReason.toLowerCase();
-              // If the reason indicates admin rejection, show as rejected
-              // Otherwise keep as cancelled (user cancelled or other cancellation)
-              if (reason.includes('rejected') || reason.includes('by admin') || reason.includes('administrator')) {
-                displayStatus = 'rejected';
-              }
-              // If reason contains 'cancel', 'user', or 'employee', keep as cancelled
-              // This covers: "Cancelled by user", "Cancelled by employee", "User cancelled", etc.
-            }
+            // Map the backend status to frontend status - backend now has separate Rejected status
+            const displayStatus = this.mapRedemptionStatus(r.status);
             
             // Mark as refunded if cancelled or rejected (points were returned)
             const isRefunded = displayStatus === 'cancelled' || displayStatus === 'rejected';
@@ -312,21 +299,24 @@ export class EmployeeAccountComponent implements OnInit {
     });
   }
 
-  private mapRedemptionStatus(status: string | number): 'pending' | 'approved' | 'rejected' | 'cancelled' {
+  private mapRedemptionStatus(status: string | number): 'pending' | 'approved' | 'rejected' | 'cancelled' | 'delivered' {
     // Handle numeric status values from backend enum
     if (typeof status === 'number') {
-      const numericMap: { [key: number]: 'pending' | 'approved' | 'rejected' | 'cancelled' } = {
+      const numericMap: { [key: number]: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'delivered' } = {
         0: 'pending',    // RedemptionStatus.Pending
         1: 'approved',   // RedemptionStatus.Approved
-        2: 'cancelled'   // RedemptionStatus.Cancelled
+        2: 'delivered',  // RedemptionStatus.Delivered
+        3: 'cancelled',  // RedemptionStatus.Cancelled
+        4: 'rejected'    // RedemptionStatus.Rejected
       };
       return numericMap[status] || 'pending';
     }
 
     // Handle string status values
-    const statusMap: { [key: string]: 'pending' | 'approved' | 'rejected' | 'cancelled' } = {
+    const statusMap: { [key: string]: 'pending' | 'approved' | 'rejected' | 'cancelled' | 'delivered' } = {
       'Pending': 'pending',
       'Approved': 'approved',
+      'Delivered': 'delivered',
       'Rejected': 'rejected',
       'Cancelled': 'cancelled'
     };
@@ -369,6 +359,7 @@ export class EmployeeAccountComponent implements OnInit {
       'Approved': 'status-approved',
       'pending': 'status-pending',
       'approved': 'status-approved',
+      'delivered': 'status-delivered',
       'rejected': 'status-rejected',
       'cancelled': 'status-cancelled'
     };
