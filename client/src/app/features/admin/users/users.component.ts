@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, signal, DestroyRef, inject, computed } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
@@ -54,6 +54,70 @@ export class AdminUsersComponent implements OnInit {
   currentPage = signal(1);
   pageSize = signal(10);
   totalUsers = signal(0);
+  
+  // Filter and Search state
+  searchQuery = signal('');
+  statusFilter = signal<'all' | 'Active' | 'Inactive'>('all');
+  roleFilter = signal<'all' | 'Admin' | 'Employee'>('all');
+  sortField = signal<'name' | 'email' | 'role' | 'status' | 'createdAt' | 'pointsBalance'>('name');
+  sortDirection = signal<'asc' | 'desc'>('asc');
+  
+  // Computed filtered and sorted users
+  filteredUsers = computed(() => {
+    let result = [...this.users()];
+    
+    // Apply search filter
+    const query = this.searchQuery().toLowerCase().trim();
+    if (query) {
+      result = result.filter(u => 
+        u.firstName.toLowerCase().includes(query) ||
+        u.lastName.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply status filter
+    if (this.statusFilter() !== 'all') {
+      result = result.filter(u => u.status === this.statusFilter());
+    }
+    
+    // Apply role filter
+    if (this.roleFilter() !== 'all') {
+      result = result.filter(u => u.role === this.roleFilter());
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      const field = this.sortField();
+      
+      switch (field) {
+        case 'name':
+          comparison = `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`);
+          break;
+        case 'email':
+          comparison = a.email.localeCompare(b.email);
+          break;
+        case 'role':
+          comparison = a.role.localeCompare(b.role);
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'createdAt':
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case 'pointsBalance':
+          comparison = (a.pointsBalance || 0) - (b.pointsBalance || 0);
+          break;
+      }
+      
+      return this.sortDirection() === 'asc' ? comparison : -comparison;
+    });
+    
+    return result;
+  });
   
   // Admin protection
   adminCount = signal(0);
@@ -169,6 +233,43 @@ export class AdminUsersComponent implements OnInit {
     return role === 'Admin' ? 'warning' : 'info';
   }
 
+  // Filter and Sort methods
+  onSearchChange(): void {
+    // Search is automatically applied via computed signal
+  }
+  
+  onStatusFilterChange(status: 'all' | 'Active' | 'Inactive'): void {
+    this.statusFilter.set(status);
+  }
+  
+  onRoleFilterChange(role: 'all' | 'Admin' | 'Employee'): void {
+    this.roleFilter.set(role);
+  }
+  
+  toggleSort(field: 'name' | 'email' | 'role' | 'status' | 'createdAt' | 'pointsBalance'): void {
+    if (this.sortField() === field) {
+      // Toggle direction
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      // New field, default to ascending
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+  }
+  
+  getSortIcon(field: string): string {
+    if (this.sortField() !== field) return '↕️';
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
+  }
+  
+  clearFilters(): void {
+    this.searchQuery.set('');
+    this.statusFilter.set('all');
+    this.roleFilter.set('all');
+    this.sortField.set('name');
+    this.sortDirection.set('asc');
+  }
+
   /**
    * Check if admin actions (deactivate/delete) should be disabled for a user
    * This protects the last admin from being removed from the system
@@ -180,6 +281,37 @@ export class AdminUsersComponent implements OnInit {
     }
     
     // If there's only one admin, disable actions for that admin
+    return this.adminCount() <= 1;
+  }
+
+  /**
+   * Check if the current user being edited is the last admin and should have role protected
+   */
+  isLastAdminRoleProtected(): boolean {
+    if (this.modalMode() !== 'edit') return false;
+    if (!this.selectedUser.id) return false;
+    
+    // Get the original user (not the edited version)
+    const originalUser = this.users().find(u => u.id === this.selectedUser.id);
+    if (!originalUser || originalUser.role !== 'Admin') return false;
+    
+    // If there's only 1 admin, protect role change
+    return this.adminCount() <= 1;
+  }
+
+  /**
+   * Check if the current user being edited is the last admin and should have status protected
+   */
+  isLastAdminStatusProtected(): boolean {
+    if (this.modalMode() !== 'edit') return false;
+    if (!this.selectedUser.id) return false;
+    
+    // Get the original user (not the edited version)
+    const originalUser = this.users().find(u => u.id === this.selectedUser.id);
+    if (!originalUser || originalUser.role !== 'Admin') return false;
+    if (originalUser.status !== 'Active') return false; // Already inactive, can be activated
+    
+    // If there's only 1 admin and they are active, protect status change
     return this.adminCount() <= 1;
   }
 
@@ -415,34 +547,6 @@ export class AdminUsersComponent implements OnInit {
         error: (error) => {
           console.error('Error toggling user status:', error);
           this.toast.showApiError(error, `Failed to ${action} user`);
-        }
-      });
-    }
-  }
-
-  async deleteUser(userId: string): Promise<void> {
-    const user = this.users().find(u => u.id === userId);
-    
-    // Check if this is the last admin
-    if (user && this.isAdminActionDisabled(user)) {
-      this.toast.error('Cannot delete the last admin in the system');
-      return;
-    }
-    
-    const confirmed = await this.confirmDialog.confirmDelete(`user ${user?.firstName} ${user?.lastName}`);
-    if (confirmed) {
-      this.userService.deleteUser(userId).subscribe({
-        next: (response) => {
-          if (response.success) {
-            this.toast.success('User deleted successfully!');
-            this.loadUsers();
-          } else {
-            this.toast.error(response.message || 'Failed to delete user');
-          }
-        },
-        error: (error) => {
-          console.error('Error deleting user:', error);
-          this.toast.showApiError(error, 'Failed to delete user');
         }
       });
     }

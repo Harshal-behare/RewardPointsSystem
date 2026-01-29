@@ -16,6 +16,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<User> GetUserByIdAsync(Guid id);
         Task<User> GetUserByEmailAsync(string email);
         Task<IEnumerable<User>> GetActiveUsersAsync();
+        Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> UpdateUserAsync(Guid id, UserUpdateDto updates);
         Task DeactivateUserAsync(Guid id);
     }

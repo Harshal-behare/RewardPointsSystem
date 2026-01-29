@@ -97,17 +97,16 @@
 // Filters & Search Section
 .filters-section {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
+  flex-direction: column;
+  gap: 16px;
   margin: 20px 0;
   padding: 20px 0;
   border-bottom: 1px solid #E1E8ED;
-  flex-wrap: wrap;
 
   .filter-tabs {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
 
     .filter-tab {
       padding: 8px 16px;
@@ -132,10 +131,18 @@
       }
     }
   }
+  
+  .search-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
 
   .search-box {
     position: relative;
-    width: 280px;
+    flex: 1;
+    max-width: 400px;
 
     .search-input {
       width: 100%;
@@ -160,6 +167,11 @@
       pointer-events: none;
     }
   }
+  
+  .results-info {
+    font-size: 12px;
+    color: #7A7A7A;
+  }
 }
 
 // Table Styles
@@ -183,6 +195,26 @@
       color: #7A7A7A;
       text-transform: uppercase;
       letter-spacing: 0.5px;
+      
+      &.sortable {
+        cursor: pointer;
+        user-select: none;
+        transition: background-color 0.2s;
+        
+        &:hover {
+          background-color: #E8EBED;
+        }
+        
+        .sort-icon {
+          font-size: 12px;
+          margin-left: 4px;
+          opacity: 0.5;
+        }
+        
+        &:hover .sort-icon {
+          opacity: 1;
+        }
+      }
     }
   }
 
@@ -244,6 +276,43 @@
 
   &:hover {
     background-color: #F4F6F7;
+  }
+}
+
+// No Results
+.no-results {
+  text-align: center;
+  padding: 48px 16px !important;
+  
+  .no-results-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    
+    .no-results-icon {
+      font-size: 48px;
+      opacity: 0.5;
+    }
+    
+    p {
+      margin: 0;
+      color: #7A7A7A;
+      font-size: 16px;
+    }
+    
+    .clear-filters-link {
+      background: none;
+      border: none;
+      color: #27AE60;
+      cursor: pointer;
+      font-size: 14px;
+      text-decoration: underline;
+      
+      &:hover {
+        color: #1e8449;
+      }
+    }
   }
 }
 

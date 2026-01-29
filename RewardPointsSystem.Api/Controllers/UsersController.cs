@@ -39,11 +39,11 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
-        /// Get all users with pagination (Admin only)
+        /// Get all users with pagination including inactive users (Admin only)
         /// </summary>
         /// <param name="page">Page number (default: 1)</param>
         /// <param name="pageSize">Items per page (default: 10, max: 100)</param>
-        /// <response code="200">Returns paginated user list</response>
+        /// <response code="200">Returns paginated user list including inactive users</response>
         /// <response code="401">User is not authenticated</response>
         /// <response code="403">User lacks admin privileges</response>
         [HttpGet]
@@ -55,7 +55,8 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var users = await _userService.GetActiveUsersAsync();
+                // Get ALL users (including inactive) for admin
+                var users = await _userService.GetAllUsersAsync();
                 
                 // Get all user roles and points accounts for efficient lookup
                 var allUserRoles = await _unitOfWork.UserRoles.GetAllAsync();
@@ -284,16 +285,16 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
-        /// Delete user (soft delete - Admin only)
+        /// Deactivate user (Admin only). Use PUT with isActive=false for more control.
         /// </summary>
         /// <param name="id">User ID</param>
-        /// <response code="200">User deleted successfully</response>
+        /// <response code="200">User deactivated successfully</response>
         /// <response code="404">User not found</response>
-        [HttpDelete("{id}")]
+        [HttpPatch("{id}/deactivate")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> DeleteUser(Guid id)
+        public async Task<IActionResult> DeactivateUser(Guid id)
         {
             try
             {
@@ -308,8 +309,8 @@ namespace RewardPointsSystem.Api.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error deleting user {UserId}", id);
-                return Error("Failed to delete user");
+                _logger.LogError(ex, "Error deactivating user {UserId}", id);
+                return Error("Failed to deactivate user");
             }
         }
 

@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { RouterModule, Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { RouterModule, Router, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-employee-layout',
@@ -8,12 +9,24 @@ import { RouterModule, Router } from '@angular/router';
   templateUrl: './employee-layout.component.html',
   styleUrl: './employee-layout.component.scss'
 })
-export class EmployeeLayoutComponent implements OnInit {
+export class EmployeeLayoutComponent implements OnInit, OnDestroy {
   isSidebarCollapsed = false;
   showProfileDropdown = false;
   isAdmin = false;
   userName = 'John Doe';
   userInitials = 'JD';
+  pageTitle = 'Dashboard';
+  
+  private routerSubscription?: Subscription;
+  
+  // Route to page title mapping
+  private readonly pageTitleMap: { [key: string]: string } = {
+    '/employee/dashboard': 'Dashboard',
+    '/employee/products': 'Products',
+    '/employee/events': 'Events',
+    '/employee/account': 'My Account',
+    '/employee/profile': 'My Profile'
+  };
 
   menuItems = [
     { name: 'Dashboard', icon: '📊', route: '/employee/dashboard', active: true },
@@ -27,6 +40,44 @@ export class EmployeeLayoutComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadUserInfo();
+    
+    // Set initial page title based on current route
+    this.updatePageTitle(this.router.url);
+    
+    // Subscribe to route changes to update page title
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.updatePageTitle(event.urlAfterRedirects || event.url);
+    });
+  }
+  
+  ngOnDestroy(): void {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+  }
+  
+  private updatePageTitle(url: string): void {
+    // Remove query params and fragments
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    
+    // Check for exact match first
+    if (this.pageTitleMap[cleanUrl]) {
+      this.pageTitle = this.pageTitleMap[cleanUrl];
+      return;
+    }
+    
+    // Check for partial match (for nested routes)
+    for (const [route, title] of Object.entries(this.pageTitleMap)) {
+      if (cleanUrl.startsWith(route)) {
+        this.pageTitle = title;
+        return;
+      }
+    }
+    
+    // Default to Dashboard if no match
+    this.pageTitle = 'Dashboard';
   }
 
   loadUserInfo(): void {

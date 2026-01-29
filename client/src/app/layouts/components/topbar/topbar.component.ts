@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Router, NavigationEnd } from '@angular/router';
+import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service';
 
 @Component({
@@ -237,7 +238,7 @@ import { AuthService } from '../../../auth/auth.service';
 
   `]
 })
-export class TopbarComponent implements OnInit {
+export class TopbarComponent implements OnInit, OnDestroy {
   pageTitle = 'Dashboard';
   userName = 'Admin User';
   userRole = 'Administrator';
@@ -246,6 +247,24 @@ export class TopbarComponent implements OnInit {
   showDropdown = false;
   isAdmin = false;
   userRoles: string[] = [];
+  
+  private routerSubscription?: Subscription;
+  
+  // Route to page title mapping
+  private readonly pageTitleMap: { [key: string]: string } = {
+    '/admin/dashboard': 'Dashboard',
+    '/admin/users': 'Users',
+    '/admin/products': 'Products',
+    '/admin/events': 'Events',
+    '/admin/redemptions': 'Redemptions',
+    '/admin/reports': 'Reports',
+    '/admin/settings': 'Settings',
+    '/employee/dashboard': 'Dashboard',
+    '/employee/products': 'Products',
+    '/employee/events': 'Events',
+    '/employee/account': 'My Account',
+    '/employee/profile': 'My Profile'
+  };
 
   constructor(
     private router: Router,
@@ -256,6 +275,16 @@ export class TopbarComponent implements OnInit {
     // Try to get user info from localStorage or API
     this.loadUserInfo();
     
+    // Set initial page title based on current route
+    this.updatePageTitle(this.router.url);
+    
+    // Subscribe to route changes to update page title
+    this.routerSubscription = this.router.events.pipe(
+      filter(event => event instanceof NavigationEnd)
+    ).subscribe((event: any) => {
+      this.updatePageTitle(event.urlAfterRedirects || event.url);
+    });
+    
     // Close dropdown when clicking outside
     document.addEventListener('click', (event) => {
       const target = event.target as HTMLElement;
@@ -263,6 +292,34 @@ export class TopbarComponent implements OnInit {
         this.showDropdown = false;
       }
     });
+  }
+  
+  ngOnDestroy(): void {
+    if (this.routerSubscription) {
+      this.routerSubscription.unsubscribe();
+    }
+  }
+  
+  private updatePageTitle(url: string): void {
+    // Remove query params and fragments
+    const cleanUrl = url.split('?')[0].split('#')[0];
+    
+    // Check for exact match first
+    if (this.pageTitleMap[cleanUrl]) {
+      this.pageTitle = this.pageTitleMap[cleanUrl];
+      return;
+    }
+    
+    // Check for partial match (for nested routes)
+    for (const [route, title] of Object.entries(this.pageTitleMap)) {
+      if (cleanUrl.startsWith(route)) {
+        this.pageTitle = title;
+        return;
+      }
+    }
+    
+    // Default to Dashboard if no match
+    this.pageTitle = 'Dashboard';
   }
 
   loadUserInfo(): void {

@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
@@ -53,6 +53,11 @@ export class AdminRedemptionsComponent implements OnInit {
   // Filter state
   currentFilter = signal<'All' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered'>('All');
   
+  // Search and Sort state
+  searchQuery = signal('');
+  sortField = signal<'userName' | 'productName' | 'pointsSpent' | 'requestedAt' | 'status'>('requestedAt');
+  sortDirection = signal<'asc' | 'desc'>('desc');
+  
   // Stats
   stats = signal<Stats>({
     total: 0,
@@ -75,7 +80,54 @@ export class AdminRedemptionsComponent implements OnInit {
   rejectionError = signal('');
 
   redemptionRequests = signal<RedemptionRequest[]>([]);
-  filteredRequests = signal<RedemptionRequest[]>([]);
+  
+  // Computed filtered requests with search and sort
+  filteredRequests = computed(() => {
+    let result = [...this.redemptionRequests()];
+    
+    // Apply status filter
+    if (this.currentFilter() !== 'All') {
+      result = result.filter(r => r.status === this.currentFilter());
+    }
+    
+    // Apply search filter
+    const query = this.searchQuery().toLowerCase().trim();
+    if (query) {
+      result = result.filter(r => 
+        r.userName.toLowerCase().includes(query) ||
+        r.userEmail.toLowerCase().includes(query) ||
+        r.productName.toLowerCase().includes(query)
+      );
+    }
+    
+    // Apply sorting
+    result.sort((a, b) => {
+      let comparison = 0;
+      const field = this.sortField();
+      
+      switch (field) {
+        case 'userName':
+          comparison = a.userName.localeCompare(b.userName);
+          break;
+        case 'productName':
+          comparison = a.productName.localeCompare(b.productName);
+          break;
+        case 'pointsSpent':
+          comparison = a.pointsSpent - b.pointsSpent;
+          break;
+        case 'requestedAt':
+          comparison = new Date(a.requestedAt).getTime() - new Date(b.requestedAt).getTime();
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+      }
+      
+      return this.sortDirection() === 'asc' ? comparison : -comparison;
+    });
+    
+    return result;
+  });
 
   constructor(
     private router: Router,
@@ -112,12 +164,10 @@ export class AdminRedemptionsComponent implements OnInit {
           
           this.redemptionRequests.set(data.map((r: any) => this.mapRedemptionToDisplay(r)));
           this.calculateStats();
-          this.filterRequests();
         } else {
           this.toast.error('Failed to load redemptions');
           this.redemptionRequests.set([]);
           this.calculateStats();
-          this.filterRequests();
         }
       },
       error: (error) => {
@@ -125,7 +175,6 @@ export class AdminRedemptionsComponent implements OnInit {
         this.toast.error('Failed to load redemptions from server');
         this.redemptionRequests.set([]);
         this.calculateStats();
-        this.filterRequests();
       }
     });
   }
@@ -233,18 +282,31 @@ export class AdminRedemptionsComponent implements OnInit {
 
   setFilter(filter: 'All' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered'): void {
     this.currentFilter.set(filter);
-    this.filterRequests();
+    // filteredRequests computed signal handles filtering automatically
   }
 
-  filterRequests(): void {
-    const filter = this.currentFilter();
-    const requests = this.redemptionRequests();
-    
-    if (filter === 'All') {
-      this.filteredRequests.set([...requests]);
+  // Search method
+  onSearchChange(): void {
+    // Search is automatically applied via computed signal
+  }
+  
+  // Sort methods
+  toggleSort(field: 'userName' | 'productName' | 'pointsSpent' | 'requestedAt' | 'status'): void {
+    if (this.sortField() === field) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
     } else {
-      this.filteredRequests.set(requests.filter(r => r.status === filter));
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
     }
+  }
+  
+  getSortIcon(field: string): string {
+    if (this.sortField() !== field) return '↕️';
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
+  }
+  
+  clearSearch(): void {
+    this.searchQuery.set('');
   }
 
   getUserInitials(userName: string): string {
@@ -291,9 +353,8 @@ export class AdminRedemptionsComponent implements OnInit {
             );
             this.redemptionRequests.set(updatedRequests);
             
-            // Recalculate stats and filter
+            // Recalculate stats
             this.calculateStats();
-            this.filterRequests();
             
             this.toast.success(`Redemption approved! ${request.pointsSpent} points deducted from ${request.userName}'s account.`);
           } else {
@@ -355,9 +416,8 @@ export class AdminRedemptionsComponent implements OnInit {
             );
             this.redemptionRequests.set(updatedRequests);
             
-            // Recalculate stats and filter
+            // Recalculate stats
             this.calculateStats();
-            this.filterRequests();
             
             this.closeRejectModal();
             this.toast.success(`Redemption rejected. ${request.pointsSpent} points have been refunded to ${request.userName}'s account.`);
@@ -406,9 +466,8 @@ export class AdminRedemptionsComponent implements OnInit {
             );
             this.redemptionRequests.set(updatedRequests);
             
-            // Recalculate stats and filter
+            // Recalculate stats
             this.calculateStats();
-            this.filterRequests();
             
             this.toast.success(`Redemption marked as delivered for ${request.userName}.`);
           } else {

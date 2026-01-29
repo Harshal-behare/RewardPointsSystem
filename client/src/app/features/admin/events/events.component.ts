@@ -59,6 +59,10 @@ export class AdminEventsComponent implements OnInit {
   filteredEvents = signal<DisplayEvent[]>([]);
   searchQuery = signal('');
   selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  
+  // Sorting
+  sortField = signal<'name' | 'eventDate' | 'status' | 'pointsPool' | 'participantCount'>('eventDate');
+  sortDirection = signal<'asc' | 'desc'>('asc');
 
   // Event Modal
   showModal = signal(false);
@@ -207,6 +211,32 @@ export class AdminEventsComponent implements OnInit {
         event.description.toLowerCase().includes(query)
       );
     }
+    
+    // Apply sorting
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      const field = this.sortField();
+      
+      switch (field) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'eventDate':
+          comparison = new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime();
+          break;
+        case 'status':
+          comparison = a.status.localeCompare(b.status);
+          break;
+        case 'pointsPool':
+          comparison = a.pointsPool - b.pointsPool;
+          break;
+        case 'participantCount':
+          comparison = a.participantCount - b.participantCount;
+          break;
+      }
+      
+      return this.sortDirection() === 'asc' ? comparison : -comparison;
+    });
 
     this.filteredEvents.set(filtered);
   }
@@ -217,6 +247,29 @@ export class AdminEventsComponent implements OnInit {
   }
 
   onSearchChange(): void {
+    this.applyFilters();
+  }
+  
+  toggleSort(field: 'name' | 'eventDate' | 'status' | 'pointsPool' | 'participantCount'): void {
+    if (this.sortField() === field) {
+      this.sortDirection.set(this.sortDirection() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortField.set(field);
+      this.sortDirection.set('asc');
+    }
+    this.applyFilters();
+  }
+  
+  getSortIcon(field: string): string {
+    if (this.sortField() !== field) return '↕️';
+    return this.sortDirection() === 'asc' ? '↑' : '↓';
+  }
+  
+  clearFilters(): void {
+    this.searchQuery.set('');
+    this.selectedFilter.set('all');
+    this.sortField.set('eventDate');
+    this.sortDirection.set('asc');
     this.applyFilters();
   }
 

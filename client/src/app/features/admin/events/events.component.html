@@ -58,15 +58,20 @@
         </button>
       </div>
 
-      <div class="search-box">
-        <input
-          type="text"
-          placeholder="Search events..."
-          [(ngModel)]="searchQuery"
-          (input)="onSearchChange()"
-          class="search-input"
-        />
-        <span class="search-icon">🔍</span>
+      <div class="search-row">
+        <div class="search-box">
+          <input
+            type="text"
+            placeholder="Search events..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            class="search-input"
+          />
+          <span class="search-icon">🔍</span>
+        </div>
+        <div class="results-info">
+          Showing {{ filteredEvents().length }} of {{ events().length }} events
+        </div>
       </div>
     </div>
 
@@ -75,12 +80,22 @@
       <table class="events-table">
         <thead>
           <tr>
-            <th>Event Name</th>
-            <th>Date</th>
-            <th>Status</th>
-            <th>Points Pool</th>
+            <th class="sortable" (click)="toggleSort('name')">
+              Event Name <span class="sort-icon">{{ getSortIcon('name') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('eventDate')">
+              Date <span class="sort-icon">{{ getSortIcon('eventDate') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('status')">
+              Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('pointsPool')">
+              Points Pool <span class="sort-icon">{{ getSortIcon('pointsPool') }}</span>
+            </th>
             <th>Remaining Points</th>
-            <th>Participants</th>
+            <th class="sortable" (click)="toggleSort('participantCount')">
+              Participants <span class="sort-icon">{{ getSortIcon('participantCount') }}</span>
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -121,6 +136,22 @@
                   <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
                     🗑️
                   </button>
+                </div>
+              </td>
+            </tr>
+          }
+          
+          @if (filteredEvents().length === 0) {
+            <tr>
+              <td colspan="7" class="no-results">
+                <div class="no-results-content">
+                  <span class="no-results-icon">🎉</span>
+                  @if (searchQuery()) {
+                    <p>No events found matching "{{ searchQuery() }}"</p>
+                    <button class="clear-filters-link" (click)="clearFilters()">Clear filters</button>
+                  } @else {
+                    <p>No {{ selectedFilter() === 'all' ? '' : selectedFilter().toLowerCase() }} events at the moment.</p>
+                  }
                 </div>
               </td>
             </tr>

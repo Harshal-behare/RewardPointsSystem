@@ -54,44 +54,62 @@
       </div>
     </div>
 
-    <!-- Filter Tabs -->
-    <div class="filter-tabs">
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'All'"
-        (click)="setFilter('All')">
-        All ({{ stats().total }})
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'Pending'"
-        (click)="setFilter('Pending')">
-        Pending ({{ stats().pending }})
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'Approved'"
-        (click)="setFilter('Approved')">
-        Approved ({{ stats().approved }})
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'Delivered'"
-        (click)="setFilter('Delivered')">
-        Delivered ({{ stats().delivered }})
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'Rejected'"
-        (click)="setFilter('Rejected')">
-        Rejected ({{ stats().rejected }})
-      </button>
-      <button 
-        class="tab-button" 
-        [class.active]="currentFilter() === 'Cancelled'"
-        (click)="setFilter('Cancelled')">
-        Cancelled ({{ stats().cancelled }})
-      </button>
+    <!-- Filter Tabs and Search -->
+    <div class="filters-section">
+      <div class="filter-tabs">
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'All'"
+          (click)="setFilter('All')">
+          All ({{ stats().total }})
+        </button>
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'Pending'"
+          (click)="setFilter('Pending')">
+          Pending ({{ stats().pending }})
+        </button>
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'Approved'"
+          (click)="setFilter('Approved')">
+          Approved ({{ stats().approved }})
+        </button>
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'Delivered'"
+          (click)="setFilter('Delivered')">
+          Delivered ({{ stats().delivered }})
+        </button>
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'Rejected'"
+          (click)="setFilter('Rejected')">
+          Rejected ({{ stats().rejected }})
+        </button>
+        <button 
+          class="tab-button" 
+          [class.active]="currentFilter() === 'Cancelled'"
+          (click)="setFilter('Cancelled')">
+          Cancelled ({{ stats().cancelled }})
+        </button>
+      </div>
+      
+      <div class="search-row">
+        <div class="search-box">
+          <input
+            type="text"
+            placeholder="Search by employee name, email or product..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            class="search-input"
+          />
+          <span class="search-icon">🔍</span>
+        </div>
+        <div class="results-info">
+          Showing {{ filteredRequests().length }} of {{ redemptionRequests().length }} requests
+        </div>
+      </div>
     </div>
 
     <!-- Redemptions Table -->
@@ -99,12 +117,22 @@
       <table class="redemptions-table">
         <thead>
           <tr>
-            <th>Employee Name</th>
-            <th>Product Name</th>
+            <th class="sortable" (click)="toggleSort('userName')">
+              Employee Name <span class="sort-icon">{{ getSortIcon('userName') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('productName')">
+              Product Name <span class="sort-icon">{{ getSortIcon('productName') }}</span>
+            </th>
             <th>Quantity</th>
-            <th>Points Redeemed</th>
-            <th>Request Date</th>
-            <th>Status</th>
+            <th class="sortable" (click)="toggleSort('pointsSpent')">
+              Points Redeemed <span class="sort-icon">{{ getSortIcon('pointsSpent') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('requestedAt')">
+              Request Date <span class="sort-icon">{{ getSortIcon('requestedAt') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('status')">
+              Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
             <th>Actions</th>
           </tr>
         </thead>
@@ -172,16 +200,24 @@
               </td>
             </tr>
           }
+          
+          @if (filteredRequests().length === 0) {
+            <tr>
+              <td colspan="7" class="no-results">
+                <div class="no-results-content">
+                  <span class="no-results-icon">🔍</span>
+                  @if (searchQuery()) {
+                    <p>No redemptions found matching "{{ searchQuery() }}"</p>
+                    <button class="clear-search-link" (click)="clearSearch()">Clear search</button>
+                  } @else {
+                    <p>No {{ currentFilter() === 'All' ? '' : currentFilter().toLowerCase() }} redemption requests at the moment.</p>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
         </tbody>
       </table>
-      
-      @if (filteredRequests().length === 0) {
-        <div class="empty-state">
-          <div class="empty-icon">📋</div>
-          <h3>No redemption requests</h3>
-          <p>There are no {{ currentFilter().toLowerCase() }} redemption requests at the moment.</p>
-        </div>
-      }
     </div>
   </app-card>
 </div>

@@ -51,6 +51,11 @@ namespace RewardPointsSystem.Application.Services.Core
             return await _unitOfWork.Users.FindAsync(u => u.IsActive);
         }
 
+        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        {
+            return await _unitOfWork.Users.GetAllAsync();
+        }
+
         public async Task<User> UpdateUserAsync(Guid id, UserUpdateDto updates)
         {
             if (updates == null)
