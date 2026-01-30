@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../../../shared/components/card/card.component';
@@ -28,18 +28,18 @@ interface UserProfileResponse {
   styleUrl: './profile.component.scss'
 })
 export class AdminProfileComponent implements OnInit {
-  isLoading = true;
-  isSaving = false;
+  isLoading = signal(true);
+  isSaving = signal(false);
   
   userId = '';
   
-  profileData = {
+  profileData = signal({
     firstName: '',
     lastName: '',
     email: '',
     role: '',
     joinedDate: ''
-  };
+  });
 
   passwordData = {
     currentPassword: '',
@@ -54,7 +54,8 @@ export class AdminProfileComponent implements OnInit {
   constructor(
     private api: ApiService,
     private toast: ToastService,
-    private authService: AuthService
+    private authService: AuthService,
+    private cdr: ChangeDetectorRef
   ) {}
 
   ngOnInit(): void {
@@ -62,57 +63,81 @@ export class AdminProfileComponent implements OnInit {
   }
 
   loadProfile(): void {
-    this.isLoading = true;
+    this.isLoading.set(true);
     this.api.get<UserProfileResponse>('Auth/me').subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const user = response.data;
           this.userId = user.userId;
-          this.profileData = {
+          this.profileData.set({
             firstName: user.firstName || '',
             lastName: user.lastName || '',
             email: user.email || '',
             role: user.roles?.[0] || 'Administrator',
             joinedDate: ''
-          };
+          });
         }
-        this.isLoading = false;
+        this.isLoading.set(false);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading profile:', error);
         this.toast.error('Failed to load profile data');
-        this.isLoading = false;
+        this.isLoading.set(false);
+        this.cdr.detectChanges();
       }
     });
   }
 
   updateProfile(): void {
-    if (!this.profileData.firstName.trim() || !this.profileData.lastName.trim()) {
+    const data = this.profileData();
+    if (!data.firstName.trim() || !data.lastName.trim()) {
       this.toast.error('First name and last name are required');
       return;
     }
 
-    this.isSaving = true;
+    this.isSaving.set(true);
     this.api.put(`Users/${this.userId}`, {
-      firstName: this.profileData.firstName.trim(),
-      lastName: this.profileData.lastName.trim()
+      firstName: data.firstName.trim(),
+      lastName: data.lastName.trim()
     }).subscribe({
       next: (response: any) => {
         if (response.success) {
           this.toast.success('Profile updated successfully!');
           // Update auth service with new name
-          this.authService.updateUserName(this.profileData.firstName, this.profileData.lastName);
+          this.authService.updateUserName(data.firstName, data.lastName);
+          // Update localStorage user data
+          const userDataStr = localStorage.getItem('user');
+          if (userDataStr) {
+            try {
+              const userData = JSON.parse(userDataStr);
+              userData.firstName = data.firstName;
+              userData.lastName = data.lastName;
+              localStorage.setItem('user', JSON.stringify(userData));
+            } catch (e) {
+              console.error('Error updating user data in localStorage', e);
+            }
+          }
         } else {
           this.toast.error(response.message || 'Failed to update profile');
         }
-        this.isSaving = false;
+        this.isSaving.set(false);
       },
       error: (error) => {
         console.error('Error updating profile:', error);
         this.toast.showValidationErrors(error);
-        this.isSaving = false;
+        this.isSaving.set(false);
       }
     });
+  }
+
+  // Helper methods to update profile data fields
+  updateFirstName(value: string): void {
+    this.profileData.update(data => ({ ...data, firstName: value }));
+  }
+
+  updateLastName(value: string): void {
+    this.profileData.update(data => ({ ...data, lastName: value }));
   }
 
   changePassword(): void {

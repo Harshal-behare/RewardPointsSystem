@@ -203,6 +203,10 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogInformation("User {Email} created successfully by admin", user.Email);
                 return Created(userDto, "User created successfully");
             }
+            catch (RewardPointsSystem.Domain.Exceptions.DuplicateUserEmailException ex)
+            {
+                return ConflictError(ex.Message);
+            }
             catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
             {
                 return ConflictError(ex.Message);

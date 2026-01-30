@@ -10,8 +10,9 @@ namespace RewardPointsSystem.Application.Validators.Roles
     {
         public AssignRoleDtoValidator()
         {
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage("User ID is required");
+            // UserId is optional in the body since it's provided in the URL path
+            // RuleFor(x => x.UserId)
+            //     .NotEmpty().WithMessage("User ID is required");
 
             RuleFor(x => x.RoleId)
                 .NotEmpty().WithMessage("Role ID is required");

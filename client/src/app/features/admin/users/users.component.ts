@@ -2,7 +2,7 @@ import { Component, OnInit, signal, DestroyRef, inject, computed } from '@angula
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd } from '@angular/router';
-import { filter, forkJoin } from 'rxjs';
+import { filter, forkJoin, Observable } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
@@ -469,16 +469,23 @@ export class AdminUsersComponent implements OnInit {
             this.closeModal();
             this.loadUsers();
           } else {
-            this.toast.error(response.message || 'Failed to create user');
+            // Display the error message in the modal
+            this.modalValidationErrors = [response.message || 'Failed to create user'];
           }
         },
         error: (error) => {
-          console.error('Error creating user:', error);
-          // Show backend validation errors
-          this.toast.showValidationErrors(error);
+          // Handle 409 Conflict (duplicate user) and other errors
+          const errorMessage = this.extractErrorMessage(error);
+          this.modalValidationErrors = [errorMessage];
+          // Show toast for visibility
+          this.toast.error(errorMessage);
         }
       });
     } else {
+      // Get original user to check if role changed
+      const originalUser = this.users().find(u => u.id === this.selectedUser.id);
+      const roleChanged = originalUser && originalUser.role !== this.selectedUser.role;
+      
       const updateData: UpdateUserDto = {
         firstName: this.selectedUser.firstName,
         lastName: this.selectedUser.lastName,
@@ -489,20 +496,107 @@ export class AdminUsersComponent implements OnInit {
       this.userService.updateUser(this.selectedUser.id!, updateData).subscribe({
         next: (response) => {
           if (response.success) {
-            this.toast.success('User updated successfully!');
-            this.closeModal();
-            this.loadUsers();
+            // Check if role changed - handle role update separately
+            if (roleChanged && this.selectedUser.id) {
+              this.updateUserRole(this.selectedUser.id, this.selectedUser.role || 'Employee').subscribe({
+                next: () => {
+                  this.toast.success('User updated successfully!');
+                  this.closeModal();
+                  this.loadUsers();
+                },
+                error: (roleError) => {
+                  console.error('Error updating role:', roleError);
+                  this.toast.warning('User updated but role change failed. Please try again.');
+                  this.closeModal();
+                  this.loadUsers();
+                }
+              });
+            } else {
+              this.toast.success('User updated successfully!');
+              this.closeModal();
+              this.loadUsers();
+            }
           } else {
-            this.toast.error(response.message || 'Failed to update user');
+            this.modalValidationErrors = [response.message || 'Failed to update user'];
           }
         },
         error: (error) => {
-          console.error('Error updating user:', error);
-          // Show backend validation errors
-          this.toast.showValidationErrors(error);
+          const errorMessage = this.extractErrorMessage(error);
+          this.modalValidationErrors = [errorMessage];
+          this.toast.error(errorMessage);
         }
       });
     }
+  }
+  
+  /**
+   * Extract error message from API error response
+   */
+  private extractErrorMessage(error: any): string {
+    // Handle 409 Conflict specifically
+    if (error.status === 409) {
+      return error.error?.message || error.error?.Message || 'A user with this email already exists';
+    }
+    
+    // Check for validation errors
+    const errors = error?.error?.errors || error?.errors;
+    if (errors && typeof errors === 'object') {
+      const messages: string[] = [];
+      Object.keys(errors).forEach(field => {
+        const fieldErrors = errors[field];
+        if (Array.isArray(fieldErrors)) {
+          fieldErrors.forEach(msg => messages.push(msg));
+        } else if (typeof fieldErrors === 'string') {
+          messages.push(fieldErrors);
+        }
+      });
+      if (messages.length > 0) return messages.join('. ');
+    }
+    
+    // Check for single message
+    return error?.error?.message || error?.error?.Message || error?.message || 'An unexpected error occurred';
+  }
+  
+  /**
+   * Update user role via the roles API
+   */
+  private updateUserRole(userId: string, newRoleName: string): Observable<any> {
+    // First, get the role ID for the new role
+    const newRole = this.roles().find(r => r.name === newRoleName);
+    if (!newRole) {
+      return new Observable(subscriber => {
+        subscriber.error(new Error(`Role ${newRoleName} not found`));
+      });
+    }
+    
+    // Get current user's roles and remove them, then assign the new role
+    return new Observable(subscriber => {
+      // Get current roles
+      this.userService.getUserRoles(userId).subscribe({
+        next: (rolesResponse) => {
+          const currentRoles = rolesResponse.data || [];
+          // Remove all current roles
+          const removePromises = currentRoles.map((role: any) => 
+            this.userService.removeRole(userId, role.id).toPromise()
+          );
+          
+          Promise.all(removePromises).then(() => {
+            // Assign new role
+            this.userService.assignRole(userId, newRole.id).subscribe({
+              next: () => subscriber.next(true),
+              error: (err) => subscriber.error(err)
+            });
+          }).catch(err => subscriber.error(err));
+        },
+        error: (err) => {
+          // If we can't get roles, just try to assign the new one
+          this.userService.assignRole(userId, newRole.id).subscribe({
+            next: () => subscriber.next(true),
+            error: (assignErr) => subscriber.error(assignErr)
+          });
+        }
+      });
+    });
   }
 
   async toggleUserStatus(user: DisplayUser): Promise<void> {

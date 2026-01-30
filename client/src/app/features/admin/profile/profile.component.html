@@ -5,12 +5,12 @@
       <form (ngSubmit)="updateProfile()">
         <div class="avatar-section">
           <div class="avatar-large">
-            {{ profileData.firstName.charAt(0) }}{{ profileData.lastName.charAt(0) }}
+            {{ profileData().firstName.charAt(0) }}{{ profileData().lastName.charAt(0) }}
           </div>
           <div class="avatar-info">
-            <h3>{{ profileData.firstName }} {{ profileData.lastName }}</h3>
-            <p class="role-badge">{{ profileData.role }}</p>
-            <p class="join-date">Member since {{ profileData.joinedDate | date: 'MMMM yyyy' }}</p>
+            <h3>{{ profileData().firstName }} {{ profileData().lastName }}</h3>
+            <p class="role-badge">{{ profileData().role }}</p>
+            <p class="join-date">Member since {{ profileData().joinedDate | date: 'MMMM yyyy' }}</p>
           </div>
         </div>
 
@@ -22,7 +22,8 @@
             <input
               id="firstName"
               type="text"
-              [(ngModel)]="profileData.firstName"
+              [ngModel]="profileData().firstName"
+              (ngModelChange)="updateFirstName($event)"
               name="firstName"
               placeholder="Enter first name"
               required
@@ -34,7 +35,8 @@
             <input
               id="lastName"
               type="text"
-              [(ngModel)]="profileData.lastName"
+              [ngModel]="profileData().lastName"
+              (ngModelChange)="updateLastName($event)"
               name="lastName"
               placeholder="Enter last name"
               required
@@ -47,7 +49,7 @@
           <input
             id="email"
             type="email"
-            [(ngModel)]="profileData.email"
+            [value]="profileData().email"
             name="email"
             disabled
             class="disabled-input"
@@ -56,7 +58,7 @@
         </div>
 
         <div class="form-actions">
-          <app-button type="submit" [fullWidth]="true">
+          <app-button type="submit" [fullWidth]="true" [disabled]="isSaving()">
             💾 Save Changes
           </app-button>
         </div>

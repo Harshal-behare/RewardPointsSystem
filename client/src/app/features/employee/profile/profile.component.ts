@@ -1,10 +1,8 @@
-import { Component, OnInit, signal } from '@angular/core';
-import { TitleCasePipe } from '@angular/common';
+import { Component, OnInit, signal, ChangeDetectorRef } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
-import { UserService, UserDto, UpdateUserDto } from '../../../core/services/user.service';
-import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { AuthService } from '../../../auth/auth.service';
 
 interface UserProfileResponse {
   userId: string;
@@ -14,76 +12,47 @@ interface UserProfileResponse {
   roles: string[];
 }
 
-interface UserProfile {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  department: string;
-  position: string;
-  avatarUrl: string;
-  joinDate: string;
-}
-
 @Component({
   selector: 'app-employee-profile',
   standalone: true,
-  imports: [FormsModule, TitleCasePipe],
+  imports: [FormsModule],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })
 export class EmployeeProfileComponent implements OnInit {
+  // Use signals for reactive state
   isLoading = signal(true);
   isSaving = signal(false);
-  
-  profile = signal<UserProfile>({
-    id: '',
+
+  userId = '';
+
+  profileData = signal({
     firstName: '',
     lastName: '',
     email: '',
-    phone: '',
-    department: '',
-    position: '',
-    avatarUrl: 'https://i.pravatar.cc/200?img=1',
-    joinDate: ''
+    role: ''
   });
 
-  // Password change
-  currentPassword: string = '';
-  newPassword: string = '';
-  confirmPassword: string = '';
+  // Validation errors
+  firstNameError = '';
+  lastNameError = '';
 
-  // Edit mode
-  isEditMode: boolean = false;
-  editedProfile: UserProfile = { ...this.profile() };
+  passwordData = {
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  };
 
-  // Avatar upload
-  selectedFile: File | null = null;
-  previewUrl: string | null = null;
-
-  // Current user ID
-  currentUserId: string = '';
+  showCurrentPassword = false;
+  showNewPassword = false;
+  showConfirmPassword = false;
 
   constructor(
     private api: ApiService,
-    private userService: UserService,
+    private toast: ToastService,
     private authService: AuthService,
-    private toast: ToastService
-  ) {
-    // Extract user ID from JWT token
-    const token = this.authService.getToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
-                            payload.sub || 
-                            payload.userId || '';
-      } catch (e) {
-        console.error('Error parsing token:', e);
-      }
-    }
-  }
+    private cdr: ChangeDetectorRef
+  ) {}
 
   ngOnInit(): void {
     this.loadProfile();
@@ -91,232 +60,171 @@ export class EmployeeProfileComponent implements OnInit {
 
   loadProfile(): void {
     this.isLoading.set(true);
-    
-    // First get basic auth info
     this.api.get<UserProfileResponse>('Auth/me').subscribe({
       next: (response) => {
         if (response.success && response.data) {
           const user = response.data;
-          const newProfile: UserProfile = {
-            id: user.userId || this.currentUserId,
+          this.userId = user.userId;
+          this.profileData.set({
             firstName: user.firstName || '',
             lastName: user.lastName || '',
             email: user.email || '',
-            phone: '',
-            department: '',
-            position: user.roles?.[0] || 'Employee',
-            avatarUrl: 'https://i.pravatar.cc/200?img=1',
-            joinDate: ''
-          };
-          this.profile.set(newProfile);
-          this.editedProfile = { ...newProfile };
-          
-          // Now try to get more detailed user info
-          if (this.currentUserId) {
-            this.loadUserDetails();
-          }
+            role: user.roles?.[0] || 'Employee'
+          });
         }
         this.isLoading.set(false);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error loading profile:', error);
         this.toast.error('Failed to load profile data');
         this.isLoading.set(false);
+        this.cdr.detectChanges();
       }
     });
   }
 
-  loadUserDetails(): void {
-    this.userService.getUserById(this.currentUserId).subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const user = response.data;
-          const updatedProfile: UserProfile = {
-            ...this.profile(),
-            id: user.id,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            email: user.email,
-            joinDate: user.createdAt ? new Date(user.createdAt).toLocaleDateString() : ''
-          };
-          this.profile.set(updatedProfile);
-          this.editedProfile = { ...updatedProfile };
-        }
-      },
-      error: (error) => {
-        console.error('Error loading user details:', error);
-        // Don't show error - auth/me data is sufficient
-      }
-    });
+  // Validation: Letters and spaces only, max 20 characters
+  validateName(value: string): string {
+    const trimmed = value.trim();
+    
+    if (!trimmed) {
+      return 'This field is required';
+    }
+    
+    if (trimmed.length > 20) {
+      return 'Maximum 20 characters allowed';
+    }
+    
+    // Letters and spaces only (including accented characters)
+    const namePattern = /^[A-Za-zÀ-ÿ\s]+$/;
+    if (!namePattern.test(trimmed)) {
+      return 'Only letters and spaces allowed';
+    }
+    
+    return '';
   }
 
-  enableEditMode(): void {
-    this.isEditMode = true;
-    this.editedProfile = { ...this.profile() };
+  validateFirstName(): void {
+    this.firstNameError = this.validateName(this.profileData().firstName);
   }
 
-  cancelEdit(): void {
-    this.isEditMode = false;
-    this.editedProfile = { ...this.profile() };
-    this.previewUrl = null;
-    this.selectedFile = null;
+  validateLastName(): void {
+    this.lastNameError = this.validateName(this.profileData().lastName);
   }
 
-  saveProfile(): void {
-    // Validate
-    if (!this.editedProfile.firstName.trim()) {
-      this.toast.error('First name is required');
+  // Helper methods to update signal fields
+  updateFirstName(value: string): void {
+    this.profileData.update(data => ({ ...data, firstName: value }));
+  }
+
+  updateLastName(value: string): void {
+    this.profileData.update(data => ({ ...data, lastName: value }));
+  }
+
+  updateProfile(): void {
+    // Validate both fields
+    this.validateFirstName();
+    this.validateLastName();
+
+    if (this.firstNameError || this.lastNameError) {
+      this.toast.error('Please fix the validation errors');
       return;
     }
-
-    if (!this.editedProfile.lastName.trim()) {
-      this.toast.error('Last name is required');
-      return;
-    }
-
-    if (!this.editedProfile.email.trim()) {
-      this.toast.error('Email is required');
-      return;
-    }
-
-    // Prepare update data
-    const updateData: UpdateUserDto = {
-      firstName: this.editedProfile.firstName.trim(),
-      lastName: this.editedProfile.lastName.trim(),
-      email: this.editedProfile.email.trim()
-    };
 
     this.isSaving.set(true);
-
-    this.userService.updateUser(this.currentUserId, updateData).subscribe({
-      next: (response) => {
+    this.api.put(`Users/${this.userId}`, {
+      firstName: this.profileData().firstName.trim(),
+      lastName: this.profileData().lastName.trim()
+    }).subscribe({
+      next: (response: any) => {
         if (response.success) {
-          this.profile.set({ ...this.editedProfile });
-          
-          if (this.previewUrl) {
-            const updated = this.profile();
-            updated.avatarUrl = this.previewUrl;
-            this.profile.set(updated);
-          }
-
-          this.isEditMode = false;
-          this.previewUrl = null;
-          this.selectedFile = null;
-          
           this.toast.success('Profile updated successfully!');
+          // Update auth service with new name
+          this.authService.updateUserName(
+            this.profileData().firstName.trim(),
+            this.profileData().lastName.trim()
+          );
         } else {
           this.toast.error(response.message || 'Failed to update profile');
         }
         this.isSaving.set(false);
+        this.cdr.detectChanges();
       },
       error: (error) => {
         console.error('Error updating profile:', error);
-        // Show backend validation errors
         this.toast.showValidationErrors(error);
         this.isSaving.set(false);
+        this.cdr.detectChanges();
       }
     });
   }
 
-  onFileSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (input.files && input.files[0]) {
-      this.selectedFile = input.files[0];
-
-      // Preview image
-      const reader = new FileReader();
-      reader.onload = (e: any) => {
-        this.previewUrl = e.target.result;
-      };
-      reader.readAsDataURL(this.selectedFile);
-    }
-  }
-
   changePassword(): void {
-    // Validate
-    if (!this.currentPassword || !this.newPassword || !this.confirmPassword) {
-      this.toast.error('Please fill in all password fields');
+    if (this.passwordData.newPassword !== this.passwordData.confirmPassword) {
+      this.toast.error('New passwords do not match!');
       return;
     }
 
-    if (this.newPassword.length < 8) {
-      this.toast.error('New password must be at least 8 characters');
+    if (this.passwordData.newPassword.length < 8) {
+      this.toast.error('Password must be at least 8 characters long!');
       return;
     }
 
-    if (this.newPassword !== this.confirmPassword) {
-      this.toast.error('New passwords do not match');
+    // Validate password strength
+    if (!/[A-Z]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one uppercase letter');
+      return;
+    }
+    if (!/[a-z]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one lowercase letter');
+      return;
+    }
+    if (!/[0-9]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one number');
       return;
     }
 
-    // Call password change API
     this.api.post('Auth/change-password', {
-      currentPassword: this.currentPassword,
-      newPassword: this.newPassword
+      currentPassword: this.passwordData.currentPassword,
+      newPassword: this.passwordData.newPassword
     }).subscribe({
       next: (response: any) => {
         if (response.success) {
           this.toast.success('Password changed successfully!');
-          // Reset fields
-          this.currentPassword = '';
-          this.newPassword = '';
-          this.confirmPassword = '';
+          this.passwordData = {
+            currentPassword: '',
+            newPassword: '',
+            confirmPassword: ''
+          };
         } else {
           this.toast.error(response.message || 'Failed to change password');
         }
       },
       error: (error) => {
         console.error('Error changing password:', error);
-        // Show backend validation errors (like password requirements)
         this.toast.showValidationErrors(error);
       }
     });
   }
 
-  getFullName(): string {
-    const p = this.profile();
-    return `${p.firstName} ${p.lastName}`.trim();
+  togglePasswordVisibility(field: 'current' | 'new' | 'confirm'): void {
+    switch (field) {
+      case 'current':
+        this.showCurrentPassword = !this.showCurrentPassword;
+        break;
+      case 'new':
+        this.showNewPassword = !this.showNewPassword;
+        break;
+      case 'confirm':
+        this.showConfirmPassword = !this.showConfirmPassword;
+        break;
+    }
   }
 
-  getPasswordStrength(): string {
-    if (!this.newPassword) return '';
-    
-    const length = this.newPassword.length;
-    const hasUpperCase = /[A-Z]/.test(this.newPassword);
-    const hasLowerCase = /[a-z]/.test(this.newPassword);
-    const hasNumbers = /\d/.test(this.newPassword);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(this.newPassword);
-
-    let strength = 0;
-    if (length >= 8) strength++;
-    if (length >= 12) strength++;
-    if (hasUpperCase && hasLowerCase) strength++;
-    if (hasNumbers) strength++;
-    if (hasSpecialChar) strength++;
-
-    if (strength <= 2) return 'weak';
-    if (strength <= 4) return 'medium';
-    return 'strong';
-  }
-
-  // Helper methods for password requirements
-  hasMinLength(): boolean {
-    return this.newPassword.length >= 8;
-  }
-
-  hasUpperCase(): boolean {
-    return /[A-Z]/.test(this.newPassword);
-  }
-
-  hasLowerCase(): boolean {
-    return /[a-z]/.test(this.newPassword);
-  }
-
-  hasNumber(): boolean {
-    return /\d/.test(this.newPassword);
-  }
-
-  hasSpecialChar(): boolean {
-    return /[!@#$%^&*(),.?":{}|<>]/.test(this.newPassword);
+  getInitials(): string {
+    const first = this.profileData().firstName?.charAt(0) || '';
+    const last = this.profileData().lastName?.charAt(0) || '';
+    return (first + last).toUpperCase();
   }
 }

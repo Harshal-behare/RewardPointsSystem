@@ -1,7 +1,8 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, signal } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service';
+import { ApiService } from '../../../core/services/api.service';
 
 @Component({
   selector: 'app-topbar',
@@ -9,17 +10,17 @@ import { AuthService } from '../../../auth/auth.service';
   template: `
     <header class="topbar">
       <div class="topbar-left">
-        <h1>{{ pageTitle }}</h1>
+        <h1>{{ pageTitle() }}</h1>
       </div>
       
       <div class="topbar-right">
         <div class="user-menu">
           <div class="user-avatar">
-            <span>{{ userInitials }}</span>
+            <span>{{ userInitials() }}</span>
           </div>
           <div class="user-info">
-            <div class="user-name">{{ userName }}</div>
-            <div class="user-role">{{ currentRole }}</div>
+            <div class="user-name">{{ userName() }}</div>
+            <div class="user-role">{{ currentRole() }}</div>
           </div>
           
           <!-- Dropdown Toggle Button -->
@@ -35,7 +36,7 @@ import { AuthService } from '../../../auth/auth.service';
             @if (isAdmin) {
               <button 
                 class="dropdown-item" 
-                [class.active]="currentRole === 'Administrator'"
+                [class.active]="currentRole() === 'Administrator'"
                 (click)="switchRole('admin')">
                 <span class="role-icon">👨‍💼</span>
                 <span>Admin Dashboard</span>
@@ -43,7 +44,7 @@ import { AuthService } from '../../../auth/auth.service';
             }
             <button 
               class="dropdown-item"
-              [class.active]="currentRole === 'Employee'"
+              [class.active]="currentRole() === 'Employee'"
               (click)="switchRole('employee')">
               <span class="role-icon">👤</span>
               <span>Employee Dashboard</span>
@@ -239,14 +240,15 @@ import { AuthService } from '../../../auth/auth.service';
   `]
 })
 export class TopbarComponent implements OnInit, OnDestroy {
-  pageTitle = 'Dashboard';
-  userName = 'Admin User';
-  userRole = 'Administrator';
-  currentRole = 'Administrator';
-  userInitials = 'AU';
+  pageTitle = signal('Dashboard');
+  userName = signal('Admin User');
+  userRole = signal('Administrator');
+  currentRole = signal('Administrator');
+  userInitials = signal('AU');
   showDropdown = false;
   isAdmin = false;
   userRoles: string[] = [];
+  private profileLoaded = false;
   
   private routerSubscription?: Subscription;
   
@@ -268,7 +270,8 @@ export class TopbarComponent implements OnInit, OnDestroy {
 
   constructor(
     private router: Router,
-    private authService: AuthService
+    private authService: AuthService,
+    private apiService: ApiService
   ) {}
 
   ngOnInit(): void {
@@ -306,20 +309,20 @@ export class TopbarComponent implements OnInit, OnDestroy {
     
     // Check for exact match first
     if (this.pageTitleMap[cleanUrl]) {
-      this.pageTitle = this.pageTitleMap[cleanUrl];
+      this.pageTitle.set(this.pageTitleMap[cleanUrl]);
       return;
     }
     
     // Check for partial match (for nested routes)
     for (const [route, title] of Object.entries(this.pageTitleMap)) {
       if (cleanUrl.startsWith(route)) {
-        this.pageTitle = title;
+        this.pageTitle.set(title);
         return;
       }
     }
     
     // Default to Dashboard if no match
-    this.pageTitle = 'Dashboard';
+    this.pageTitle.set('Dashboard');
   }
 
   loadUserInfo(): void {
@@ -332,20 +335,67 @@ export class TopbarComponent implements OnInit, OnDestroy {
     if (userDataStr) {
       try {
         const userData = JSON.parse(userDataStr);
-        this.userName = `${userData.firstName || ''} ${userData.lastName || ''}`.trim() || 'User';
-        this.userRole = userData.role || (this.userRoles.length > 0 ? this.userRoles[0] : 'User');
-        this.userInitials = this.getInitials(userData.firstName, userData.lastName);
+        this.setUserDisplayInfo(userData);
+        this.profileLoaded = true;
       } catch (e) {
         console.error('Error parsing user data', e);
+        this.fetchUserProfileFromApi();
       }
+    } else {
+      // No user data in localStorage, fetch from API
+      this.fetchUserProfileFromApi();
     }
 
     // Set current role based on current route
     if (this.router.url.includes('/admin')) {
-      this.currentRole = 'Administrator';
+      this.currentRole.set('Administrator');
     } else {
-      this.currentRole = 'Employee';
+      this.currentRole.set('Employee');
     }
+  }
+
+  private setUserDisplayInfo(userData: any): void {
+    const firstName = userData.firstName || userData.FirstName || '';
+    const lastName = userData.lastName || userData.LastName || '';
+    const email = userData.email || userData.Email || '';
+    
+    const fullName = `${firstName} ${lastName}`.trim() || email || 'User';
+    this.userName.set(fullName);
+    this.userRole.set(userData.role || (this.userRoles.length > 0 ? this.userRoles[0] : 'User'));
+    this.userInitials.set(this.getInitials(firstName, lastName));
+    
+    // If we still have no name, try email
+    if (fullName === 'User' && email) {
+      this.userName.set(email.split('@')[0]);
+      this.userInitials.set(email.charAt(0).toUpperCase());
+    }
+  }
+
+  private fetchUserProfileFromApi(): void {
+    // Get user ID from token
+    const decoded = this.authService.getDecodedToken();
+    const userId = decoded?.sub || decoded?.nameid;
+    
+    if (!userId) {
+      console.warn('No user ID found in token');
+      return;
+    }
+
+    // Fetch user profile from API
+    this.apiService.get<any>(`Users/${userId}`).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const userData = response.data;
+          // Store in localStorage for future use
+          localStorage.setItem('user', JSON.stringify(userData));
+          this.setUserDisplayInfo(userData);
+          this.profileLoaded = true;
+        }
+      },
+      error: (error) => {
+        console.error('Error fetching user profile:', error);
+      }
+    });
   }
 
   getInitials(firstName?: string, lastName?: string): string {
@@ -367,10 +417,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
         console.warn('Access denied: User does not have Admin role');
         return;
       }
-      this.currentRole = 'Administrator';
+      this.currentRole.set('Administrator');
       this.router.navigate(['/admin/dashboard']);
     } else {
-      this.currentRole = 'Employee';
+      this.currentRole.set('Employee');
       this.router.navigate(['/employee/dashboard']);
     }
   }
