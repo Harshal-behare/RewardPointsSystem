@@ -18,7 +18,7 @@
           @if (form.get('email')?.invalid && form.get('email')?.touched) {
             <div class="error">
               @if (form.get('email')?.errors?.['required']) {
-                <span>Email is required</span>
+                <span>Email is required</span><br />
               }
               @if (form.get('email')?.errors?.['email']) {
                 <span>Invalid email format</span>
@@ -27,7 +27,7 @@
                 <span>Email cannot exceed 255 characters</span>
               }
               @if (form.get('email')?.errors?.['agdataEmail']) {
-                <span>  Only @agdata.com email can login</span>
+                <span> Only @agdata.com email can login</span>
               }
             </div>
           }
@@ -35,20 +35,37 @@
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input id="password" type="password" formControlName="password" placeholder="" />
+
+          <div class="password-wrapper">
+            <input
+              id="password"
+              [type]="showPassword ? 'text' : 'password'"
+              formControlName="password"
+              placeholder=""
+            />
+
+            <button
+              type="button"
+              class="toggle-password"
+              (click)="togglePassword()"
+              [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
+            >
+              <!-- Simple eye icon using text. You can replace with SVG/FontAwesome -->
+              <span class="eye">{{ showPassword ? '🙈' : '👁️' }}</span>
+            </button>
+          </div>
+
           @let pwd = form.get('password');
-
-@if (pwd?.invalid && pwd?.touched) {
-  <div class="error">
-    @if (pwd?.errors?.['required']) {
-      <span>Password is required</span>
-    }
-
-    @if (pwd?.errors?.['minlength']) {
-      <span>Password must be at least 8 characters</span>
-    }
-  </div>
-}
+          @if (pwd?.invalid && pwd?.touched) {
+            <div class="error">
+              @if (pwd?.errors?.['required']) {
+                <span>Password is required</span>
+              }
+              @if (pwd?.errors?.['minlength']) {
+                <span>Password must be at least 8 characters</span>
+              }
+            </div>
+          }
         </div>
 
         <!-- Show all validation errors from backend -->

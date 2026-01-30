@@ -130,3 +130,38 @@
   color: #333;
   text-decoration: none;
 }
+.password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-wrapper input {
+  width: 100%;
+  padding-right: 44px; /* space for the icon */
+}
+
+/* Always visible icon */
+.toggle-password {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toggle-password .eye {
+  font-size: 16px;
+  opacity: 0.8;
+}
+
+.toggle-password:hover .eye {
+  opacity: 1;
+}

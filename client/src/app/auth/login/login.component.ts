@@ -42,14 +42,18 @@ export class LoginComponent implements OnInit {
       ]],
       password: ['', [
         Validators.required,
-        Validators.minLength(6)
+        Validators.minLength(8)
       ]]
     });
     // Get return URL from route parameters or default to '/dashboard'
     this.returnUrl = this.route.snapshot.queryParams['returnUrl'] || '/dashboard';
   }
 
+showPassword = false;
 
+togglePassword(): void {
+  this.showPassword = !this.showPassword;
+}
 
   onSubmit(): void {
     if (this.form.invalid) return;
