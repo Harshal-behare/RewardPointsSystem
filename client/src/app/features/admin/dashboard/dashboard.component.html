@@ -16,10 +16,10 @@
 
   <!-- Quick Actions Section -->
   <section class="quick-actions-section">
-    <app-card title="⚡ Quick Actions">
+    <app-card title="Quick Actions">
       <div class="quick-actions-grid">
         <button class="quick-action-btn event-btn" (click)="openEventModal()">
-          <span class="action-icon">📅</span>
+          <span class="action-icon"><app-icon name="calendar" [size]="20"></app-icon></span>
           <div class="action-content">
             <h3>Create Event</h3>
             <p>Add a new reward event</p>
@@ -27,7 +27,7 @@
         </button>
 
         <button class="quick-action-btn product-btn" (click)="openProductModal()">
-          <span class="action-icon">🎁</span>
+          <span class="action-icon"><app-icon name="gift" [size]="20"></app-icon></span>
           <div class="action-content">
             <h3>Add Product</h3>
             <p>Add new product to catalog</p>
@@ -35,7 +35,7 @@
         </button>
 
         <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
-          <span class="action-icon">👥</span>
+          <span class="action-icon"><app-icon name="users" [size]="20"></app-icon></span>
           <div class="action-content">
             <h3>Manage Users</h3>
             <p>View and manage users</p>
@@ -43,7 +43,7 @@
         </button>
 
         <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
-          <span class="action-icon">🛍️</span>
+          <span class="action-icon"><app-icon name="cart" [size]="20"></app-icon></span>
           <div class="action-content">
             <h3>Redemptions</h3>
             <p>Process pending redemptions</p>
@@ -60,7 +60,7 @@
       <!-- <app-card title="Monthly Points Awarded" class="chart-card">
         <div class="chart-placeholder">
           <div class="chart-info">
-            <p class="chart-label">📈 Monthly Trend</p>
+            <p class="chart-label"><app-icon name="trending-up" [size]="16"></app-icon> Monthly Trend</p>
             <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
@@ -82,7 +82,7 @@
       <!-- <app-card title="Redemption Trends" class="chart-card">
         <div class="chart-placeholder">
           <div class="chart-info">
-            <p class="chart-label">📊 Redemption Activity</p>
+            <p class="chart-label"><app-icon name="chart" [size]="16"></app-icon> Redemption Activity</p>
             <p class="chart-value">No historical data available</p>
           </div>
           <div class="bar-chart">
@@ -126,7 +126,7 @@
         </div>
       } @else {
         <div class="no-data-message">
-          <p>📋 No recent activity to display</p>
+          <p><app-icon name="clipboard" [size]="16"></app-icon> No recent activity to display</p>
           <p class="no-data-hint">Activity will appear here as you create events, add products, and manage the system.</p>
         </div>
       }
@@ -139,8 +139,8 @@
   <div class="modal-overlay" (click)="closeEventModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📅 Create New Event</h3>
-        <button class="close-btn" (click)="closeEventModal()">✕</button>
+        <h3><app-icon name="events" [size]="20"></app-icon> Create New Event</h3>
+        <button class="close-btn" (click)="closeEventModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -212,8 +212,8 @@
   <div class="modal-overlay" (click)="closeProductModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>🎁 Add New Product</h3>
-        <button class="close-btn" (click)="closeProductModal()">✕</button>
+        <h3><app-icon name="gift" [size]="20"></app-icon> Add New Product</h3>
+        <button class="close-btn" (click)="closeProductModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">

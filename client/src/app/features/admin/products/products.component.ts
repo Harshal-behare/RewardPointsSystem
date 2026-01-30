@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../../../core/services/product.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
@@ -38,7 +39,8 @@ interface DisplayCategory {
     FormsModule,
     CardComponent,
     ButtonComponent,
-    BadgeComponent
+    BadgeComponent,
+    IconComponent
   ],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'

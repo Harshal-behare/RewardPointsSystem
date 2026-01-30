@@ -2,11 +2,11 @@
   <!-- Quick Actions -->
   <div class="quick-actions-bar">
     <button class="quick-action-btn primary" (click)="openCreateModal()">
-      <span class="action-icon">➕</span>
+      <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
       <span>Create New Event</span>
     </button>
     <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
-      <span class="action-icon">🔄</span>
+      <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
       <span>Refresh</span>
     </button> -->
   </div>
@@ -19,7 +19,7 @@
         <p class="subtitle">Manage all events and reward activities</p>
       </div>
       <app-button (clicked)="openCreateModal()">
-        ➕ Create Event
+        <app-icon name="add" [size]="16"></app-icon> Create Event
       </app-button>
     </div>
 
@@ -67,7 +67,7 @@
             (input)="onSearchChange()"
             class="search-input"
           />
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         </div>
         <div class="results-info">
           Showing {{ filteredEvents().length }} of {{ events().length }} events
@@ -121,13 +121,13 @@
                 @if (event.firstPlacePoints || event.secondPlacePoints || event.thirdPlacePoints) {
                   <div class="prize-badges">
                     @if (event.firstPlacePoints) {
-                      <span class="prize-badge gold">🥇 {{ event.firstPlacePoints }}</span>
+                      <span class="prize-badge gold"><app-icon name="medal-gold" [size]="14"></app-icon> {{ event.firstPlacePoints }}</span>
                     }
                     @if (event.secondPlacePoints) {
-                      <span class="prize-badge silver">🥈 {{ event.secondPlacePoints }}</span>
+                      <span class="prize-badge silver"><app-icon name="medal-silver" [size]="14"></app-icon> {{ event.secondPlacePoints }}</span>
                     }
                     @if (event.thirdPlacePoints) {
-                      <span class="prize-badge bronze">🥉 {{ event.thirdPlacePoints }}</span>
+                      <span class="prize-badge bronze"><app-icon name="medal-bronze" [size]="14"></app-icon> {{ event.thirdPlacePoints }}</span>
                     }
                   </div>
                 } @else {
@@ -140,13 +140,13 @@
               <td>
                 <div class="action-buttons">
                   <button class="action-btn edit-btn" (click)="openEditModal(event)" title="Edit">
-                    ✏️
+                    <app-icon name="edit" [size]="16"></app-icon>
                   </button>
                   <button class="action-btn participants-btn" (click)="openParticipantsModal(event)" title="View Participants">
-                    👥
+                    <app-icon name="users" [size]="16"></app-icon>
                   </button>
                   <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
-                    🗑️
+                    <app-icon name="delete" [size]="16"></app-icon>
                   </button>
                 </div>
               </td>
@@ -157,7 +157,7 @@
             <tr>
               <td colspan="7" class="no-results">
                 <div class="no-results-content">
-                  <span class="no-results-icon">🎉</span>
+                  <span class="no-results-icon"><app-icon name="celebrate" [size]="32"></app-icon></span>
                   @if (searchQuery()) {
                     <p>No events found matching "{{ searchQuery() }}"</p>
                     <button class="clear-filters-link" (click)="clearFilters()">Clear filters</button>
@@ -180,7 +180,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
-        <button class="close-btn" (click)="closeModal()">✕</button>
+        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -297,12 +297,12 @@
 
         <!-- Prize Distribution Section -->
         <div class="form-section">
-          <h4 class="form-section-title">🏆 Prize Distribution (Optional)</h4>
+          <h4 class="form-section-title"><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution (Optional)</h4>
           <p class="form-section-hint">Set point rewards for top performers</p>
           
           <div class="form-row prize-row">
             <div class="form-group prize-input first-place">
-              <label for="firstPlacePoints">🥇 1st Place</label>
+              <label for="firstPlacePoints"><app-icon name="medal-gold" [size]="14"></app-icon> 1st Place</label>
               <input
                 id="firstPlacePoints"
                 type="number"
@@ -314,7 +314,7 @@
             </div>
 
             <div class="form-group prize-input second-place">
-              <label for="secondPlacePoints">🥈 2nd Place</label>
+              <label for="secondPlacePoints"><app-icon name="medal-silver" [size]="14"></app-icon> 2nd Place</label>
               <input
                 id="secondPlacePoints"
                 type="number"
@@ -326,7 +326,7 @@
             </div>
 
             <div class="form-group prize-input third-place">
-              <label for="thirdPlacePoints">🥉 3rd Place</label>
+              <label for="thirdPlacePoints"><app-icon name="medal-bronze" [size]="14"></app-icon> 3rd Place</label>
               <input
                 id="thirdPlacePoints"
                 type="number"
@@ -341,7 +341,7 @@
 
         <!-- Registration Period Section -->
         <div class="form-section">
-          <h4 class="form-section-title">📅 Registration Period (Optional)</h4>
+          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period (Optional)</h4>
           
           <div class="form-row">
             <div class="form-group">
@@ -370,7 +370,7 @@
 
         <!-- Location Section -->
         <div class="form-section">
-          <h4 class="form-section-title">📍 Event Location (Optional)</h4>
+          <h4 class="form-section-title"><app-icon name="location" [size]="18"></app-icon> Event Location (Optional)</h4>
           
           <div class="form-group">
             <label for="location">Physical Location</label>
@@ -435,7 +435,7 @@
             </span>
           </p>
         </div>
-        <button class="close-btn" (click)="closeParticipantsModal()">✕</button>
+        <button class="close-btn" (click)="closeParticipantsModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
     <div class="modal-body">
       <!-- Search Bar -->
@@ -445,7 +445,7 @@
           class="search-input"
           [ngModel]="participantSearchQuery()"
           (ngModelChange)="participantSearchQuery.set($event); filterParticipants()"
-          placeholder="🔍 Search by name or email..."
+          placeholder="Search by name or email..."
         />
       </div>
 
@@ -479,7 +479,7 @@
                   <td>
                     @if (participant.eventRank) {
                       <span class="rank-badge">
-                        🏆 #{{ participant.eventRank }}
+                        <app-icon name="trophy" [size]="14"></app-icon> #{{ participant.eventRank }}
                       </span>
                     } @else {
                       <span>-</span>
@@ -501,7 +501,11 @@
                       [disabled]="participant.pointsAwarded || participant.status === 'Awarded'"
                       [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded'"
                       title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : 'Award points to this participant' }}">
-                      {{ (participant.pointsAwarded || participant.status === 'Awarded') ? '✓ Awarded' : '🏆 Award Points' }}
+                      @if (participant.pointsAwarded || participant.status === 'Awarded') {
+                          <app-icon name="check" [size]="14"></app-icon> Awarded
+                        } @else {
+                          <app-icon name="trophy" [size]="14"></app-icon> Award Points
+                        }
                     </button>
                   </td>
                 </tr>
@@ -525,8 +529,8 @@
   <div class="modal-overlay" (click)="closeWinnerModal()">
     <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>🏆 Award Points</h3>
-        <button class="close-btn" (click)="closeWinnerModal()">✕</button>
+        <h3><app-icon name="trophy" [size]="20"></app-icon> Award Points</h3>
+        <button class="close-btn" (click)="closeWinnerModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">

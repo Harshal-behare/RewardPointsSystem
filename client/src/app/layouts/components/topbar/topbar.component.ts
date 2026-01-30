@@ -3,10 +3,12 @@ import { Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service';
 import { ApiService } from '../../../core/services/api.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-topbar',
   standalone: true,
+  imports: [IconComponent],
   template: `
     <header class="topbar">
       <div class="topbar-left">
@@ -38,7 +40,7 @@ import { ApiService } from '../../../core/services/api.service';
                 class="dropdown-item" 
                 [class.active]="currentRole() === 'Administrator'"
                 (click)="switchRole('admin')">
-                <span class="role-icon">👨‍💼</span>
+                <span class="role-icon"><app-icon name="admin" [size]="16"></app-icon></span>
                 <span>Admin Dashboard</span>
               </button>
             }
@@ -46,12 +48,12 @@ import { ApiService } from '../../../core/services/api.service';
               class="dropdown-item"
               [class.active]="currentRole() === 'Employee'"
               (click)="switchRole('employee')">
-              <span class="role-icon">👤</span>
+              <span class="role-icon"><app-icon name="user" [size]="16"></app-icon></span>
               <span>Employee Dashboard</span>
             </button>
             <div class="dropdown-divider"></div>
             <button class="dropdown-item logout-item" (click)="logout()">
-              <span class="role-icon">🚪</span>
+              <span class="role-icon"><app-icon name="logout" [size]="16"></app-icon></span>
               <span>Log out</span>
             </button>
           </div>

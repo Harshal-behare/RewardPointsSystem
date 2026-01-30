@@ -6,6 +6,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { AdminService, DashboardStats } from '../../../core/services/admin.service';
 import { EventService, CreateEventDto } from '../../../core/services/event.service';
 import { ProductService, CreateProductDto } from '../../../core/services/product.service';
@@ -34,7 +35,8 @@ interface RecentActivity {
     FormsModule,
     CardComponent,
     ButtonComponent,
-    KpiCardComponent
+    KpiCardComponent,
+    IconComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -46,11 +48,11 @@ export class AdminDashboardComponent implements OnInit {
   isLoading = signal(true);
   
   kpiData = signal<KpiData[]>([
-    { icon: '👥', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
-    { icon: '📅', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
-    { icon: '🎁', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
-    { icon: '⭐', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
-    { icon: '⏳', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+    { icon: 'users', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
+    { icon: 'events', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
+    { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
+    { icon: 'star', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
+    { icon: 'pending', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
   ]);
 
   recentActivities = signal<RecentActivity[]>([]);
@@ -122,11 +124,11 @@ export class AdminDashboardComponent implements OnInit {
 
   private updateKpiData(stats: DashboardStats): void {
     this.kpiData.set([
-      { icon: '👥', label: 'Total Users', value: stats.totalUsers || 0, trend: 0, route: '/admin/users' },
-      { icon: '📅', label: 'Total Events', value: stats.totalEvents || 0, trend: 0, route: '/admin/events' },
-      { icon: '🎁', label: 'Total Products', value: stats.totalProducts || 0, trend: 0, route: '/admin/products' },
-      { icon: '⭐', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 0, route: '/admin/dashboard' },
-      { icon: '⏳', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: 0, route: '/admin/redemptions' },
+      { icon: 'users', label: 'Total Users', value: stats.totalUsers || 0, trend: 0, route: '/admin/users' },
+      { icon: 'events', label: 'Total Events', value: stats.totalEvents || 0, trend: 0, route: '/admin/events' },
+      { icon: 'gift', label: 'Total Products', value: stats.totalProducts || 0, trend: 0, route: '/admin/products' },
+      { icon: 'star', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 0, route: '/admin/dashboard' },
+      { icon: 'pending', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: 0, route: '/admin/redemptions' },
     ]);
     
     // Clear recent activities - no endpoint available yet
@@ -142,11 +144,11 @@ export class AdminDashboardComponent implements OnInit {
 
   private useFallbackData(): void {
     this.kpiData.set([
-      { icon: '👥', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
-      { icon: '📅', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
-      { icon: '🎁', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
-      { icon: '⭐', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
-      { icon: '⏳', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+      { icon: 'users', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
+      { icon: 'events', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
+      { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
+      { icon: 'star', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
+      { icon: 'pending', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
     ]);
     this.recentActivities.set([]);
     this.chartData.set({

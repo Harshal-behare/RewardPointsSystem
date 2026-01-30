@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EventService, CreateEventDto, UpdateEventDto } from '../../../core/services/event.service';
 import { PointsService } from '../../../core/services/points.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -53,7 +54,8 @@ interface EventParticipant {
     FormsModule,
     CardComponent,
     ButtonComponent,
-    BadgeComponent
+    BadgeComponent,
+    IconComponent
   ],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss'

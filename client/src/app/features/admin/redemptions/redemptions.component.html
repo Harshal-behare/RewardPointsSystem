@@ -2,42 +2,42 @@
   <!-- Stats Cards -->
   <div class="stats-grid">
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #E8F5E9;">📊</div>
+      <div class="stat-icon" style="background-color: #E8F5E9;"><app-icon name="chart-bar" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().total }}</div>
         <div class="stat-label">Total Requests</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #FFF3E0;">⏳</div>
+      <div class="stat-icon" style="background-color: #FFF3E0;"><app-icon name="pending" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().pending }}</div>
         <div class="stat-label">Pending</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #E3F2FD;">✓</div>
+      <div class="stat-icon" style="background-color: #E3F2FD;"><app-icon name="check" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().approved }}</div>
         <div class="stat-label">Approved</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #E8F5E9;">📦</div>
+      <div class="stat-icon" style="background-color: #E8F5E9;"><app-icon name="delivered" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().delivered }}</div>
         <div class="stat-label">Delivered</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #FFEBEE;">✗</div>
+      <div class="stat-icon" style="background-color: #FFEBEE;"><app-icon name="rejected" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().rejected }}</div>
         <div class="stat-label">Rejected</div>
       </div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon" style="background-color: #F5F5F5;">🚫</div>
+      <div class="stat-icon" style="background-color: #F5F5F5;"><app-icon name="cancelled" [size]="24"></app-icon></div>
       <div class="stat-content">
         <div class="stat-value">{{ stats().cancelled }}</div>
         <div class="stat-label">Cancelled</div>
@@ -104,7 +104,7 @@
             (ngModelChange)="searchQuery.set($event)"
             class="search-input"
           />
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         </div>
         <div class="results-info">
           Showing {{ filteredRequests().length }} of {{ redemptionRequests().length }} requests
@@ -150,7 +150,7 @@
               </td>
               <td>
                 <div class="product-info">
-                  <div class="product-thumbnail">📦</div>
+                  <div class="product-thumbnail"><app-icon name="box" [size]="20"></app-icon></div>
                   <strong>{{ request.productName }}</strong>
                 </div>
               </td>
@@ -173,13 +173,13 @@
                       class="action-btn approve-btn" 
                       (click)="openApproveModal(request)"
                       title="Approve">
-                      ✓ Approve
+                      <app-icon name="check" [size]="14"></app-icon> Approve
                     </button>
                     <button 
                       class="action-btn reject-btn" 
                       (click)="openRejectModal(request)"
                       title="Reject">
-                      ✗ Reject
+                      <app-icon name="close" [size]="14"></app-icon> Reject
                     </button>
                   }
                   @if (request.status === 'Approved') {
@@ -187,14 +187,14 @@
                       class="action-btn deliver-btn" 
                       (click)="openDeliverModal(request)"
                       title="Mark as Delivered">
-                      📦 Deliver
+                      <app-icon name="delivered" [size]="14"></app-icon> Deliver
                     </button>
                   }
                   <button 
                     class="action-btn view-btn" 
                     (click)="openDetailsModal(request)"
                     title="View Details">
-                    👁 Details
+                    <app-icon name="view" [size]="14"></app-icon> Details
                   </button>
                 </div>
               </td>
@@ -205,7 +205,7 @@
             <tr>
               <td colspan="7" class="no-results">
                 <div class="no-results-content">
-                  <span class="no-results-icon">🔍</span>
+                  <span class="no-results-icon"><app-icon name="search" [size]="32"></app-icon></span>
                   @if (searchQuery()) {
                     <p>No redemptions found matching "{{ searchQuery() }}"</p>
                     <button class="clear-search-link" (click)="clearSearch()">Clear search</button>
@@ -227,8 +227,8 @@
   <div class="modal-overlay" (click)="closeApproveModal()">
     <div class="modal-content approve-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>✓ Approve Redemption</h3>
-        <button class="close-btn" (click)="closeApproveModal()">✕</button>
+        <h3><app-icon name="check" [size]="20"></app-icon> Approve Redemption</h3>
+        <button class="close-btn" (click)="closeApproveModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -240,7 +240,7 @@
             <p><strong>Points:</strong> {{ selectedRequest()?.pointsSpent }} pts</p>
           </div>
           <div class="warning-box">
-            <p>⚠️ This action will deduct {{ selectedRequest()?.pointsSpent }} points from the employee's account.</p>
+            <p><app-icon name="warning" [size]="16"></app-icon> This action will deduct {{ selectedRequest()?.pointsSpent }} points from the employee's account.</p>
           </div>
         </div>
       </div>
@@ -262,8 +262,8 @@
   <div class="modal-overlay" (click)="closeRejectModal()">
     <div class="modal-content reject-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>✗ Reject Redemption</h3>
-        <button class="close-btn" (click)="closeRejectModal()">✕</button>
+        <h3><app-icon name="close" [size]="20"></app-icon> Reject Redemption</h3>
+        <button class="close-btn" (click)="closeRejectModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -307,8 +307,8 @@
   <div class="modal-overlay" (click)="closeDetailsModal()">
     <div class="modal-content details-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📋 Redemption Details</h3>
-        <button class="close-btn" (click)="closeDetailsModal()">✕</button>
+        <h3><app-icon name="clipboard" [size]="20"></app-icon> Redemption Details</h3>
+        <button class="close-btn" (click)="closeDetailsModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -376,7 +376,7 @@
           <div class="details-section rejection-section">
             <h4>
               @if (selectedRequest()?.status === 'Rejected') {
-                ❌ Rejection Reason
+                <app-icon name="close" [size]="14"></app-icon> Rejection Reason
               } @else {
                 ℹ️ Cancellation Reason
               }
@@ -411,8 +411,8 @@
   <div class="modal-overlay" (click)="closeDeliverModal()">
     <div class="modal-content deliver-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📦 Mark as Delivered</h3>
-        <button class="close-btn" (click)="closeDeliverModal()">✕</button>
+        <h3><app-icon name="package" [size]="20"></app-icon> Mark as Delivered</h3>
+        <button class="close-btn" (click)="closeDeliverModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">

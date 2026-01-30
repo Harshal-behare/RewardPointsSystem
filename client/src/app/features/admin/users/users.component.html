@@ -2,7 +2,7 @@
   <!-- Quick Actions Bar -->
   <div class="quick-actions-bar">
     <button class="quick-action-btn primary" (click)="openCreateModal()">
-      <span class="action-icon">➕</span>
+      <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
       <span>Add New User</span>
     </button>
   </div>
@@ -15,7 +15,7 @@
         <p class="subtitle">Manage system users and their roles</p>
       </div>
       <app-button (clicked)="openCreateModal()">
-        ➕ Add User
+        <app-icon name="add" [size]="16"></app-icon> Add User
       </app-button>
     </div>
 
@@ -30,7 +30,7 @@
             (ngModelChange)="searchQuery.set($event)"
             class="search-input"
           />
-          <span class="search-icon">🔍</span>
+          <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         </div>
         
         <div class="filter-controls">
@@ -53,7 +53,7 @@
           </div>
           
           <button class="clear-filters-btn" (click)="clearFilters()" title="Clear all filters">
-            🔄 Clear
+            <app-icon name="refresh" [size]="16"></app-icon> Clear
           </button>
         </div>
       </div>
@@ -130,7 +130,7 @@
                     (click)="openEditModal(user)" 
                     title="Edit"
                   >
-                    ✏️
+                    <app-icon name="edit" [size]="16"></app-icon>
                   </button>
                   <button 
                     class="action-btn" 
@@ -141,7 +141,7 @@
                     [title]="getAdminActionTooltip(user)"
                     [disabled]="isAdminActionDisabled(user) && user.status === 'Active'"
                   >
-                    {{ user.status === 'Active' ? '🔒' : '✅' }}
+                    <app-icon [name]="user.status === 'Active' ? 'lock' : 'check-circle'" [size]="16"></app-icon>
                   </button>
                 </div>
               </td>
@@ -152,7 +152,7 @@
             <tr>
               <td colspan="7" class="no-results">
                 <div class="no-results-content">
-                  <span class="no-results-icon">🔍</span>
+                  <span class="no-results-icon"><app-icon name="search" [size]="32"></app-icon></span>
                   <p>No users found matching your criteria</p>
                   <button class="clear-filters-link" (click)="clearFilters()">Clear filters</button>
                 </div>
@@ -171,7 +171,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Add New User' : 'Edit User' }}</h3>
-        <button class="close-btn" (click)="closeModal()">✕</button>
+        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -253,7 +253,7 @@
               }
             </select>
             @if (isLastAdminRoleProtected()) {
-              <small class="form-warning">⚠️ Cannot change role - this is the only admin in the system</small>
+              <small class="form-warning"><app-icon name="warning" [size]="14"></app-icon> Cannot change role - this is the only admin in the system</small>
             }
           </div>
 
@@ -271,7 +271,7 @@
               <option value="Inactive">Inactive</option>
             </select>
             @if (isLastAdminStatusProtected()) {
-              <small class="form-warning">⚠️ Cannot deactivate - this is the only admin in the system</small>
+              <small class="form-warning"><app-icon name="warning" [size]="14"></app-icon> Cannot deactivate - this is the only admin in the system</small>
             }
           </div>
         </div>

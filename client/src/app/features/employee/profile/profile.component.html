@@ -98,7 +98,7 @@
 
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="isSaving() || firstNameError || lastNameError">
-                {{ isSaving() ? 'Saving...' : '💾 Save Changes' }}
+                @if (isSaving()) { Saving... } @else { <app-icon name="save" [size]="16"></app-icon> Save Changes }
               </button>
             </div>
           </form>
@@ -113,7 +113,7 @@
         <div class="card-body">
           <!-- Password Requirements Notice -->
           <div class="notice">
-            <span class="notice-icon">🔒</span>
+            <span class="notice-icon"><app-icon name="lock" [size]="20"></app-icon></span>
             <div>
               <strong>Password Requirements:</strong>
               <ul>
@@ -137,7 +137,7 @@
                   required
                 />
                 <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('current')">
-                  {{ showCurrentPassword ? '👁️' : '👁️‍🗨️' }}
+                  <app-icon [name]="showCurrentPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
                 </button>
               </div>
             </div>
@@ -154,7 +154,7 @@
                   required
                 />
                 <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('new')">
-                  {{ showNewPassword ? '👁️' : '👁️‍🗨️' }}
+                  <app-icon [name]="showNewPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
                 </button>
               </div>
             </div>
@@ -171,7 +171,7 @@
                   required
                 />
                 <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('confirm')">
-                  {{ showConfirmPassword ? '👁️' : '👁️‍🗨️' }}
+                  <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
                 </button>
               </div>
               @if (passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword) {
@@ -181,7 +181,7 @@
 
             <div class="form-actions">
               <button type="submit" class="btn-primary" [disabled]="!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword || passwordData.newPassword !== passwordData.confirmPassword">
-                🔐 Update Password
+                <app-icon name="lock" [size]="16"></app-icon> Update Password
               </button>
             </div>
           </form>

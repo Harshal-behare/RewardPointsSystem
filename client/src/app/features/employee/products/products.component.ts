@@ -5,6 +5,7 @@ import { RedemptionService, CreateRedemptionDto, RedemptionDto } from '../../../
 import { PointsService, PointsAccountDto } from '../../../core/services/points.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 interface Product {
   id: string;
@@ -20,7 +21,7 @@ interface Product {
 @Component({
   selector: 'app-employee-products',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   templateUrl: './products.component.html',
   styleUrl: './products.component.scss'
 })

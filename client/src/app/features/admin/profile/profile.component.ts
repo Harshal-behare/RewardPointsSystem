@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -22,7 +23,8 @@ interface UserProfileResponse {
     DatePipe,
     FormsModule,
     CardComponent,
-    ButtonComponent
+    ButtonComponent,
+    IconComponent
   ],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'

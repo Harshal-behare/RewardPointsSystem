@@ -40,7 +40,7 @@
     <div class="search">
       <input type="text" placeholder="Search events..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event); onSearchChange()" />
       @if (searchQuery()) {
-        <button class="clear" (click)="clearSearch()">×</button>
+        <button class="clear" (click)="clearSearch()"><app-icon name="close" [size]="14"></app-icon></button>
       }
     </div>
   </div>
@@ -64,7 +64,7 @@
             <div class="overlay">
               <span class="status" [class]="event.status.toLowerCase()">{{ event.status }}</span>
               @if (event.registered) {
-                <span class="reg-badge">✓ Registered</span>
+                <span class="reg-badge"><app-icon name="check" [size]="14"></app-icon> Registered</span>
               }
             </div>
           </div>
@@ -76,9 +76,9 @@
 
             <!-- Quick Info -->
             <div class="info-row">
-              <span class="info"><i>📅</i> {{ formatDate(event.eventDate) }}</span>
+              <span class="info"><app-icon name="calendar" [size]="14"></app-icon> {{ formatDate(event.eventDate) }}</span>
               @if (event.location) {
-                <span class="info"><i>📍</i> {{ event.location | slice:0:20 }}{{ event.location.length > 20 ? '...' : '' }}</span>
+                <span class="info"><app-icon name="location" [size]="14"></app-icon> {{ event.location | slice:0:20 }}{{ event.location.length > 20 ? '...' : '' }}</span>
               }
             </div>
 
@@ -86,16 +86,16 @@
             <div class="meta-row">
               <div class="prizes">
                 @if (event.firstPlacePoints) {
-                  <span class="prize gold">🥇{{ event.firstPlacePoints }}</span>
+                  <span class="prize gold"><app-icon name="medal-gold" [size]="16"></app-icon>{{ event.firstPlacePoints }}</span>
                 }
                 @if (event.secondPlacePoints) {
-                  <span class="prize silver">🥈{{ event.secondPlacePoints }}</span>
+                  <span class="prize silver"><app-icon name="medal-silver" [size]="16"></app-icon>{{ event.secondPlacePoints }}</span>
                 }
                 @if (event.thirdPlacePoints) {
-                  <span class="prize bronze">🥉{{ event.thirdPlacePoints }}</span>
+                  <span class="prize bronze"><app-icon name="medal-bronze" [size]="16"></app-icon>{{ event.thirdPlacePoints }}</span>
                 }
               </div>
-              <span class="participants">👥 {{ event.participantCount }}@if (event.maxParticipants) {/{{ event.maxParticipants }}}</span>
+              <span class="participants"><app-icon name="users" [size]="14"></app-icon> {{ event.participantCount }}@if (event.maxParticipants) {/{{ event.maxParticipants }}}</span>
             </div>
 
             <!-- Winners for Completed Events -->
@@ -103,7 +103,7 @@
               <div class="winners-row">
                 @for (winner of event.winners.slice(0, 3); track winner.userId) {
                   <span class="winner" [class]="'rank-' + winner.rank">
-                    {{ getRankIcon(winner.rank) }} {{ winner.userName.split(' ')[0] }}
+                    <app-icon [name]="getRankIcon(winner.rank)" [size]="14"></app-icon> {{ winner.userName.split(' ')[0] }}
                   </span>
                 }
               </div>
@@ -115,7 +115,7 @@
             <button class="btn-details" (click)="openDetailsModal(event)">Details</button>
             @switch (getRegistrationStatus(event)) {
               @case ('registered') {
-                <span class="status-label registered">✓ Registered</span>
+                <span class="status-label registered"><app-icon name="check" [size]="14"></app-icon> Registered</span>
               }
               @case ('open') {
                 <button class="btn-register" (click)="registerForEvent(event)">Register</button>
@@ -142,7 +142,7 @@
   <!-- Empty State -->
   @if (!isLoading() && filteredEvents().length === 0) {
     <div class="empty-state">
-      <span class="icon">📭</span>
+      <span class="icon"><app-icon name="calendar" [size]="48"></app-icon></span>
       <h3>No events found</h3>
       @if (searchQuery()) {
         <p>No results for "{{ searchQuery() }}"</p>
@@ -164,7 +164,7 @@
           <span class="modal-status" [class]="selectedEvent()!.status.toLowerCase()">{{ selectedEvent()!.status }}</span>
           <h2>{{ selectedEvent()!.name }}</h2>
         </div>
-        <button class="close-btn" (click)="closeDetailsModal()">×</button>
+        <button class="close-btn" (click)="closeDetailsModal()"><app-icon name="close" [size]="20"></app-icon></button>
       </div>
 
       <!-- Modal Content -->
@@ -173,7 +173,7 @@
         <div class="banner">
           <img [src]="selectedEvent()!.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600'" [alt]="selectedEvent()!.name" />
           @if (selectedEvent()!.registered) {
-            <div class="registered-overlay">✓ You're Registered</div>
+            <div class="registered-overlay"><app-icon name="check" [size]="16"></app-icon> You're Registered</div>
           }
         </div>
 
@@ -185,7 +185,7 @@
         <!-- Info Grid -->
         <div class="info-grid">
           <div class="info-item">
-            <span class="icon">📅</span>
+            <span class="icon"><app-icon name="calendar" [size]="20"></app-icon></span>
             <div>
               <label>Event Date</label>
               <span>{{ formatDate(selectedEvent()!.eventDate) }}</span>
@@ -193,7 +193,7 @@
           </div>
           @if (selectedEvent()!.eventEndDate) {
             <div class="info-item">
-              <span class="icon">🏁</span>
+              <span class="icon"><app-icon name="flag" [size]="20"></app-icon></span>
               <div>
                 <label>End Date</label>
                 <span>{{ formatDate(selectedEvent()!.eventEndDate) }}</span>
@@ -202,7 +202,7 @@
           }
           @if (selectedEvent()!.location) {
             <div class="info-item">
-              <span class="icon">📍</span>
+              <span class="icon"><app-icon name="location" [size]="20"></app-icon></span>
               <div>
                 <label>Location</label>
                 <span>{{ selectedEvent()!.location }}</span>
@@ -210,7 +210,7 @@
             </div>
           }
           <div class="info-item">
-            <span class="icon">👥</span>
+            <span class="icon"><app-icon name="users" [size]="20"></app-icon></span>
             <div>
               <label>Participants</label>
               <span>{{ selectedEvent()!.participantCount }}@if (selectedEvent()!.maxParticipants) { / {{ selectedEvent()!.maxParticipants }}}</span>
@@ -221,7 +221,7 @@
         <!-- Registration Period -->
         @if (selectedEvent()!.status === 'Upcoming' && (selectedEvent()!.registrationStartDate || selectedEvent()!.registrationEndDate)) {
           <div class="section reg-period">
-            <h4>📝 Registration Period</h4>
+            <h4><app-icon name="edit" [size]="18"></app-icon> Registration Period</h4>
             <p>
               @if (selectedEvent()!.registrationStartDate && selectedEvent()!.registrationEndDate) {
                 {{ formatDate(selectedEvent()!.registrationStartDate) }} - {{ formatDate(selectedEvent()!.registrationEndDate) }}
@@ -237,25 +237,25 @@
         <!-- Prize Distribution -->
         @if (hasPrizeDistribution(selectedEvent()!)) {
           <div class="section prizes-section">
-            <h4>🏆 Prize Distribution</h4>
+            <h4><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution</h4>
             <div class="prizes-grid">
               @if (selectedEvent()!.firstPlacePoints) {
                 <div class="prize-item gold">
-                  <span class="medal">🥇</span>
+                  <span class="medal"><app-icon name="medal-gold" [size]="24"></app-icon></span>
                   <span class="place">1st Place</span>
                   <span class="points">{{ selectedEvent()!.firstPlacePoints }} pts</span>
                 </div>
               }
               @if (selectedEvent()!.secondPlacePoints) {
                 <div class="prize-item silver">
-                  <span class="medal">🥈</span>
+                  <span class="medal"><app-icon name="medal-silver" [size]="24"></app-icon></span>
                   <span class="place">2nd Place</span>
                   <span class="points">{{ selectedEvent()!.secondPlacePoints }} pts</span>
                 </div>
               }
               @if (selectedEvent()!.thirdPlacePoints) {
                 <div class="prize-item bronze">
-                  <span class="medal">🥉</span>
+                  <span class="medal"><app-icon name="medal-bronze" [size]="24"></app-icon></span>
                   <span class="place">3rd Place</span>
                   <span class="points">{{ selectedEvent()!.thirdPlacePoints }} pts</span>
                 </div>
@@ -267,11 +267,11 @@
         <!-- Winners -->
         @if (selectedEvent()!.status === 'Completed' && selectedEvent()!.winners && selectedEvent()!.winners!.length > 0) {
           <div class="section winners-section">
-            <h4>🎊 Event Winners</h4>
+            <h4><app-icon name="celebrate" [size]="18"></app-icon> Event Winners</h4>
             <div class="winners-list">
               @for (winner of selectedEvent()!.winners; track winner.userId) {
                 <div class="winner-item" [class]="'rank-' + winner.rank">
-                  <span class="medal">{{ getRankIcon(winner.rank) }}</span>
+                  <span class="medal"><app-icon [name]="getRankIcon(winner.rank)" [size]="20"></app-icon></span>
                   <span class="name">{{ winner.userName }}</span>
                   <span class="pts">{{ winner.pointsAwarded }} pts</span>
                 </div>
@@ -283,7 +283,7 @@
         <!-- Points Pool -->
         <div class="points-pool">
           <span>Total Rewards Pool</span>
-          <strong>🏆 {{ selectedEvent()!.pointsPool }} points</strong>
+          <strong><app-icon name="trophy" [size]="18"></app-icon> {{ selectedEvent()!.pointsPool }} points</strong>
         </div>
       </div>
 
@@ -292,7 +292,7 @@
         <button class="btn-secondary" (click)="closeDetailsModal()">Close</button>
         @switch (getRegistrationStatus(selectedEvent()!)) {
           @case ('registered') {
-            <span class="footer-status registered">✓ Already Registered</span>
+            <span class="footer-status registered"><app-icon name="check" [size]="16"></app-icon> Already Registered</span>
           }
           @case ('open') {
             <button class="btn-primary" (click)="registerForEvent(selectedEvent()!); closeDetailsModal()">Register Now</button>
@@ -307,7 +307,13 @@
             <span class="footer-status">Registration Closed</span>
           }
           @case ('closed') {
-            <span class="footer-status">{{ selectedEvent()!.status === 'Active' ? '🔥 In Progress' : '✅ Completed' }}</span>
+            <span class="footer-status">
+              @if (selectedEvent()!.status === 'Active') {
+                <app-icon name="fire" [size]="16"></app-icon> In Progress
+              } @else {
+                <app-icon name="check" [size]="16"></app-icon> Completed
+              }
+            </span>
           }
         }
       </div>

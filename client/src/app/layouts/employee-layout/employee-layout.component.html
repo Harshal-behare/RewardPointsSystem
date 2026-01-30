@@ -18,7 +18,7 @@
           class="nav-item"
           (click)="setActiveMenu(item)"
         >
-          <span class="nav-icon">{{ item.icon }}</span>
+          <span class="nav-icon"><app-icon [name]="item.icon" [size]="20"></app-icon></span>
           @if (!isSidebarCollapsed) {
             <span class="nav-text">{{ item.name }}</span>
           }
@@ -28,7 +28,7 @@
 
     <div class="sidebar-footer">
       <button class="collapse-btn" (click)="toggleSidebar()">
-        <span>{{ isSidebarCollapsed ? '→' : '←' }}</span>
+        <app-icon [name]="isSidebarCollapsed ? 'chevron-right' : 'chevron-left'" [size]="18"></app-icon>
       </button>
     </div>
   </aside>
@@ -52,24 +52,24 @@
             <span class="profile-name">{{ userName }}</span>
             <span class="profile-role">Employee</span>
           </div>
-          <span class="dropdown-arrow">▼</span>
+          <span class="dropdown-arrow"><app-icon name="chevron-down" [size]="14"></app-icon></span>
 
           @if (showProfileDropdown) {
             <div class="dropdown-menu">
               @if (isAdmin) {
                 <a (click)="switchToAdmin()" class="dropdown-item admin-switch">
-                  <span>👨‍💼</span> Switch to Admin
+                  <app-icon name="users" [size]="16"></app-icon> Switch to Admin
                 </a>
               }
               <a [routerLink]="['/employee/profile']" class="dropdown-item">
-                <span>👤</span> My Profile
+                <app-icon name="user" [size]="16"></app-icon> My Profile
               </a>
               <a [routerLink]="['/employee/account']" class="dropdown-item">
-                <span>💰</span> My Points
+                <app-icon name="wallet" [size]="16"></app-icon> My Points
               </a>
               <hr />
               <a (click)="logout()" class="dropdown-item logout">
-                <span>🚪</span> Logout
+                <app-icon name="logout" [size]="16"></app-icon> Logout
               </a>
             </div>
           }

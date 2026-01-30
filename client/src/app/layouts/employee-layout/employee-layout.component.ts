@@ -1,11 +1,12 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
+import { IconComponent } from '../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-employee-layout',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, IconComponent],
   templateUrl: './employee-layout.component.html',
   styleUrl: './employee-layout.component.scss'
 })
@@ -29,11 +30,11 @@ export class EmployeeLayoutComponent implements OnInit, OnDestroy {
   };
 
   menuItems = [
-    { name: 'Dashboard', icon: '📊', route: '/employee/dashboard', active: true },
-    { name: 'Events', icon: '🎉', route: '/employee/events', active: false },
-    { name: 'Products', icon: '🎁', route: '/employee/products', active: false },
-    { name: 'My Account', icon: '💰', route: '/employee/account', active: false },
-    { name: 'Profile', icon: '👤', route: '/employee/profile', active: false }
+    { name: 'Dashboard', icon: 'dashboard', route: '/employee/dashboard', active: true },
+    { name: 'Events', icon: 'celebrate', route: '/employee/events', active: false },
+    { name: 'Products', icon: 'gift', route: '/employee/products', active: false },
+    { name: 'My Account', icon: 'wallet', route: '/employee/account', active: false },
+    { name: 'Profile', icon: 'user', route: '/employee/profile', active: false }
   ];
 
   constructor(private router: Router) {}

@@ -3,6 +3,7 @@ import { FormsModule } from '@angular/forms';
 import { ApiService } from '../../../core/services/api.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { AuthService } from '../../../auth/auth.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 interface UserProfileResponse {
   userId: string;
@@ -15,7 +16,7 @@ interface UserProfileResponse {
 @Component({
   selector: 'app-employee-profile',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   templateUrl: './profile.component.html',
   styleUrl: './profile.component.scss'
 })

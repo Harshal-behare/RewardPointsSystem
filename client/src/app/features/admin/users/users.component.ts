@@ -7,6 +7,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
 import { AdminService } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -41,7 +42,8 @@ interface DisplayUser {
     FormsModule,
     CardComponent,
     ButtonComponent,
-    BadgeComponent
+    BadgeComponent,
+    IconComponent
   ],
   templateUrl: './users.component.html',
   styleUrl: './users.component.scss'

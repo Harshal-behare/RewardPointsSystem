@@ -2,15 +2,15 @@
   <!-- Quick Actions -->
   <div class="quick-actions-bar">
     <button class="quick-action-btn primary" (click)="openCreateModal()">
-      <span class="action-icon">➕</span>
+      <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
       <span>Add New Product</span>
     </button>
     <button class="quick-action-btn secondary" (click)="openCategoryModal()">
-      <span class="action-icon">📁</span>
+      <span class="action-icon"><app-icon name="folder" [size]="18"></app-icon></span>
       <span>Manage Categories</span>
     </button>
     <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
-      <span class="action-icon">🔄</span>
+      <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
       <span>Refresh</span>
     </button> -->
   </div>
@@ -24,10 +24,10 @@
       </div>
       <div class="header-actions">
         <button class="view-toggle" (click)="toggleViewMode()">
-          {{ viewMode() === 'grid' ? '📋 Table View' : '🔲 Grid View' }}
+          <app-icon [name]="viewMode() === 'grid' ? 'table' : 'grid'" [size]="16"></app-icon> {{ viewMode() === 'grid' ? 'Table View' : 'Grid View' }}
         </button>
         <app-button (clicked)="openCreateModal()">
-          ➕ Add Product
+          <app-icon name="add" [size]="16"></app-icon> Add Product
         </app-button>
       </div>
     </div>
@@ -71,7 +71,7 @@
           (ngModelChange)="searchQuery.set($event); onSearchChange()"
           class="search-input"
         />
-        <span class="search-icon">🔍</span>
+        <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
       </div>
     </div>
 
@@ -107,7 +107,7 @@
               </div>
               <div class="product-actions">
                 <app-button size="sm" variant="secondary" (clicked)="openEditModal(product)">
-                  ✏️ Edit
+                  <app-icon name="edit" [size]="14"></app-icon> Edit
                 </app-button>
               </div>
             </div>
@@ -161,7 +161,7 @@
                 <td>
                   <div class="action-buttons">
                     <button class="action-btn edit-btn" (click)="openEditModal(product)" title="Edit">
-                      ✏️
+                      <app-icon name="edit" [size]="16"></app-icon>
                     </button>
                   </div>
                 </td>
@@ -180,7 +180,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
-        <button class="close-btn" (click)="closeModal()">✕</button>
+        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -308,14 +308,14 @@
   <div class="modal-overlay" (click)="closeCategoryModal()">
     <div class="modal-content category-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📁 Manage Categories</h3>
-        <button class="close-btn" (click)="closeCategoryModal()">✕</button>
+        <h3><app-icon name="folder" [size]="20"></app-icon> Manage Categories</h3>
+        <button class="close-btn" (click)="closeCategoryModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
         <div class="category-actions">
           <app-button (clicked)="openCreateCategoryForm()">
-            ➕ Add Category
+            <app-icon name="plus" [size]="14"></app-icon> Add Category
           </app-button>
         </div>
 
@@ -353,20 +353,24 @@
                     <td>
                       <div class="category-action-buttons">
                         <button class="action-btn edit-btn" (click)="openEditCategoryForm(category)" title="Edit">
-                          ✏️
+                          <app-icon name="edit" [size]="14"></app-icon>
                         </button>
                         <button 
                           class="action-btn toggle-btn" 
                           (click)="toggleCategoryStatus(category)" 
                           [title]="category.isActive ? 'Deactivate' : 'Activate'">
-                          {{ category.isActive ? '🚫' : '✅' }}
+                          @if (category.isActive) {
+                            <app-icon name="close" [size]="14"></app-icon>
+                          } @else {
+                            <app-icon name="check" [size]="14"></app-icon>
+                          }
                         </button>
                         <button 
                           class="action-btn delete-btn" 
                           (click)="deleteCategory(category)" 
                           title="Delete"
                           [disabled]="category.productCount > 0">
-                          🗑️
+                          <app-icon name="trash" [size]="14"></app-icon>
                         </button>
                       </div>
                     </td>
@@ -396,8 +400,14 @@
   <div class="modal-overlay" (click)="closeCategoryFormModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>{{ categoryModalMode() === 'create' ? '➕ Add New Category' : '✏️ Edit Category' }}</h3>
-        <button class="close-btn" (click)="closeCategoryFormModal()">✕</button>
+        <h3>
+          @if (categoryModalMode() === 'create') {
+            <app-icon name="plus" [size]="18"></app-icon> Add New Category
+          } @else {
+            <app-icon name="edit" [size]="18"></app-icon> Edit Category
+          }
+        </h3>
+        <button class="close-btn" (click)="closeCategoryFormModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">

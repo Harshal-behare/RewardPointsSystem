@@ -4,6 +4,7 @@ import { CommonModule } from '@angular/common';
 import { EventService, EventWinnerDto } from '../../../core/services/event.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 interface DisplayEvent {
   id: string;
@@ -35,7 +36,7 @@ interface DisplayEvent {
 @Component({
   selector: 'app-employee-events',
   standalone: true,
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, IconComponent],
   templateUrl: './events.component.html',
   styleUrl: './events.component.scss'
 })
@@ -285,11 +286,11 @@ export class EmployeeEventsComponent implements OnInit {
 
   getStatusIcon(status: string): string {
     const icons: { [key: string]: string } = {
-      'Upcoming': '📅',
-      'Active': '🔥',
-      'Completed': '✅'
+      'Upcoming': 'calendar',
+      'Active': 'fire',
+      'Completed': 'check'
     };
-    return icons[status] || '📌';
+    return icons[status] || 'pin';
   }
 
   getStatusLabel(status: string): string {
@@ -354,10 +355,10 @@ export class EmployeeEventsComponent implements OnInit {
 
   getRankIcon(rank: number): string {
     switch (rank) {
-      case 1: return '🥇';
-      case 2: return '🥈';
-      case 3: return '🥉';
-      default: return '🏅';
+      case 1: return 'medal-gold';
+      case 2: return 'medal-silver';
+      case 3: return 'medal-bronze';
+      default: return 'trophy';
     }
   }
 

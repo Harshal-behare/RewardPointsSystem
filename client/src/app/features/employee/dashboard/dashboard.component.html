@@ -1,14 +1,14 @@
 <div class="employee-dashboard">
   <!-- Header Section -->
   <div class="dashboard-header">
-    <h1 class="dashboard-title">Welcome back, John! 👋</h1>
+    <h1 class="dashboard-title">Welcome back, John!</h1>
     <p class="dashboard-subtitle">Here's your rewards summary</p>
   </div>
 
   <!-- Points Balance Section -->
   <div class="points-balance-section">
     <div class="balance-card main-balance">
-      <div class="balance-icon">🏆</div>
+      <div class="balance-icon"><app-icon name="trophy" [size]="28"></app-icon></div>
       <div class="balance-info">
         <span class="balance-label">Total Points</span>
         <span class="balance-value">{{ pointsBalance().total }}</span>
@@ -16,7 +16,7 @@
     </div>
 
     <div class="balance-card">
-      <div class="balance-icon available">💰</div>
+      <div class="balance-icon available"><app-icon name="wallet" [size]="28"></app-icon></div>
       <div class="balance-info">
         <span class="balance-label">Available Points</span>
         <span class="balance-value">{{ pointsBalance().available }}</span>
@@ -24,7 +24,7 @@
     </div>
 
     <div class="balance-card">
-      <div class="balance-icon pending">⏳</div>
+      <div class="balance-icon pending"><app-icon name="pending" [size]="28"></app-icon></div>
       <div class="balance-info">
         <span class="balance-label">Pending Points</span>
         <span class="balance-value">{{ pointsBalance().pending }}</span>
@@ -32,7 +32,7 @@
     </div>
 
     <div class="balance-card">
-      <div class="balance-icon redeemed">🎁</div>
+      <div class="balance-icon redeemed"><app-icon name="gift" [size]="28"></app-icon></div>
       <div class="balance-info">
         <span class="balance-label">Redeemed Points</span>
         <span class="balance-value">{{ pointsBalance().redeemed }}</span>
@@ -47,8 +47,8 @@
       <!-- Upcoming Events -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">🎉 Upcoming Events</h2>
-          <button class="view-all-btn" (click)="navigateToEvents()">View All →</button>
+          <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> Upcoming Events</h2>
+          <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
         </div>
 
         <div class="events-list">
@@ -58,8 +58,8 @@
               <div class="event-details">
                 <h3 class="event-name">{{ event.name }}</h3>
                 <p class="event-meta">
-                  <span class="event-date">📅 {{ event.date }}</span>
-                  <span class="event-location">📍 {{ event.location }}</span>
+                  <span class="event-date"><app-icon name="calendar" [size]="14"></app-icon> {{ event.date }}</span>
+                  <span class="event-location"><app-icon name="location" [size]="14"></app-icon> {{ event.location }}</span>
                 </p>
                 <div class="event-footer">
                   <span class="event-points">+{{ event.points }} points</span>
@@ -71,7 +71,7 @@
                       Register
                     </button>
                   } @else {
-                    <span class="registered-badge">✓ Registered</span>
+                    <span class="registered-badge"><app-icon name="check" [size]="14"></app-icon> Registered</span>
                   }
                 </div>
               </div>
@@ -89,8 +89,8 @@
       <!-- Featured Products -->
       <div class="section-card">
         <div class="section-header">
-          <h2 class="section-title">🎁 Featured Products</h2>
-          <button class="view-all-btn" (click)="navigateToProducts()">View All →</button>
+          <h2 class="section-title"><app-icon name="gift" [size]="20"></app-icon> Featured Products</h2>
+          <button class="view-all-btn" (click)="navigateToProducts()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
         </div>
 
         <div class="products-grid">
@@ -128,8 +128,8 @@
       <!-- Recent Transactions -->
       <div class="section-card transactions-card">
         <div class="section-header">
-          <h2 class="section-title">💳 Recent Transactions</h2>
-          <button class="view-all-btn" (click)="navigateToAccount()">View All →</button>
+          <h2 class="section-title"><app-icon name="wallet" [size]="20"></app-icon> Recent Transactions</h2>
+          <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
         </div>
 
         <div class="transactions-list">
@@ -141,10 +141,10 @@
             >
               <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
                 @if (transaction.type === 'earned') {
-                  <span>📈</span>
+                  <app-icon name="trending-up" [size]="20"></app-icon>
                 }
                 @if (transaction.type === 'redeemed') {
-                  <span>🛒</span>
+                  <app-icon name="shopping-cart" [size]="20"></app-icon>
                 }
               </div>
               <div class="transaction-details">
@@ -159,9 +159,9 @@
                 </div>
                 @if (transaction.eventName) {
                   <div class="transaction-event">
-                    <span class="event-name">🎉 {{ transaction.eventName }}</span>
+                    <span class="event-name"><app-icon name="celebrate" [size]="14"></app-icon> {{ transaction.eventName }}</span>
                     @if (transaction.eventRank) {
-                      <span class="event-rank">🏆 #{{ transaction.eventRank }}</span>
+                      <span class="event-rank"><app-icon name="trophy" [size]="14"></app-icon> #{{ transaction.eventRank }}</span>
                     }
                   </div>
                 }
@@ -184,18 +184,18 @@
 
       <!-- Quick Actions -->
       <div class="section-card quick-actions-card">
-        <h2 class="section-title">⚡ Quick Actions</h2>
+        <h2 class="section-title"><app-icon name="flash" [size]="20"></app-icon> Quick Actions</h2>
         <div class="quick-actions">
           <button class="action-btn" (click)="navigateToEvents()">
-            <span class="action-icon">🎉</span>
+            <span class="action-icon"><app-icon name="celebrate" [size]="24"></app-icon></span>
             <span class="action-text">Browse Events</span>
           </button>
           <button class="action-btn" (click)="navigateToProducts()">
-            <span class="action-icon">🛒</span>
+            <span class="action-icon"><app-icon name="shopping-cart" [size]="24"></app-icon></span>
             <span class="action-text">Shop Products</span>
           </button>
           <button class="action-btn" (click)="navigateToAccount()">
-            <span class="action-icon">📊</span>
+            <span class="action-icon"><app-icon name="chart-bar" [size]="24"></app-icon></span>
             <span class="action-text">View History</span>
           </button>
         </div>

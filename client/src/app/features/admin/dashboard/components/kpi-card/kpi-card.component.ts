@@ -1,12 +1,14 @@
 import { Component, Input } from '@angular/core';
+import { IconComponent } from '../../../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-kpi-card',
   standalone: true,
+  imports: [IconComponent],
   template: `
     <div class="kpi-card">
       <div class="kpi-icon">
-        <span>{{ icon }}</span>
+        <app-icon [name]="icon" [size]="28"></app-icon>
       </div>
       <div class="kpi-content">
         <div class="kpi-label">{{ label }}</div>
@@ -14,7 +16,8 @@ import { Component, Input } from '@angular/core';
         @if (trend) {
           <div class="kpi-trend">
             <span [class]="getTrendClass()">
-              {{ trend > 0 ? '↑' : '↓' }} {{ Math.abs(trend) }}%
+              <app-icon [name]="trend > 0 ? 'trending-up' : 'trending-down'" [size]="14"></app-icon>
+              {{ Math.abs(trend) }}%
             </span>
           </div>
         }
@@ -81,7 +84,7 @@ import { Component, Input } from '@angular/core';
   `]
 })
 export class KpiCardComponent {
-  @Input() icon = '📊';
+  @Input() icon = 'dashboard';
   @Input() label = '';
   @Input() value: string | number = 0;
   @Input() trend?: number;

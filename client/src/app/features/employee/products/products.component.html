@@ -2,7 +2,7 @@
   <!-- Page Header -->
   <div class="page-header">
     <div class="header-content">
-      <h1 class="page-title">🎁 Products Catalog</h1>
+      <h1 class="page-title"><app-icon name="gift" [size]="28"></app-icon> Products Catalog</h1>
       <p class="page-subtitle">Redeem your points for amazing rewards</p>
     </div>
     <div class="user-points">
@@ -33,7 +33,7 @@
         (ngModelChange)="onSearchChange($event)"
         class="search-input"
       />
-      <span class="search-icon">🔍</span>
+      <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
     </div>
   </div>
 
@@ -44,7 +44,7 @@
         <div class="product-image-container">
           <img [src]="product.image" [alt]="product.name" class="product-image" />
           @if (product.featured) {
-            <span class="featured-badge">⭐ Featured</span>
+            <span class="featured-badge"><app-icon name="star" [size]="14"></app-icon> Featured</span>
           }
           @if (isOutOfStock(product)) {
             <span class="stock-badge out-of-stock">Out of Stock</span>
@@ -53,7 +53,7 @@
             <span class="stock-badge low-stock">Only {{ product.stock }} left</span>
           }
           @if (hasPendingRedemption(product)) {
-            <span class="stock-badge pending">⏳ Pending Request</span>
+            <span class="stock-badge pending"><app-icon name="pending" [size]="14"></app-icon> Pending Request</span>
           }
         </div>
 
@@ -86,7 +86,7 @@
   <!-- Empty State -->
   @if (filteredProducts().length === 0) {
     <div class="empty-state">
-      <span class="empty-icon">🔍</span>
+      <span class="empty-icon"><app-icon name="search" [size]="48"></app-icon></span>
       <h3>No products found</h3>
       <p>Try adjusting your filters or search query</p>
     </div>
@@ -99,7 +99,7 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h2 class="modal-title">Redeem Product</h2>
-        <button class="close-btn" (click)="closeRedeemModal()">✕</button>
+        <button class="close-btn" (click)="closeRedeemModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
       <div class="modal-body">

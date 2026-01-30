@@ -1,10 +1,11 @@
 import { Component } from '@angular/core';
 import { RouterModule } from '@angular/router';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-sidebar',
   standalone: true,
-  imports: [RouterModule],
+  imports: [RouterModule, IconComponent],
   template: `
     <aside class="sidebar">
       <!-- Sidebar Header with Logo only -->
@@ -24,7 +25,7 @@ import { RouterModule } from '@angular/router';
             routerLinkActive="active"
             class="nav-item"
           >
-            <span class="nav-icon">{{ item.icon }}</span>
+            <span class="nav-icon"><app-icon [name]="item.icon" [size]="20"></app-icon></span>
             <span class="nav-label">{{ item.label }}</span>
           </a>
         }
@@ -100,11 +101,11 @@ import { RouterModule } from '@angular/router';
 })
 export class SidebarComponent {
   menuItems = [
-    { icon: '📊', label: 'Dashboard', route: '/admin/dashboard' },
-    { icon: '📅', label: 'Events', route: '/admin/events' },
-    { icon: '🎁', label: 'Products', route: '/admin/products' },
-    { icon: '🛒', label: 'Redemptions', route: '/admin/redemptions' },
-    { icon: '👥', label: 'Users', route: '/admin/users' },
-    { icon: '👤', label: 'Profile', route: '/admin/profile' },
+    { icon: 'dashboard', label: 'Dashboard', route: '/admin/dashboard' },
+    { icon: 'events', label: 'Events', route: '/admin/events' },
+    { icon: 'gift', label: 'Products', route: '/admin/products' },
+    { icon: 'shopping-cart', label: 'Redemptions', route: '/admin/redemptions' },
+    { icon: 'users', label: 'Users', route: '/admin/users' },
+    { icon: 'user', label: 'Profile', route: '/admin/profile' },
   ];
 }

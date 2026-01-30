@@ -5,6 +5,7 @@ import { RedemptionService, RedemptionDto } from '../../../core/services/redempt
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 interface PointTransaction {
   id: string;
@@ -34,7 +35,7 @@ interface RedemptionRecord {
 @Component({
   selector: 'app-employee-account',
   standalone: true,
-  imports: [NgClass, TitleCasePipe],
+  imports: [NgClass, TitleCasePipe, IconComponent],
   templateUrl: './account.component.html',
   styleUrl: './account.component.scss'
 })
@@ -368,11 +369,11 @@ export class EmployeeAccountComponent implements OnInit {
 
   getTransactionIcon(type: string): string {
     const icons: { [key: string]: string } = {
-      'earned': '✅',
-      'redeemed': '🎁',
-      'expired': '⏰'
+      'earned': 'check',
+      'redeemed': 'gift',
+      'expired': 'pending'
     };
-    return icons[type] || '📝';
+    return icons[type] || 'edit';
   }
 
   isLoading(): boolean {

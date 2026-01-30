@@ -6,6 +6,7 @@ import { ProductService, ProductDto } from '../../../core/services/product.servi
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 
 interface PointsBalance {
   total: number;
@@ -49,6 +50,7 @@ interface Transaction {
 @Component({
   selector: 'app-employee-dashboard',
   standalone: true,
+  imports: [IconComponent],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })

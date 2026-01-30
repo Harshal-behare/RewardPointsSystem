@@ -17,7 +17,7 @@
   @if (!isLoading()) {
   <div class="summary-section">
     <div class="summary-card earned">
-      <div class="summary-icon"></div>
+      <div class="summary-icon"><app-icon name="trending-up" [size]="24"></app-icon></div>
       <div class="summary-info">
         <span class="summary-label">Total Earned</span>
         <span class="summary-value">{{ totalEarned() }}</span>
@@ -25,7 +25,7 @@
     </div>
 
     <div class="summary-card balance">
-      <div class="summary-icon"></div>
+      <div class="summary-icon"><app-icon name="wallet" [size]="24"></app-icon></div>
       <div class="summary-info">
         <span class="summary-label">Current Balance</span>
         <span class="summary-value">{{ currentBalance() }}</span>
@@ -33,7 +33,7 @@
     </div>
 
     <div class="summary-card pending">
-      <div class="summary-icon"></div>
+      <div class="summary-icon"><app-icon name="pending" [size]="24"></app-icon></div>
       <div class="summary-info">
         <span class="summary-label">Pending Points</span>
         <span class="summary-value">{{ pendingPoints() }}</span>
@@ -41,7 +41,7 @@
     </div>
 
     <div class="summary-card redeemed">
-      <div class="summary-icon"></div>
+      <div class="summary-icon"><app-icon name="gift" [size]="24"></app-icon></div>
       <div class="summary-info">
         <span class="summary-label">Total Redeemed</span>
         <span class="summary-value">{{ totalRedeemed() }}</span>
@@ -59,14 +59,14 @@
         [class.active]="activeTab === 'points'"
         (click)="switchTab('points')"
       >
-        📈 Earning History
+        <app-icon name="trending-up" [size]="18"></app-icon> Earning History
       </button>
       <button
         class="tab-btn"
         [class.active]="activeTab === 'redemptions'"
         (click)="switchTab('redemptions')"
       >
-        🛒 Redemption History
+        <app-icon name="cart" [size]="18"></app-icon> Redemption History
       </button>
     </div>
 
@@ -76,7 +76,7 @@
       <!-- Empty State for Earnings -->
       @if (pointsHistory().length === 0) {
       <div class="empty-state">
-        <span class="empty-icon">📊</span>
+        <span class="empty-icon"><app-icon name="chart" [size]="48"></app-icon></span>
         <h3>No earnings yet</h3>
         <p>Your earned points will appear here once you participate in events or receive rewards.</p>
       </div>
@@ -114,7 +114,7 @@
               </td>
               <td class="col-rank">
                 @if (transaction.rank) {
-                <span class="rank-badge">🏆 #{{ transaction.rank }}</span>
+                <span class="rank-badge"><app-icon name="trophy" [size]="14"></app-icon> #{{ transaction.rank }}</span>
                 } @else {
                 <span class="text-muted">-</span>
                 }
@@ -137,7 +137,7 @@
       <!-- Empty State for Redemptions -->
       @if (redemptionHistory().length === 0) {
       <div class="empty-state">
-        <span class="empty-icon"></span>
+        <span class="empty-icon"><app-icon name="gift" [size]="48"></app-icon></span>
         <h3>No redemptions yet</h3>
         <p>Your product redemptions will appear here once you redeem your points.</p>
       </div>

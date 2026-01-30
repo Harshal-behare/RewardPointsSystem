@@ -6,6 +6,7 @@ import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { RedemptionService } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -42,7 +43,8 @@ interface Stats {
     DatePipe,
     FormsModule,
     CardComponent,
-    BadgeComponent
+    BadgeComponent,
+    IconComponent
   ],
   templateUrl: './redemptions.component.html',
   styleUrl: './redemptions.component.scss'

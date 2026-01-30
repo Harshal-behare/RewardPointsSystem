@@ -1,16 +1,18 @@
 import { Component, computed } from '@angular/core';
 import { ToastService } from '../../../core/services/toast.service';
+import { IconComponent } from '../icon/icon.component';
 
 @Component({
   selector: 'app-toast',
   standalone: true,
+  imports: [IconComponent],
   template: `
     <div class="toast-container">
       @for (toast of toasts(); track toast.id) {
         <div class="toast toast-{{toast.type}}">
-          <span class="toast-icon">{{ getIcon(toast.type) }}</span>
+          <span class="toast-icon"><app-icon [name]="getIcon(toast.type)" [size]="20"></app-icon></span>
           <span class="toast-message">{{ toast.message }}</span>
-          <button class="toast-close" (click)="close(toast.id)">✕</button>
+          <button class="toast-close" (click)="close(toast.id)"><app-icon name="close" [size]="16"></app-icon></button>
         </div>
       }
     </div>
@@ -116,12 +118,12 @@ export class ToastComponent {
 
   getIcon(type: string): string {
     const icons = {
-      success: '✓',
-      error: '✗',
-      warning: '⚠',
-      info: 'ℹ'
+      success: 'check',
+      error: 'close',
+      warning: 'warning',
+      info: 'info'
     };
-    return icons[type as keyof typeof icons] || 'ℹ';
+    return icons[type as keyof typeof icons] || 'info';
   }
 
   close(id: number) {
