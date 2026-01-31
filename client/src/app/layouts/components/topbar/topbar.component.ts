@@ -251,8 +251,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   isAdmin = false;
   userRoles: string[] = [];
   private profileLoaded = false;
-  
+
   private routerSubscription?: Subscription;
+  private clickHandler = (event: Event) => this.handleDocumentClick(event);
   
   // Route to page title mapping
   private readonly pageTitleMap: { [key: string]: string } = {
@@ -291,17 +292,21 @@ export class TopbarComponent implements OnInit, OnDestroy {
     });
     
     // Close dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.user-menu')) {
-        this.showDropdown = false;
-      }
-    });
+    document.addEventListener('click', this.clickHandler);
   }
-  
+
   ngOnDestroy(): void {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    // Remove document click listener to prevent memory leak
+    document.removeEventListener('click', this.clickHandler);
+  }
+
+  private handleDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.user-menu')) {
+      this.showDropdown = false;
     }
   }
   

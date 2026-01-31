@@ -431,6 +431,9 @@ export class AdminUsersComponent implements OnInit {
         if (password.length < 8) {
           this.modalValidationErrors.push('Password must be at least 8 characters');
         }
+        if (password.length > 20) {
+          this.modalValidationErrors.push('Password cannot exceed 20 characters');
+        }
         if (!/[A-Z]/.test(password)) {
           this.modalValidationErrors.push('Password must contain at least one uppercase letter');
         }
@@ -440,8 +443,8 @@ export class AdminUsersComponent implements OnInit {
         if (!/[0-9]/.test(password)) {
           this.modalValidationErrors.push('Password must contain at least one number');
         }
-        if (!/[\W_]/.test(password)) {
-          this.modalValidationErrors.push('Password must contain at least one special character');
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password)) {
+          this.modalValidationErrors.push('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
         }
       }
     }

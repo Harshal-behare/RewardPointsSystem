@@ -401,6 +401,11 @@ export class AdminRedemptionsComponent implements OnInit {
       return;
     }
 
+    if (reason.length > 500) {
+      this.rejectionError.set('Reason cannot exceed 500 characters');
+      return;
+    }
+
     const request = this.selectedRequest();
     if (request) {
       this.redemptionService.rejectRedemption(request.id, reason).subscribe({

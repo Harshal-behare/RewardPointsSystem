@@ -172,6 +172,11 @@ export class EmployeeProfileComponent implements OnInit {
       return;
     }
 
+    if (this.passwordData.newPassword.length > 20) {
+      this.toast.error('Password cannot exceed 20 characters!');
+      return;
+    }
+
     // Validate password strength
     if (!/[A-Z]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one uppercase letter');
@@ -183,6 +188,10 @@ export class EmployeeProfileComponent implements OnInit {
     }
     if (!/[0-9]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one number');
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
       return;
     }
 

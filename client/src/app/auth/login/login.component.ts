@@ -42,7 +42,9 @@ export class LoginComponent implements OnInit {
       ]],
       password: ['', [
         Validators.required,
-        Validators.minLength(8)
+        Validators.minLength(8),
+        Validators.maxLength(20),
+        Validators.pattern(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).+$/)
       ]]
     });
     // Get return URL from route parameters or default to '/dashboard'
