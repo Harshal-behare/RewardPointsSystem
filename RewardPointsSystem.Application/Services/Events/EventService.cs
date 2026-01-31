@@ -189,7 +189,15 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => e.Status == EventStatus.Upcoming,
                 e => e.Participants);
-            return events;
+
+            // Auto-update statuses before returning
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
+            // Return only still-upcoming events after status update
+            return events.Where(e => e.Status == EventStatus.Upcoming);
         }
 
         public async Task<IEnumerable<Event>> GetAllEventsAsync()
@@ -198,6 +206,13 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => true,  // All events
                 e => e.Participants);
+
+            // Auto-update statuses before returning
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
             return events;
         }
 
@@ -207,11 +222,18 @@ namespace RewardPointsSystem.Application.Services.Events
         public async Task<IEnumerable<Event>> GetVisibleEventsAsync()
         {
             // Include participants so we can count them
-            // Return events visible to employees: Upcoming, Active, Completed (not Draft)
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
-                e => e.Status != EventStatus.Draft,
+                e => true,  // Get all first to auto-update statuses
                 e => e.Participants);
-            return events;
+
+            // Auto-update statuses before filtering
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
+            // Return events visible to employees: Upcoming, Active, Completed (not Draft)
+            return events.Where(e => e.Status != EventStatus.Draft);
         }
 
         public async Task<Event> GetEventByIdAsync(Guid id)
@@ -220,7 +242,57 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => e.Id == id,
                 e => e.Participants);
-            return events.FirstOrDefault();
+            var eventEntity = events.FirstOrDefault();
+
+            if (eventEntity != null)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(eventEntity);
+            }
+
+            return eventEntity;
+        }
+
+        /// <summary>
+        /// Auto-update event status based on dates (per System.txt requirements)
+        /// Draft → Upcoming: On RegistrationStartDate
+        /// Upcoming → Active: On EventDate
+        /// Active → Completed: After EventEndDate (or EventDate if no end date)
+        /// </summary>
+        private async Task UpdateEventStatusBasedOnDatesAsync(Event eventEntity)
+        {
+            var now = DateTime.UtcNow;
+            var originalStatus = eventEntity.Status;
+
+            // Draft → Upcoming: When registration start date is reached
+            if (eventEntity.Status == EventStatus.Draft &&
+                eventEntity.RegistrationStartDate.HasValue &&
+                now >= eventEntity.RegistrationStartDate.Value)
+            {
+                eventEntity.Publish(); // Changes to Upcoming
+            }
+
+            // Upcoming → Active: When event date is reached
+            if (eventEntity.Status == EventStatus.Upcoming &&
+                now >= eventEntity.EventDate)
+            {
+                eventEntity.Activate(); // Changes to Active
+            }
+
+            // Active → Completed: After event end date (or event date if no end date)
+            if (eventEntity.Status == EventStatus.Active)
+            {
+                var completionDate = eventEntity.EventEndDate ?? eventEntity.EventDate;
+                if (now > completionDate)
+                {
+                    eventEntity.Complete(); // Changes to Completed
+                }
+            }
+
+            // Save if status changed
+            if (eventEntity.Status != originalStatus)
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
         }
 
         /// <summary>

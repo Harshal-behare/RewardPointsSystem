@@ -11,13 +11,17 @@
 *.sln.docstates
 *.md
 gitignore.sql
+# !CODE_REVIEW_AND_ISSUES.md
+# !PROJECT_WORKFLOW_DOCUMENTATION.md
+# !backend_fixes.md
+# !frontend_fixes.md
 !README.md
 !agdata-srp-architecture.md
 !Project_Description.md 
 !SYSTEM_DOCUMENTATION.md
 !API_DOCUMENTATION.md
 *.txt
-Database/
+Database/*
 !Database/Database_RPS.sql
 
 # User-specific files (MonoDevelop/Xamarin Studio)

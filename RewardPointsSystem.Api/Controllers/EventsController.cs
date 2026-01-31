@@ -1,12 +1,10 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using RewardPointsSystem.Application.DTOs;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Events;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Events;
-using RewardPointsSystem.Infrastructure.Data;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -17,19 +15,19 @@ namespace RewardPointsSystem.Api.Controllers
     {
         private readonly IEventService _eventService;
         private readonly IEventParticipationService _participationService;
+        private readonly IUserService _userService;
         private readonly ILogger<EventsController> _logger;
-        private readonly RewardPointsDbContext _context;
 
         public EventsController(
             IEventService eventService,
             IEventParticipationService participationService,
-            ILogger<EventsController> logger,
-            RewardPointsDbContext context)
+            IUserService userService,
+            ILogger<EventsController> logger)
         {
             _eventService = eventService;
             _participationService = participationService;
+            _userService = userService;
             _logger = logger;
-            _context = context;
         }
 
         /// <summary>
@@ -51,8 +49,10 @@ namespace RewardPointsSystem.Api.Controllers
         /// <summary>
         /// Maps an Event entity to EventResponseDto
         /// </summary>
-        private EventResponseDto MapToEventResponseDto(Event e)
+        private EventResponseDto MapToEventResponseDto(Event e, Dictionary<Guid, string> userNames = null)
         {
+            userNames ??= new Dictionary<Guid, string>();
+
             var winners = e.Participants?
                 .Where(p => p.PointsAwarded.HasValue && p.EventRank.HasValue)
                 .OrderBy(p => p.EventRank)
@@ -60,7 +60,7 @@ namespace RewardPointsSystem.Api.Controllers
                 .Select(p => new EventWinnerDto
                 {
                     UserId = p.UserId,
-                    UserName = p.User != null ? $"{p.User.FirstName} {p.User.LastName}" : "Unknown",
+                    UserName = userNames.TryGetValue(p.UserId, out var name) ? name : "Unknown",
                     Rank = p.EventRank!.Value,
                     PointsAwarded = p.PointsAwarded!.Value
                 })
@@ -100,15 +100,14 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Get events visible to employees: Upcoming, Active, Completed (excludes Draft)
-                // Use DbContext directly with ThenInclude to load User data for winners
-                var events = await _context.Events
-                    .Include(e => e.Participants)
-                        .ThenInclude(p => p.User)
-                    .Where(e => e.Status != EventStatus.Draft)
-                    .ToListAsync();
-                    
-                var eventDtos = events.Select(e => MapToEventResponseDto(e));
+                // Get events visible to employees using service (handles auto-status updates)
+                var events = await _eventService.GetVisibleEventsAsync();
+                var eventsList = events.ToList();
+
+                // Load user names for winners
+                var userNames = await GetUserNamesForEventsAsync(eventsList);
+
+                var eventDtos = eventsList.Select(e => MapToEventResponseDto(e, userNames));
 
                 return Success(eventDtos);
             }
@@ -117,6 +116,29 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error retrieving events");
                 return Error("Failed to retrieve events");
             }
+        }
+
+        /// <summary>
+        /// Helper to load user names for event participants/winners
+        /// </summary>
+        private async Task<Dictionary<Guid, string>> GetUserNamesForEventsAsync(IEnumerable<Event> events)
+        {
+            // Get all unique user IDs from participants with awards (winners)
+            var userIds = events
+                .SelectMany(e => e.Participants ?? Enumerable.Empty<EventParticipant>())
+                .Where(p => p.PointsAwarded.HasValue && p.EventRank.HasValue)
+                .Select(p => p.UserId)
+                .Distinct()
+                .ToList();
+
+            if (!userIds.Any())
+                return new Dictionary<Guid, string>();
+
+            // Load all users and create lookup
+            var allUsers = await _userService.GetActiveUsersAsync();
+            return allUsers
+                .Where(u => userIds.Contains(u.Id))
+                .ToDictionary(u => u.Id, u => $"{u.FirstName} {u.LastName}");
         }
 
         /// <summary>
@@ -129,16 +151,16 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Use DbContext with ThenInclude to load User data for winners
-                var ev = await _context.Events
-                    .Include(e => e.Participants)
-                        .ThenInclude(p => p.User)
-                    .FirstOrDefaultAsync(e => e.Id == id);
-                    
+                // Use EventService (handles auto-status updates)
+                var ev = await _eventService.GetEventByIdAsync(id);
+
                 if (ev == null)
                     return NotFoundError($"Event with ID {id} not found");
 
-                var eventDto = MapToEventResponseDto(ev);
+                // Load user names for winners
+                var userNames = await GetUserNamesForEventsAsync(new[] { ev });
+
+                var eventDto = MapToEventResponseDto(ev, userNames);
 
                 return Success(eventDto);
             }

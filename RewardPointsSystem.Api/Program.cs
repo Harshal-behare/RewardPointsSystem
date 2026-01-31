@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
@@ -45,6 +46,12 @@ namespace RewardPointsSystem.Api
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
             builder.Services.AddValidatorsFromAssemblyContaining<RewardPointsSystem.Application.Validators.Auth.LoginRequestDtoValidator>();
+
+            // =====================================================
+            // 5.1 HEALTH CHECKS (MVP)
+            // =====================================================
+            builder.Services.AddHealthChecks()
+                .AddDbContextCheck<RewardPointsDbContext>("database");
 
             // =====================================================
             // 6. CONTROLLERS & API EXPLORER
@@ -183,7 +190,31 @@ namespace RewardPointsSystem.Api
             // =====================================================
             // 11. MIDDLEWARE PIPELINE
             // =====================================================
-            
+
+            // Global Exception Handler (MVP - catches unhandled exceptions)
+            app.UseExceptionHandler(errorApp =>
+            {
+                errorApp.Run(async context =>
+                {
+                    context.Response.StatusCode = 500;
+                    context.Response.ContentType = "application/json";
+
+                    var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
+                    if (exceptionHandlerFeature != null)
+                    {
+                        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+                        logger.LogError(exceptionHandlerFeature.Error, "Unhandled exception occurred");
+
+                        await context.Response.WriteAsJsonAsync(new
+                        {
+                            success = false,
+                            message = "An unexpected error occurred. Please try again.",
+                            timestamp = DateTime.UtcNow
+                        });
+                    }
+                });
+            });
+
             // Swagger (Development and Production for testing)
             app.UseSwagger();
             app.UseSwaggerUI(options =>
@@ -205,6 +236,9 @@ namespace RewardPointsSystem.Api
 
             // Map Controllers
             app.MapControllers();
+
+            // Health Check Endpoint (MVP)
+            app.MapHealthChecks("/health");
 
              //=====================================================
              //12.DATABASE SEEDING

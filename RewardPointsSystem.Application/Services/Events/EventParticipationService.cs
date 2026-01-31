@@ -18,16 +18,48 @@ namespace RewardPointsSystem.Application.Services.Events
         public async Task RegisterParticipantAsync(Guid eventId, Guid userId)
         {
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(eventId);
-            if (eventEntity == null || eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidOperationException($"Event with ID {eventId} not found or not available for registration");
+            if (eventEntity == null)
+                throw new InvalidOperationException($"Event with ID {eventId} not found");
 
+            // Check event status - only Upcoming events accept registrations
+            if (eventEntity.Status == EventStatus.Draft)
+                throw new InvalidOperationException("Event is not yet published for registration");
+
+            if (eventEntity.Status == EventStatus.Completed)
+                throw new InvalidOperationException("Event has already ended");
+
+            if (eventEntity.Status == EventStatus.Active)
+                throw new InvalidOperationException("Event is currently in progress, registration closed");
+
+            // Validate registration window (per System.txt requirements)
+            var now = DateTime.UtcNow;
+
+            if (eventEntity.RegistrationStartDate.HasValue && now < eventEntity.RegistrationStartDate.Value)
+                throw new InvalidOperationException("Registration has not started yet");
+
+            if (eventEntity.RegistrationEndDate.HasValue && now > eventEntity.RegistrationEndDate.Value)
+                throw new InvalidOperationException("Registration period has ended");
+
+            // Validate user
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
-            if (user == null || !user.IsActive)
-                throw new InvalidOperationException($"User with ID {userId} not found or inactive");
+            if (user == null)
+                throw new InvalidOperationException($"User with ID {userId} not found");
 
+            if (!user.IsActive)
+                throw new InvalidOperationException("Your account is inactive. Please contact administrator.");
+
+            // Check if already registered
             var existingParticipation = await _unitOfWork.EventParticipants.SingleOrDefaultAsync(ep => ep.EventId == eventId && ep.UserId == userId);
             if (existingParticipation != null)
-                throw new InvalidOperationException($"User is already registered for this event");
+                throw new InvalidOperationException("You are already registered for this event");
+
+            // Check max participants limit
+            if (eventEntity.MaxParticipants.HasValue)
+            {
+                var currentCount = await _unitOfWork.EventParticipants.CountAsync(ep => ep.EventId == eventId);
+                if (currentCount >= eventEntity.MaxParticipants.Value)
+                    throw new InvalidOperationException("Event is full. Maximum participants reached.");
+            }
 
             var participant = EventParticipant.Register(eventId, userId);
 
