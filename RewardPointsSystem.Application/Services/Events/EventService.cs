@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
@@ -82,19 +83,31 @@ namespace RewardPointsSystem.Application.Services.Events
 
         private async Task<User> GetOrCreateSystemUserAsync()
         {
+            const string systemEmail = "system@agdata.com";
+            
             // Try to find system user
-            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == systemEmail);
             
             if (systemUser == null)
             {
                 // Create system user
                 systemUser = User.Create(
-                    "system@agdata.com",
+                    systemEmail,
                     "System",
                     "Administrator");
                 
-                await _unitOfWork.Users.AddAsync(systemUser);
-                await _unitOfWork.SaveChangesAsync();
+                try
+                {
+                    await _unitOfWork.Users.AddAsync(systemUser);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    // Handle race condition - another request may have created the user
+                    systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == systemEmail);
+                    if (systemUser == null)
+                        throw; // Re-throw if it's a different error
+                }
             }
             
             return systemUser;
