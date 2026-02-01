@@ -50,8 +50,6 @@ namespace RewardPointsSystem.Infrastructure.Repositories
 
         public Task<IEnumerable<T>> FindWithIncludesAsync(Expression<Func<T, bool>> predicate, params Expression<Func<T, object>>[] includes)
         {
-            // In-memory repository doesn't need to handle includes since all data is in memory
-            // Navigation properties would need to be set manually in tests
             var compiledPredicate = predicate.Compile();
             var result = _entities.Values.Where(compiledPredicate);
             return Task.FromResult(result);

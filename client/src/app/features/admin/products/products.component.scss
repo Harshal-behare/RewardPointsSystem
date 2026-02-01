@@ -31,13 +31,13 @@
     }
 
     &.primary {
-      background: linear-gradient(135deg, #3498DB 0%, #2874A6 100%);
+      background: linear-gradient(135deg, #27AE60 0%, #229954 100%);
       color: white;
-      box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+      box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
 
       &:hover {
         transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(52, 152, 219, 0.4);
+        box-shadow: 0 6px 16px rgba(39, 174, 96, 0.4);
       }
 
       &:active {
@@ -52,8 +52,8 @@
 
       &:hover {
         background-color: #F8F9FA;
-        border-color: #3498DB;
-        color: #3498DB;
+        border-color: #27AE60;
+        color: #27AE60;
         transform: translateY(-2px);
       }
 
@@ -662,10 +662,10 @@
     transition: all 0.2s ease;
 
     &.edit-btn {
-      background-color: #EBF5FB;
-      
+      background-color: #D5F4E6;
+
       &:hover {
-        background-color: #3498DB;
+        background-color: #27AE60;
         color: white;
       }
     }

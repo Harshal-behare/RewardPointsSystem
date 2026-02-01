@@ -52,7 +52,6 @@ namespace RewardPointsSystem.Infrastructure.Repositories
 
         public Task<IEnumerable<UserRole>> FindWithIncludesAsync(Expression<Func<UserRole, bool>> predicate, params Expression<Func<UserRole, object>>[] includes)
         {
-            // In-memory repository doesn't need to handle includes since all data is in memory
             var compiledPredicate = predicate.Compile();
             var result = _entities.Values.Where(compiledPredicate);
             return Task.FromResult(result);
@@ -117,8 +116,6 @@ namespace RewardPointsSystem.Infrastructure.Repositories
 
         public Task DeleteAsync(Guid id)
         {
-            // For UserRole, we can't delete by single Id
-            // This operation is not supported for composite key entities
             throw new NotSupportedException("UserRole uses composite key. Use DeleteAsync(UserRole entity) instead.");
         }
 

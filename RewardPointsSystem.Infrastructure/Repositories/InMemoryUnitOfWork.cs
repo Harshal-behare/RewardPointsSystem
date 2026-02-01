@@ -72,8 +72,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
 
         public Task<int> SaveChangesAsync()
         {
-            // In-memory implementation doesn't need explicit saves
-            // Changes are persisted immediately in memory
+            
             return Task.FromResult(0);
         }
 
@@ -101,8 +100,6 @@ namespace RewardPointsSystem.Infrastructure.Repositories
                 throw new InvalidOperationException("No active transaction to rollback");
             }
             
-            // Note: In a real implementation, you would rollback changes
-            // For in-memory, we'll just clear the transaction state
             _inTransaction = false;
             return Task.CompletedTask;
         }

@@ -94,6 +94,150 @@
   }
 }
 
+/* ===== MY REDEMPTIONS SUMMARY ===== */
+.redemptions-summary-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F4F6F7;
+  margin-bottom: 30px;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .view-all-btn {
+      background: none;
+      border: none;
+      color: #27AE60;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        color: #229954;
+        gap: 8px;
+      }
+    }
+  }
+
+  .redemptions-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .redemption-stat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+
+      &.pending-stat {
+        background-color: #FFF3CD;
+        border-color: #F39C12;
+
+        .redemption-icon {
+          color: #F39C12;
+        }
+
+        .redemption-value {
+          color: #F39C12;
+        }
+
+        &:hover {
+          background-color: #FFE99D;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(243, 156, 18, 0.2);
+        }
+      }
+
+      &.approved-stat {
+        background-color: #D5F4E6;
+        border-color: #27AE60;
+
+        .redemption-icon {
+          color: #27AE60;
+        }
+
+        .redemption-value {
+          color: #27AE60;
+        }
+
+        &:hover {
+          background-color: #B8EDD2;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+        }
+      }
+
+      &.delivered-stat {
+        background-color: #EBF5FB;
+        border-color: #3498DB;
+
+        .redemption-icon {
+          color: #3498DB;
+        }
+
+        .redemption-value {
+          color: #3498DB;
+        }
+
+        &:hover {
+          background-color: #D6EAF8;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+        }
+      }
+
+      .redemption-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+      }
+
+      .redemption-content {
+        display: flex;
+        flex-direction: column;
+
+        .redemption-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #7A7A7A;
+          margin-bottom: 4px;
+        }
+
+        .redemption-value {
+          font-size: 24px;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+}
+
 /* ===== DASHBOARD GRID ===== */
 .dashboard-grid {
   display: grid;

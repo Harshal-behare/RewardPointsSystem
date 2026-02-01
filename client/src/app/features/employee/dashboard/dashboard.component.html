@@ -1,7 +1,7 @@
 <div class="employee-dashboard">
   <!-- Header Section -->
   <div class="dashboard-header">
-    <h1 class="dashboard-title">Welcome back, John!</h1>
+    <h1 class="dashboard-title">Welcome back, {{ userName }}!</h1>
     <p class="dashboard-subtitle">Here's your rewards summary</p>
   </div>
 
@@ -36,6 +36,37 @@
       <div class="balance-info">
         <span class="balance-label">Redeemed Points</span>
         <span class="balance-value">{{ pointsBalance().redeemed }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Redemptions Summary Section -->
+  <div class="redemptions-summary-section">
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="cart" [size]="20"></app-icon> My Redemptions</h2>
+      <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+    </div>
+    <div class="redemptions-summary-grid">
+      <div class="redemption-stat pending-stat">
+        <div class="redemption-icon"><app-icon name="pending" [size]="24"></app-icon></div>
+        <div class="redemption-content">
+          <span class="redemption-label">Pending</span>
+          <span class="redemption-value">{{ redemptionsSummary().pending }}</span>
+        </div>
+      </div>
+      <div class="redemption-stat approved-stat">
+        <div class="redemption-icon"><app-icon name="check-circle" [size]="24"></app-icon></div>
+        <div class="redemption-content">
+          <span class="redemption-label">Approved</span>
+          <span class="redemption-value">{{ redemptionsSummary().approved }}</span>
+        </div>
+      </div>
+      <div class="redemption-stat delivered-stat">
+        <div class="redemption-icon"><app-icon name="gift" [size]="24"></app-icon></div>
+        <div class="redemption-content">
+          <span class="redemption-label">Delivered</span>
+          <span class="redemption-value">{{ redemptionsSummary().delivered }}</span>
+        </div>
       </div>
     </div>
   </div>

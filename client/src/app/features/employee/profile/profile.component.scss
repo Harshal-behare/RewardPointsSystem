@@ -1,6 +1,7 @@
-// AGDATA Green Theme
-$primary: #1B5E20;
-$primary-light: #2E7D32;
+// AGDATA Green Theme - Standardized Colors
+$primary: #27AE60;
+$primary-dark: #229954;
+$primary-light: #D5F4E6;
 $text: #2C3E50;
 $text-muted: #7A7A7A;
 $border: #E8EBED;
@@ -100,7 +101,7 @@ $font: 'Roboto', -apple-system, sans-serif;
     width: 64px;
     height: 64px;
     border-radius: 50%;
-    background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+    background: linear-gradient(135deg, $primary 0%, #2ECC71 100%);
     color: #fff;
     display: flex;
     align-items: center;

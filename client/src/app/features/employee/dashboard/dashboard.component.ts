@@ -62,11 +62,18 @@ export class EmployeeDashboardComponent implements OnInit {
     redeemed: 0
   });
 
+  redemptionsSummary = signal({
+    pending: 0,
+    approved: 0,
+    delivered: 0
+  });
+
   upcomingEvents = signal<Event[]>([]);
   featuredProducts = signal<Product[]>([]);
   recentTransactions = signal<Transaction[]>([]);
   isLoading = signal(true);
   currentUserId: string = '';
+  userName: string = 'User';
 
   constructor(
     private router: Router,
@@ -77,17 +84,20 @@ export class EmployeeDashboardComponent implements OnInit {
     private authService: AuthService,
     private toast: ToastService
   ) {
-    // Get current user ID from JWT token
-    const token = this.authService.getToken();
-    if (token) {
-      try {
-        const payload = JSON.parse(atob(token.split('.')[1]));
-        this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] || 
-                            payload.sub || 
-                            payload.userId || '';
-      } catch (e) {
-        console.error('Error parsing token:', e);
-      }
+    // Get current user ID and name from JWT token
+    const payload = this.authService.getDecodedToken();
+    if (payload) {
+      this.currentUserId = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier'] ||
+                          payload.sub ||
+                          payload.userId || '';
+
+      // Get user's first name from token
+      const firstName = payload['http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname'] ||
+                       payload.given_name ||
+                       payload.firstName ||
+                       payload.FirstName || '';
+
+      this.userName = firstName || 'User';
     }
   }
 
@@ -211,11 +221,28 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
+    // Load my redemptions summary
+    this.redemptionService.getMyRedemptions().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          const redemptions = response.data;
+          this.redemptionsSummary.set({
+            pending: redemptions.filter((r: RedemptionDto) => r.status === 'Pending').length,
+            approved: redemptions.filter((r: RedemptionDto) => r.status === 'Approved').length,
+            delivered: redemptions.filter((r: RedemptionDto) => r.status === 'Delivered').length
+          });
+        }
+      },
+      error: (error) => {
+        console.error('Error loading redemptions:', error);
+      }
+    });
+
     // Load featured products
     this.productService.getProducts().subscribe({
       next: (response) => {
         if (response.success && response.data) {
-          const products = Array.isArray(response.data) ? response.data : 
+          const products = Array.isArray(response.data) ? response.data :
                           (response.data as any).items || [];
           const featured = products
             .filter((p: ProductDto) => p.isActive && p.isInStock)

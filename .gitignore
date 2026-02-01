@@ -11,9 +11,10 @@
 *.sln.docstates
 *.md
 gitignore.sql
+
 !README.md
 !agdata-srp-architecture.md
-!Project_Description.md 
+# !Project_Description.md 
 !SYSTEM_DOCUMENTATION.md
 !API_DOCUMENTATION.md
 *.txt

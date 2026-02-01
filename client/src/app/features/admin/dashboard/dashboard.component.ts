@@ -1,15 +1,17 @@
 import { Component, OnInit, signal, computed, effect, model, DestroyRef, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
-import { filter, takeUntil } from 'rxjs';
+import { filter, takeUntil, forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
-import { AdminService, DashboardStats } from '../../../core/services/admin.service';
-import { EventService, CreateEventDto } from '../../../core/services/event.service';
+import { BadgeComponent } from '../../../shared/components/badge/badge.component';
+import { AdminService, DashboardStats, EventStatusSummary, RedemptionSummary, InventoryAlert, PointsSummary } from '../../../core/services/admin.service';
+import { EventService, CreateEventDto, EventDto } from '../../../core/services/event.service';
 import { ProductService, CreateProductDto } from '../../../core/services/product.service';
+import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 
 interface KpiData {
@@ -36,7 +38,8 @@ interface RecentActivity {
     CardComponent,
     ButtonComponent,
     KpiCardComponent,
-    IconComponent
+    IconComponent,
+    BadgeComponent
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -63,6 +66,33 @@ export class AdminDashboardComponent implements OnInit {
     redemptions: [0, 0, 0, 0, 0, 0],
   });
 
+  // New dashboard sections
+  eventStatusSummary = signal<EventStatusSummary>({
+    draft: 0,
+    upcoming: 0,
+    active: 0,
+    completed: 0
+  });
+
+  redemptionSummary = signal<RedemptionSummary>({
+    pending: 0,
+    approved: 0,
+    rejected: 0,
+    delivered: 0,
+    cancelled: 0
+  });
+
+  inventoryAlerts = signal<InventoryAlert[]>([]);
+
+  pointsSummary = signal<PointsSummary>({
+    totalPointsDistributed: 0,
+    totalPointsRedeemed: 0,
+    totalPointsInCirculation: 0,
+    pendingPoints: 0
+  });
+
+  eventsNeedingAttention = signal<EventDto[]>([]);
+
   // Quick Action Modals
   showEventModal = signal(false);
   showProductModal = signal(false);
@@ -86,6 +116,7 @@ export class AdminDashboardComponent implements OnInit {
     private adminService: AdminService,
     private eventService: EventService,
     private productService: ProductService,
+    private redemptionService: RedemptionService,
     private toast: ToastService
   ) {
     // Subscribe to route changes with automatic cleanup
@@ -103,15 +134,40 @@ export class AdminDashboardComponent implements OnInit {
 
   loadDashboardData(): void {
     this.isLoading.set(true);
-    
-    this.adminService.getDashboardStats().subscribe({
-      next: (response) => {
-        if (response.success && response.data) {
-          const stats = response.data;
-          this.updateKpiData(stats);
-        } else {
-          this.useFallbackData();
+
+    // Load all dashboard data in parallel using forkJoin
+    forkJoin({
+      dashboardStats: this.adminService.getDashboardStats(),
+      inventoryAlerts: this.adminService.getInventoryAlerts(),
+      pointsSummary: this.adminService.getPointsSummary(),
+      allEvents: this.eventService.getAllEventsAdmin(),
+      allRedemptions: this.redemptionService.getRedemptions()
+    }).subscribe({
+      next: (results) => {
+        // Update KPI data
+        if (results.dashboardStats.success && results.dashboardStats.data) {
+          this.updateKpiData(results.dashboardStats.data);
         }
+
+        // Update event status summary
+        this.updateEventStatusSummary(results.allEvents);
+
+        // Update redemption summary
+        this.updateRedemptionSummary(results.allRedemptions);
+
+        // Update inventory alerts
+        if (results.inventoryAlerts.success && results.inventoryAlerts.data) {
+          this.inventoryAlerts.set(results.inventoryAlerts.data);
+        }
+
+        // Update points summary
+        if (results.pointsSummary.success && results.pointsSummary.data) {
+          this.pointsSummary.set(results.pointsSummary.data);
+        }
+
+        // Update events needing attention
+        this.updateEventsNeedingAttention(results.allEvents);
+
         this.isLoading.set(false);
       },
       error: (error) => {
@@ -158,7 +214,70 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
-  private formatNumber(num: number): string {
+  private updateEventStatusSummary(eventsResponse: any): void {
+    if (!eventsResponse.success || !eventsResponse.data) return;
+
+    const events = Array.isArray(eventsResponse.data) ? eventsResponse.data : (eventsResponse.data as any).items || [];
+
+    const summary = {
+      draft: events.filter((e: EventDto) => e.status === 'Draft').length,
+      upcoming: events.filter((e: EventDto) => e.status === 'Upcoming').length,
+      active: events.filter((e: EventDto) => e.status === 'Active').length,
+      completed: events.filter((e: EventDto) => e.status === 'Completed').length
+    };
+
+    this.eventStatusSummary.set(summary);
+  }
+
+  private updateRedemptionSummary(redemptionsResponse: any): void {
+    if (!redemptionsResponse.success || !redemptionsResponse.data) return;
+
+    const redemptions = Array.isArray(redemptionsResponse.data) ? redemptionsResponse.data : (redemptionsResponse.data as any).items || [];
+
+    const summary = {
+      pending: redemptions.filter((r: RedemptionDto) => r.status === 'Pending').length,
+      approved: redemptions.filter((r: RedemptionDto) => r.status === 'Approved').length,
+      rejected: redemptions.filter((r: RedemptionDto) => r.status === 'Rejected').length,
+      delivered: redemptions.filter((r: RedemptionDto) => r.status === 'Delivered').length,
+      cancelled: redemptions.filter((r: RedemptionDto) => r.status === 'Cancelled').length
+    };
+
+    this.redemptionSummary.set(summary);
+  }
+
+  private updateEventsNeedingAttention(eventsResponse: any): void {
+    if (!eventsResponse.success || !eventsResponse.data) return;
+
+    const events = Array.isArray(eventsResponse.data) ? eventsResponse.data : (eventsResponse.data as any).items || [];
+    const now = new Date();
+    const sevenDaysFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+
+    // Filter events that need attention:
+    // 1. Completed events without winners (no points awarded yet)
+    // 2. Upcoming events starting within 7 days
+    // 3. Currently active events
+    const needingAttention = events.filter((e: EventDto) => {
+      if (e.status === 'Active') return true;
+
+      if (e.status === 'Completed' && e.remainingPoints === e.totalPointsPool) {
+        // Event completed but no winners assigned yet
+        return true;
+      }
+
+      if (e.status === 'Upcoming') {
+        const eventDate = new Date(e.eventDate);
+        if (eventDate <= sevenDaysFromNow) {
+          return true;
+        }
+      }
+
+      return false;
+    }).slice(0, 5); // Limit to top 5
+
+    this.eventsNeedingAttention.set(needingAttention);
+  }
+
+  formatNumber(num: number): string {
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
