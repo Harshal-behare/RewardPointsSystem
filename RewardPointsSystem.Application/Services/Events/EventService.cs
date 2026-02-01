@@ -140,19 +140,19 @@ namespace RewardPointsSystem.Application.Services.Events
                 secondPlacePoints,
                 thirdPlacePoints);
 
-            // Handle status change if provided
+            // Handle status change if provided - enforce ONE-WAY FLOW ONLY
             if (!string.IsNullOrWhiteSpace(updates.Status))
             {
                 var targetStatus = updates.Status.ToLower();
                 var currentStatus = eventEntity.Status;
 
+                // Validate one-way flow: Draft → Upcoming → Active → Completed
+                // NO backward transitions allowed
+                ValidateOneWayStatusTransition(currentStatus, targetStatus, id);
+
                 // Apply status transitions based on target status
                 switch (targetStatus)
                 {
-                    case "draft":
-                        if (currentStatus == EventStatus.Upcoming)
-                            eventEntity.RevertToDraft();
-                        break;
                     case "upcoming":
                     case "published":
                         if (currentStatus == EventStatus.Draft)
@@ -172,6 +172,12 @@ namespace RewardPointsSystem.Application.Services.Events
                             eventEntity.Complete();
                         else if (currentStatus == EventStatus.Upcoming)
                         {
+                            eventEntity.Activate();
+                            eventEntity.Complete();
+                        }
+                        else if (currentStatus == EventStatus.Draft)
+                        {
+                            eventEntity.Publish();
                             eventEntity.Activate();
                             eventEntity.Complete();
                         }
@@ -296,6 +302,47 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         /// <summary>
+        /// Validate that status transition follows one-way flow: Draft → Upcoming → Active → Completed
+        /// </summary>
+        private void ValidateOneWayStatusTransition(EventStatus currentStatus, string targetStatusString, Guid eventId)
+        {
+            // Parse target status
+            if (!Enum.TryParse<EventStatus>(targetStatusString, true, out var targetStatus))
+            {
+                // Try mapping common variations
+                targetStatus = targetStatusString.ToLower() switch
+                {
+                    "published" => EventStatus.Upcoming,
+                    _ => throw new InvalidEventStateException(eventId, $"Invalid status value: {targetStatusString}")
+                };
+            }
+
+            // Define status order for one-way flow
+            var statusOrder = new Dictionary<EventStatus, int>
+            {
+                { EventStatus.Draft, 0 },
+                { EventStatus.Upcoming, 1 },
+                { EventStatus.Active, 2 },
+                { EventStatus.Completed, 3 }
+            };
+
+            var currentIndex = statusOrder.GetValueOrDefault(currentStatus, -1);
+            var targetIndex = statusOrder.GetValueOrDefault(targetStatus, -1);
+
+            // Same status is allowed (no change)
+            if (currentIndex == targetIndex)
+                return;
+
+            // Backward transitions are NOT allowed
+            if (targetIndex < currentIndex)
+            {
+                throw new InvalidOperationException(
+                    $"Invalid status transition. Events can only move forward: Draft → Upcoming → Active → Completed. " +
+                    $"Cannot change from '{currentStatus}' to '{targetStatus}'.");
+            }
+        }
+
+        /// <summary>
         /// Publish event: Draft → Upcoming (makes event visible to employees)
         /// </summary>
         public async Task PublishEventAsync(Guid id)
@@ -347,20 +394,15 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         /// <summary>
-        /// Revert to draft: Upcoming → Draft (hide event from employees)
+        /// Revert to draft: DISABLED - One-way flow only (Draft → Upcoming → Active → Completed)
+        /// This method now throws an error to enforce one-way status transitions.
         /// </summary>
+        [Obsolete("Backward status transitions are no longer allowed. Events can only move forward.")]
         public async Task RevertToDraftAsync(Guid id)
         {
-            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
-            if (eventEntity == null)
-                throw new EventNotFoundException(id);
-
-            if (eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidEventStateException(id, $"Only upcoming events can be reverted to draft. Current status: {eventEntity.Status}");
-
-            eventEntity.RevertToDraft();
-
-            await _unitOfWork.SaveChangesAsync();
+            throw new InvalidOperationException(
+                "Backward status transitions are not allowed. Events can only move forward: " +
+                "Draft → Upcoming → Active → Completed.");
         }
 
         public async Task DeleteEventAsync(Guid id)

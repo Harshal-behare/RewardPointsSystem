@@ -398,10 +398,39 @@ export class AdminEventsComponent implements OnInit {
     return date.toISOString();
   }
 
+  // Status order for one-way flow validation
+  private readonly statusOrder: string[] = ['Draft', 'Upcoming', 'Active', 'Completed'];
+
+  /**
+   * Check if status transition is valid (one-way only: Draft → Upcoming → Active → Completed)
+   */
+  private isValidStatusTransition(currentStatus: string, newStatus: string): boolean {
+    const currentIndex = this.statusOrder.indexOf(currentStatus);
+    const newIndex = this.statusOrder.indexOf(newStatus);
+
+    // If status is the same, it's valid (no change)
+    if (currentIndex === newIndex) return true;
+
+    // Only forward transitions are allowed
+    return newIndex > currentIndex;
+  }
+
+  /**
+   * Get allowed next statuses for the current status
+   */
+  getAvailableStatusTransitions(currentStatus: string): string[] {
+    const currentIndex = this.statusOrder.indexOf(currentStatus);
+    if (currentIndex === -1) return this.statusOrder;
+    if (currentIndex >= this.statusOrder.length - 1) return [currentStatus]; // Completed - no transitions
+
+    // Return current status and next status only
+    return this.statusOrder.slice(currentIndex, currentIndex + 2);
+  }
+
   // Client-side validation matching backend rules
   validateEventModal(): boolean {
     this.eventModalValidationErrors = [];
-    
+
     // Event name validation
     const name = (this.selectedEvent.name || '').trim();
     if (!name) {
@@ -411,13 +440,13 @@ export class AdminEventsComponent implements OnInit {
         this.eventModalValidationErrors.push('Event name must be between 3 and 200 characters');
       }
     }
-    
+
     // Description validation
     const description = (this.selectedEvent.description || '').trim();
     if (description && description.length > 1000) {
       this.eventModalValidationErrors.push('Description cannot exceed 1000 characters');
     }
-    
+
     // Event date validation (must be in the future for new events)
     const eventDate = this.selectedEvent.eventDate;
     if (!eventDate) {
@@ -430,7 +459,7 @@ export class AdminEventsComponent implements OnInit {
         this.eventModalValidationErrors.push('Event date must be in the future');
       }
     }
-    
+
     // Points pool validation
     const pointsPool = this.selectedEvent.pointsPool || 0;
     if (pointsPool <= 0) {
@@ -439,7 +468,20 @@ export class AdminEventsComponent implements OnInit {
     if (pointsPool > 1000000) {
       this.eventModalValidationErrors.push('Points pool cannot exceed 1,000,000');
     }
-    
+
+    // One-way status transition validation (only for edit mode)
+    if (this.modalMode() === 'edit' && this.selectedEvent.id) {
+      const originalEvent = this.events().find(e => e.id === this.selectedEvent.id);
+      if (originalEvent && this.selectedEvent.status) {
+        if (!this.isValidStatusTransition(originalEvent.status, this.selectedEvent.status)) {
+          this.eventModalValidationErrors.push(
+            `Invalid status transition. Events can only move forward: Draft → Upcoming → Active → Completed. ` +
+            `Cannot change from "${originalEvent.status}" to "${this.selectedEvent.status}".`
+          );
+        }
+      }
+    }
+
     return this.eventModalValidationErrors.length === 0;
   }
 

@@ -268,7 +268,7 @@ namespace RewardPointsSystem.Api.Controllers
                 }
 
                 var updatedUser = await _userService.GetUserByIdAsync(id);
-                
+
                 var userDto = new UserResponseDto
                 {
                     Id = updatedUser.Id,
@@ -280,6 +280,11 @@ namespace RewardPointsSystem.Api.Controllers
                 };
 
                 return Success(userDto, "User updated successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Return validation errors (pending redemptions or last admin protection)
+                return Error(ex.Message, 400);
             }
             catch (Exception ex)
             {
@@ -293,23 +298,30 @@ namespace RewardPointsSystem.Api.Controllers
         /// </summary>
         /// <param name="id">User ID</param>
         /// <response code="200">User deactivated successfully</response>
+        /// <response code="400">Cannot deactivate user (pending redemptions or last admin)</response>
         /// <response code="404">User not found</response>
         [HttpPatch("{id}/deactivate")]
         [Authorize(Roles = "Admin")]
         [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
         public async Task<IActionResult> DeactivateUser(Guid id)
         {
             try
             {
                 var user = await _userService.GetUserByIdAsync(id);
-                
+
                 if (user == null)
                     return NotFoundError($"User with ID {id} not found");
 
                 await _userService.DeactivateUserAsync(id);
 
                 return Success<object>(null, "User deactivated successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Return validation errors (pending redemptions or last admin protection)
+                return Error(ex.Message, 400);
             }
             catch (Exception ex)
             {

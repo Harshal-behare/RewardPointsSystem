@@ -10,6 +10,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
 import { AdminService } from '../../../core/services/admin.service';
+import { RedemptionService } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -139,6 +140,7 @@ export class AdminUsersComponent implements OnInit {
     private router: Router,
     private userService: UserService,
     private adminService: AdminService,
+    private redemptionService: RedemptionService,
     private authService: AuthService,
     private toast: ToastService,
     private apiService: ApiService,
@@ -457,7 +459,26 @@ export class AdminUsersComponent implements OnInit {
     if (!this.validateUserModal()) {
       return;
     }
-    
+
+    // Check for last admin role change protection
+    if (this.modalMode() === 'edit') {
+      const originalUser = this.users().find(u => u.id === this.selectedUser.id);
+      if (originalUser && originalUser.role === 'Admin' && this.selectedUser.role !== 'Admin') {
+        // Trying to change admin to non-admin
+        if (this.adminCount() <= 1) {
+          this.modalValidationErrors = ['Cannot change role of the last remaining admin. At least one admin must exist in the system.'];
+          return;
+        }
+      }
+      // Check for last admin deactivation via modal
+      if (originalUser && originalUser.role === 'Admin' && originalUser.status === 'Active' && this.selectedUser.status === 'Inactive') {
+        if (this.adminCount() <= 1) {
+          this.modalValidationErrors = ['Cannot deactivate the last remaining admin. At least one admin must remain active.'];
+          return;
+        }
+      }
+    }
+
     if (this.modalMode() === 'create') {
       const createData: CreateUserDto = {
         email: this.selectedUser.email || '',
@@ -605,32 +626,41 @@ export class AdminUsersComponent implements OnInit {
   }
 
   async toggleUserStatus(user: DisplayUser): Promise<void> {
-    // Check if this is the last admin
-    if (this.isAdminActionDisabled(user) && user.status === 'Active') {
-      this.toast.error('Cannot deactivate the last admin in the system');
-      return;
+    // Only check validations when deactivating
+    if (user.status === 'Active') {
+      // Check if this is the last admin
+      if (this.isAdminActionDisabled(user)) {
+        this.toast.error('Cannot deactivate the last admin in the system. At least one admin must remain active.');
+        return;
+      }
+
+      // Check for pending redemptions before deactivating
+      const canDeactivate = await this.checkPendingRedemptionsForDeactivation(user);
+      if (!canDeactivate) {
+        return;
+      }
     }
-    
+
     const action = user.status === 'Active' ? 'deactivate' : 'activate';
-    const confirmed = user.status === 'Active' 
+    const confirmed = user.status === 'Active'
       ? await this.confirmDialog.confirmDeactivate(`user ${user.firstName} ${user.lastName}`)
       : await this.confirmDialog.confirmActivate(`user ${user.firstName} ${user.lastName}`);
-    
+
     if (confirmed) {
       const updateData: UpdateUserDto = {
         isActive: user.status !== 'Active'
       };
-      
+
       this.userService.updateUser(user.id, updateData).subscribe({
         next: (response) => {
           if (response.success) {
             // Update the user in the signal
-            const updatedUsers = this.users().map(u => 
+            const updatedUsers = this.users().map(u =>
               u.id === user.id ? { ...u, status: (u.status === 'Active' ? 'Inactive' : 'Active') as 'Active' | 'Inactive' } : u
             );
             this.users.set(updatedUsers);
             this.toast.success(`User ${action}d successfully!`);
-            
+
             // Reload admin count if an admin was activated/deactivated
             if (user.role === 'Admin') {
               this.adminService.getAdminCount().subscribe(res => {
@@ -649,5 +679,34 @@ export class AdminUsersComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Check if user has pending redemptions before allowing deactivation
+   * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
+   */
+  private async checkPendingRedemptionsForDeactivation(user: DisplayUser): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.redemptionService.getUserPendingRedemptionsCount(user.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data && response.data.count > 0) {
+            const count = response.data.count;
+            this.toast.error(
+              `Cannot deactivate user. ${user.firstName} ${user.lastName} has ${count} pending redemption${count > 1 ? 's' : ''}. ` +
+              `Please approve or reject all pending redemptions before deactivating this user.`
+            );
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        },
+        error: (error) => {
+          console.error('Error checking pending redemptions:', error);
+          // If the API endpoint doesn't exist yet, allow deactivation to proceed
+          // The backend should also validate this
+          resolve(true);
+        }
+      });
+    });
   }
 }

@@ -92,4 +92,9 @@ export class RedemptionService {
   deliverRedemption(id: string): Observable<ApiResponse<RedemptionDto>> {
     return this.api.patch<RedemptionDto>(`Redemptions/${id}/deliver`, {});
   }
+
+  // Get pending redemptions count for a specific user (for deactivation check)
+  getUserPendingRedemptionsCount(userId: string): Observable<ApiResponse<{ count: number }>> {
+    return this.api.get<{ count: number }>(`Redemptions/user/${userId}/pending-count`);
+  }
 }

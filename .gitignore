@@ -11,12 +11,7 @@
 *.sln.docstates
 *.md
 gitignore.sql
-# !CODE_REVIEW_AND_ISSUES.md
-# !PROJECT_WORKFLOW_DOCUMENTATION.md
-# !backend_fixes.md
-# !Validation.md
-# !frontend_fixes.md
-!design-system.md
+
 !README.md
 !agdata-srp-architecture.md
 !Project_Description.md 

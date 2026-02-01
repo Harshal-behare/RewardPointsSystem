@@ -476,6 +476,33 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
+        /// Get pending redemptions count for a specific user (Admin only - for deactivation check)
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <response code="200">Returns count of pending redemptions</response>
+        [HttpGet("user/{userId}/pending-count")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserPendingRedemptionsCount(Guid userId)
+        {
+            try
+            {
+                var redemptions = await _unitOfWork.Redemptions.FindAsync(
+                    r => r.UserId == userId &&
+                         (r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Pending ||
+                          r.Status == RewardPointsSystem.Domain.Entities.Operations.RedemptionStatus.Approved));
+
+                var count = redemptions.Count();
+                return Success(new { count });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving pending redemptions count for user {UserId}", userId);
+                return Error("Failed to retrieve pending redemptions count");
+            }
+        }
+
+        /// <summary>
         /// Get redemption history (Admin only)
         /// </summary>
         /// <param name="page">Page number</param>
