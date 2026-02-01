@@ -26,9 +26,9 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         public async Task<Event> CreateEventAsync(
-            string name, 
-            string description, 
-            DateTime date, 
+            string name,
+            string description,
+            DateTime date,
             int pointsPool,
             int? maxParticipants = null,
             DateTime? registrationStartDate = null,
@@ -43,16 +43,33 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new InvalidEventDataException("Event name is required");
-            
+
             if (string.IsNullOrWhiteSpace(description))
                 throw new InvalidEventDataException("Event description is required");
-            
-            if (pointsPool <= 0)
-                throw new InvalidEventDataException("Points pool must be positive");
-            
+
             // Only validate future date for creation
             if (date < DateTime.UtcNow.Date)
                 throw new InvalidEventDataException("Cannot create events in the past");
+
+            // Auto-calculate points pool from rank points if all three are provided
+            var calculatedPool = (firstPlacePoints ?? 0) + (secondPlacePoints ?? 0) + (thirdPlacePoints ?? 0);
+            if (calculatedPool > 0)
+            {
+                pointsPool = calculatedPool;
+            }
+
+            // Validate points pool (either provided or calculated)
+            if (pointsPool <= 0)
+                throw new InvalidEventDataException("Points pool must be positive. Provide TotalPointsPool or all three rank points (1st, 2nd, 3rd).");
+
+            // Validate rank order: 1st > 2nd > 3rd
+            if (firstPlacePoints.HasValue && secondPlacePoints.HasValue && thirdPlacePoints.HasValue)
+            {
+                if (secondPlacePoints >= firstPlacePoints)
+                    throw new InvalidEventDataException("Second place points must be less than first place points.");
+                if (thirdPlacePoints >= secondPlacePoints)
+                    throw new InvalidEventDataException("Third place points must be less than second place points.");
+            }
 
             // Get or create system user for event creation
             var systemUser = await GetOrCreateSystemUserAsync();
@@ -76,7 +93,7 @@ namespace RewardPointsSystem.Application.Services.Events
 
             await _unitOfWork.Events.AddAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
-            
+
             return eventEntity;
         }
 
@@ -112,7 +129,6 @@ namespace RewardPointsSystem.Application.Services.Events
             var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
             var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
             var eventDate = updates.EventDate ?? eventEntity.EventDate;
-            var pointsPool = updates.TotalPointsPool ?? eventEntity.TotalPointsPool;
             var maxParticipants = updates.MaxParticipants ?? eventEntity.MaxParticipants;
             var location = updates.Location ?? eventEntity.Location;
             var virtualLink = updates.VirtualLink ?? eventEntity.VirtualLink;
@@ -123,6 +139,19 @@ namespace RewardPointsSystem.Application.Services.Events
             var firstPlacePoints = updates.FirstPlacePoints ?? eventEntity.FirstPlacePoints;
             var secondPlacePoints = updates.SecondPlacePoints ?? eventEntity.SecondPlacePoints;
             var thirdPlacePoints = updates.ThirdPlacePoints ?? eventEntity.ThirdPlacePoints;
+
+            // Auto-calculate points pool from rank points if all three are provided
+            var calculatedPool = (firstPlacePoints ?? 0) + (secondPlacePoints ?? 0) + (thirdPlacePoints ?? 0);
+            var pointsPool = calculatedPool > 0 ? calculatedPool : (updates.TotalPointsPool ?? eventEntity.TotalPointsPool);
+
+            // Validate rank order: 1st > 2nd > 3rd
+            if (firstPlacePoints.HasValue && secondPlacePoints.HasValue && thirdPlacePoints.HasValue)
+            {
+                if (secondPlacePoints >= firstPlacePoints)
+                    throw new InvalidEventDataException("Second place points must be less than first place points.");
+                if (thirdPlacePoints >= secondPlacePoints)
+                    throw new InvalidEventDataException("Third place points must be less than second place points.");
+            }
 
             eventEntity.UpdateDetails(
                 name, 

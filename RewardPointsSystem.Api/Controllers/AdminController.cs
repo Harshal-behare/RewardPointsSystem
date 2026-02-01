@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.Interfaces;
+using System.Security.Claims;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -16,6 +18,7 @@ namespace RewardPointsSystem.Api.Controllers
         private readonly IUserPointsAccountService _accountService;
         private readonly IEventService _eventService;
         private readonly IInventoryService _inventoryService;
+        private readonly IAdminBudgetService _budgetService;
         private readonly IUnitOfWork _unitOfWork;
         private readonly ILogger<AdminController> _logger;
 
@@ -25,6 +28,7 @@ namespace RewardPointsSystem.Api.Controllers
             IUserPointsAccountService accountService,
             IEventService eventService,
             IInventoryService inventoryService,
+            IAdminBudgetService budgetService,
             IUnitOfWork unitOfWork,
             ILogger<AdminController> logger)
         {
@@ -33,6 +37,7 @@ namespace RewardPointsSystem.Api.Controllers
             _accountService = accountService;
             _eventService = eventService;
             _inventoryService = inventoryService;
+            _budgetService = budgetService;
             _unitOfWork = unitOfWork;
             _logger = logger;
         }
@@ -290,7 +295,7 @@ namespace RewardPointsSystem.Api.Controllers
                 // Get admin role
                 var adminRole = await _unitOfWork.Roles.GetAllAsync();
                 var admin = adminRole.FirstOrDefault(r => r.Name.ToLower() == "admin");
-                
+
                 if (admin == null)
                 {
                     return Success(new { count = 0 });
@@ -311,6 +316,97 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error retrieving admin count");
                 return Error("Failed to retrieve admin count");
             }
+        }
+
+        /// <summary>
+        /// Get current admin's monthly budget status
+        /// </summary>
+        /// <response code="200">Returns budget status or null if no budget set</response>
+        [HttpGet("budget")]
+        [ProducesResponseType(typeof(ApiResponse<AdminBudgetResponseDto>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBudget()
+        {
+            try
+            {
+                var adminUserId = GetCurrentUserId();
+                if (adminUserId == null)
+                    return Unauthorized();
+
+                var budget = await _budgetService.GetCurrentBudgetAsync(adminUserId.Value);
+                return Success(budget);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving admin budget");
+                return Error("Failed to retrieve budget");
+            }
+        }
+
+        /// <summary>
+        /// Set or update monthly budget limit
+        /// </summary>
+        /// <param name="dto">Budget configuration</param>
+        /// <response code="200">Budget updated successfully</response>
+        /// <response code="422">Validation failed</response>
+        [HttpPut("budget")]
+        [ProducesResponseType(typeof(ApiResponse<AdminBudgetResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ValidationErrorResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> SetBudget([FromBody] SetBudgetDto dto)
+        {
+            try
+            {
+                var adminUserId = GetCurrentUserId();
+                if (adminUserId == null)
+                    return Unauthorized();
+
+                var budget = await _budgetService.SetBudgetAsync(adminUserId.Value, dto);
+                return Success(budget, "Budget updated successfully");
+            }
+            catch (ArgumentException ex)
+            {
+                return Error(ex.Message, 422);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error setting admin budget");
+                return Error("Failed to set budget");
+            }
+        }
+
+        /// <summary>
+        /// Get budget usage history for last 12 months
+        /// </summary>
+        /// <param name="months">Number of months to retrieve (default 12)</param>
+        /// <response code="200">Returns budget history</response>
+        [HttpGet("budget/history")]
+        [ProducesResponseType(typeof(ApiResponse<IEnumerable<BudgetHistoryItemDto>>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetBudgetHistory([FromQuery] int months = 12)
+        {
+            try
+            {
+                var adminUserId = GetCurrentUserId();
+                if (adminUserId == null)
+                    return Unauthorized();
+
+                var history = await _budgetService.GetBudgetHistoryAsync(adminUserId.Value, months);
+                return Success(history);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving budget history");
+                return Error("Failed to retrieve budget history");
+            }
+        }
+
+        private Guid? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return null;
+
+            return userId;
         }
     }
 }

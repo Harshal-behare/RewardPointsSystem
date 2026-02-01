@@ -185,3 +185,11 @@
 .toggle-password:hover .eye {
   opacity: 1;
 }
+
+.form-hint {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+  text-align: left;
+}

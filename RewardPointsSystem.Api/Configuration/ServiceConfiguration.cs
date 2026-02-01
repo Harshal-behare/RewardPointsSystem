@@ -57,6 +57,9 @@ namespace RewardPointsSystem.Api.Configuration
             services.AddScoped<IAdminDashboardService, AdminDashboardService>();
             services.AddScoped<IEmployeeDashboardService, EmployeeDashboardService>();
 
+            // Budget Services
+            services.AddScoped<IAdminBudgetService, AdminBudgetService>();
+
             return services;
         }
     }

@@ -22,6 +22,7 @@ namespace RewardPointsSystem.Infrastructure.Data
         public DbSet<Role> Roles { get; set; }
         public DbSet<UserRole> UserRoles { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<AdminMonthlyBudget> AdminMonthlyBudgets { get; set; }
 
         // Account Entities
         public DbSet<UserPointsAccount> UserPointsAccounts { get; set; }
@@ -116,6 +117,37 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.Property(e => e.AssignedBy).IsRequired();
 
                 // Relationships configured in User and Role entities
+            });
+
+            // Configure AdminMonthlyBudget Entity
+            modelBuilder.Entity<AdminMonthlyBudget>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.AdminUserId).IsRequired();
+                entity.Property(e => e.MonthYear).IsRequired();
+                entity.Property(e => e.BudgetLimit).IsRequired();
+                entity.Property(e => e.PointsAwarded).IsRequired();
+                entity.Property(e => e.IsHardLimit).IsRequired();
+                entity.Property(e => e.WarningThreshold).IsRequired();
+                entity.Property(e => e.CreatedAt).IsRequired();
+                entity.Property(e => e.UpdatedAt).IsRequired();
+
+                // Check constraints
+                entity.HasCheckConstraint("CK_AdminMonthlyBudget_BudgetLimit", "[BudgetLimit] > 0");
+                entity.HasCheckConstraint("CK_AdminMonthlyBudget_PointsAwarded", "[PointsAwarded] >= 0");
+                entity.HasCheckConstraint("CK_AdminMonthlyBudget_WarningThreshold", "[WarningThreshold] >= 0 AND [WarningThreshold] <= 100");
+
+                // Unique constraint - one budget per admin per month
+                entity.HasIndex(e => new { e.AdminUserId, e.MonthYear }).IsUnique();
+
+                // Relationship with User (Admin)
+                entity.HasOne(e => e.AdminUser)
+                    .WithMany()
+                    .HasForeignKey(e => e.AdminUserId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // Index on MonthYear for history queries
+                entity.HasIndex(e => e.MonthYear);
             });
 
             // Configure RefreshToken Entity

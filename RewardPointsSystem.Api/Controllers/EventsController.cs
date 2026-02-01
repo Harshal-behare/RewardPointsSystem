@@ -5,6 +5,7 @@ using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Events;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Events;
+using System.Security.Claims;
 
 namespace RewardPointsSystem.Api.Controllers
 {
@@ -15,17 +16,20 @@ namespace RewardPointsSystem.Api.Controllers
     {
         private readonly IEventService _eventService;
         private readonly IEventParticipationService _participationService;
+        private readonly IPointsAwardingService _pointsAwardingService;
         private readonly IUserService _userService;
         private readonly ILogger<EventsController> _logger;
 
         public EventsController(
             IEventService eventService,
             IEventParticipationService participationService,
+            IPointsAwardingService pointsAwardingService,
             IUserService userService,
             ILogger<EventsController> logger)
         {
             _eventService = eventService;
             _participationService = participationService;
+            _pointsAwardingService = pointsAwardingService;
             _userService = userService;
             _logger = logger;
         }
@@ -454,6 +458,144 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error retrieving all events");
                 return Error("Failed to retrieve events");
             }
+        }
+
+        /// <summary>
+        /// Bulk award points to event winners (Admin only)
+        /// Awards points to multiple winners in a single transaction
+        /// </summary>
+        /// <param name="id">Event ID</param>
+        /// <param name="dto">List of winners with points and ranks</param>
+        /// <response code="200">Points awarded successfully</response>
+        /// <response code="404">Event not found</response>
+        /// <response code="400">Validation failed (not enough points, already awarded, etc.)</response>
+        [HttpPost("{id}/award-winners")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> AwardWinners(Guid id, [FromBody] BulkAwardWinnersDto dto)
+        {
+            try
+            {
+                var eventEntity = await _eventService.GetEventByIdAsync(id);
+                if (eventEntity == null)
+                    return NotFoundError($"Event with ID {id} not found");
+
+                if (dto.Awards == null || !dto.Awards.Any())
+                    return Error("Awards list cannot be empty", 400);
+
+                // Validate ranks are unique and within 1-3
+                var ranks = dto.Awards.Select(a => a.EventRank).ToList();
+                if (ranks.Distinct().Count() != ranks.Count)
+                    return Error("Each winner must have a unique rank", 400);
+
+                if (ranks.Any(r => r < 1 || r > 3))
+                    return Error("Ranks must be between 1 and 3", 400);
+
+                // Validate points match event configuration if set
+                if (eventEntity.FirstPlacePoints.HasValue)
+                {
+                    var firstPlace = dto.Awards.FirstOrDefault(a => a.EventRank == 1);
+                    var secondPlace = dto.Awards.FirstOrDefault(a => a.EventRank == 2);
+                    var thirdPlace = dto.Awards.FirstOrDefault(a => a.EventRank == 3);
+
+                    if (firstPlace != null && firstPlace.Points != eventEntity.FirstPlacePoints.Value)
+                        return Error($"First place points must be {eventEntity.FirstPlacePoints.Value}", 400);
+                    if (secondPlace != null && secondPlace.Points != eventEntity.SecondPlacePoints.Value)
+                        return Error($"Second place points must be {eventEntity.SecondPlacePoints.Value}", 400);
+                    if (thirdPlace != null && thirdPlace.Points != eventEntity.ThirdPlacePoints.Value)
+                        return Error($"Third place points must be {eventEntity.ThirdPlacePoints.Value}", 400);
+                }
+
+                await _pointsAwardingService.BulkAwardPointsAsync(id, dto.Awards);
+
+                var updatedEvent = await _eventService.GetEventByIdAsync(id);
+                var userNames = await GetUserNamesForEventsAsync(new[] { updatedEvent });
+                var eventDto = MapToEventResponseDto(updatedEvent, userNames);
+
+                return Success(eventDto, "Points awarded to winners successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                return Error(ex.Message, 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error awarding winners for event {EventId}", id);
+                return Error("Failed to award winners");
+            }
+        }
+
+        /// <summary>
+        /// Unregister a participant from an event
+        /// Self-unregister or admin can unregister anyone
+        /// </summary>
+        /// <param name="id">Event ID</param>
+        /// <param name="userId">User ID to unregister</param>
+        /// <response code="200">Participant unregistered successfully</response>
+        /// <response code="404">Event or participant not found</response>
+        /// <response code="400">Cannot unregister (event started, already awarded, etc.)</response>
+        /// <response code="403">Not authorized to unregister this user</response>
+        [HttpDelete("{id}/participants/{userId}")]
+        [Authorize]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status403Forbidden)]
+        public async Task<IActionResult> UnregisterParticipant(Guid id, Guid userId)
+        {
+            try
+            {
+                var eventEntity = await _eventService.GetEventByIdAsync(id);
+                if (eventEntity == null)
+                    return NotFoundError($"Event with ID {id} not found");
+
+                // Check authorization - either self or admin
+                var currentUserId = GetCurrentUserId();
+                var isAdmin = User.IsInRole("Admin");
+
+                if (currentUserId != userId && !isAdmin)
+                    return StatusCode(403, new ErrorResponse { Message = "Not authorized to unregister this participant" });
+
+                // Check if event has started (Active or Completed)
+                if (eventEntity.Status == EventStatus.Active)
+                    return Error("Cannot unregister from an event that is in progress", 400);
+
+                if (eventEntity.Status == EventStatus.Completed)
+                    return Error("Cannot unregister from a completed event", 400);
+
+                // Check if user has already been awarded points
+                var hasBeenAwarded = await _pointsAwardingService.HasUserBeenAwardedAsync(id, userId);
+                if (hasBeenAwarded)
+                    return Error("Cannot unregister a participant who has already been awarded points", 400);
+
+                await _participationService.RemoveParticipantAsync(id, userId);
+
+                return Success<object>(null, "Participant unregistered successfully");
+            }
+            catch (InvalidOperationException ex)
+            {
+                if (ex.Message.Contains("not registered"))
+                    return NotFoundError("User is not registered for this event");
+                return Error(ex.Message, 400);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error unregistering participant {UserId} from event {EventId}", userId, id);
+                return Error("Failed to unregister participant");
+            }
+        }
+
+        private Guid? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return null;
+
+            return userId;
         }
     }
 }

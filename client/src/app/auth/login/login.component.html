@@ -64,8 +64,15 @@
               @if (pwd?.errors?.['minlength']) {
                 <span>Password must be at least 8 characters</span>
               }
+              @if (pwd?.errors?.['maxlength']) {
+                <span>Password cannot exceed 20 characters</span>
+              }
+              @if (pwd?.errors?.['pattern']) {
+                <span>Password must include uppercase, lowercase, number, and special character</span>
+              }
             </div>
           }
+          <small class="form-hint">8-20 chars, uppercase, lowercase, number, special char</small>
         </div>
 
         <!-- Show all validation errors from backend -->

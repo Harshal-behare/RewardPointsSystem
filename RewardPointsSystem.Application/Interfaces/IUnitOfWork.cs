@@ -14,6 +14,7 @@ namespace RewardPointsSystem.Application.Interfaces
         IRepository<User> Users { get; }
         IRepository<Role> Roles { get; }
         IRepository<UserRole> UserRoles { get; }
+        IRepository<AdminMonthlyBudget> AdminMonthlyBudgets { get; }
 
         // Event repositories
         IRepository<Event> Events { get; }

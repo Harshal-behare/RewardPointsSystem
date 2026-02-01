@@ -20,6 +20,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private IRepository<User> _users;
         private IRepository<Role> _roles;
         private IRepository<UserRole> _userRoles;
+        private IRepository<AdminMonthlyBudget> _adminMonthlyBudgets;
         private IRepository<Event> _events;
         private IRepository<EventParticipant> _eventParticipants;
         private IRepository<UserPointsAccount> _userPointsAccounts;
@@ -39,6 +40,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         public IRepository<User> Users => _users ??= new EfRepository<User>(_context);
         public IRepository<Role> Roles => _roles ??= new EfRepository<Role>(_context);
         public IRepository<UserRole> UserRoles => _userRoles ??= new EfRepository<UserRole>(_context);
+        public IRepository<AdminMonthlyBudget> AdminMonthlyBudgets => _adminMonthlyBudgets ??= new EfRepository<AdminMonthlyBudget>(_context);
 
         // Event repositories
         public IRepository<Event> Events => _events ??= new EfRepository<Event>(_context);

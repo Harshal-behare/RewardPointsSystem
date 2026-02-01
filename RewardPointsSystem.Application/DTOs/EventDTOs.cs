@@ -61,6 +61,14 @@ namespace RewardPointsSystem.Application.DTOs
     }
 
     /// <summary>
+    /// DTO for bulk awarding winners endpoint
+    /// </summary>
+    public class BulkAwardWinnersDto
+    {
+        public List<WinnerDto> Awards { get; set; } = new();
+    }
+
+    /// <summary>
     /// DTO for transaction summaries - Architecture Compliant
     /// </summary>
     public class TransactionSummaryDto
