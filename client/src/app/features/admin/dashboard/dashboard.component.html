@@ -192,6 +192,35 @@
     </div>
   </app-card>
 
+  <!-- Charts Section -->
+  <div class="grid-2-col charts-section">
+    <app-card title="Redemption Status Distribution" class="chart-card">
+      <div class="chart-container">
+        <apx-chart
+          [series]="redemptionChartOptions().series"
+          [chart]="redemptionChartOptions().chart"
+          [labels]="redemptionChartOptions().labels"
+          [colors]="redemptionChartOptions().colors"
+          [legend]="redemptionChartOptions().legend"
+          [responsive]="redemptionChartOptions().responsive"
+        ></apx-chart>
+      </div>
+    </app-card>
+
+    <app-card title="Event Status Distribution" class="chart-card">
+      <div class="chart-container">
+        <apx-chart
+          [series]="eventChartOptions().series"
+          [chart]="eventChartOptions().chart"
+          [labels]="eventChartOptions().labels"
+          [colors]="eventChartOptions().colors"
+          [legend]="eventChartOptions().legend"
+          [responsive]="eventChartOptions().responsive"
+        ></apx-chart>
+      </div>
+    </app-card>
+  </div>
+
   <!-- Quick Actions Section -->
   <app-card title="Quick Actions" class="quick-actions-card">
     <div class="quick-actions-grid">

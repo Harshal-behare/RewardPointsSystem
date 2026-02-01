@@ -15,7 +15,7 @@
           <label for="email">Email</label>
           <input id="email" type="email" formControlName="email" placeholder="" maxlength="255" />
 
-          @if (form.get('email')?.invalid && form.get('email')?.touched) {
+          @if (form.get('email')?.invalid && (form.get('email')?.dirty || form.get('email')?.touched)) {
             <div class="error">
               @if (form.get('email')?.errors?.['required']) {
                 <span>Email is required</span><br />
@@ -50,13 +50,12 @@
               (click)="togglePassword()"
               [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
             >
-              <!-- Simple eye icon using text. You can replace with SVG/FontAwesome -->
-              <span class="eye">{{ showPassword ? '🙈' : '👁️' }}</span>
+              <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
             </button>
           </div>
 
           @let pwd = form.get('password');
-          @if (pwd?.invalid && pwd?.touched) {
+          @if (pwd?.invalid && (pwd?.dirty || pwd?.touched)) {
             <div class="error">
               @if (pwd?.errors?.['required']) {
                 <span>Password is required</span>
@@ -89,7 +88,9 @@
           <div class="error">{{ errorMsg() }}</div>
         }
 
-        <button class="login-btn" type="submit" [disabled]="loading()">
+        <button class="login-btn" type="submit"
+                [disabled]="loading() || form.invalid"
+                [class.invalid]="form.invalid">
           {{ loading() ? 'Signing in...' : 'Login' }}
         </button>
 

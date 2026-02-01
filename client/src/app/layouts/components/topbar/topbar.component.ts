@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, signal, input } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service';
@@ -10,7 +10,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   standalone: true,
   imports: [IconComponent],
   template: `
-    <header class="topbar">
+    <header class="topbar" [class.sidebar-collapsed]="sidebarCollapsed()">
       <div class="topbar-left">
         <h1>{{ pageTitle() }}</h1>
       </div>
@@ -75,6 +75,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       justify-content: space-between;
       padding: 0 32px;
       z-index: 90;
+      transition: left 0.3s ease;
+    }
+
+    .topbar.sidebar-collapsed {
+      left: 70px;
     }
 
     .topbar-left h1 {
@@ -239,9 +244,27 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       margin: 4px 0;
     }
 
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .topbar {
+        left: 0;
+        padding: 0 16px;
+      }
+
+      .topbar-left h1 {
+        font-size: 18px;
+      }
+
+      .user-info {
+        display: none;
+      }
+    }
+
   `]
 })
 export class TopbarComponent implements OnInit, OnDestroy {
+  sidebarCollapsed = input<boolean>(false);
+
   pageTitle = signal('Dashboard');
   userName = signal('Admin User');
   userRole = signal('Administrator');

@@ -3,6 +3,7 @@ import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { filter, takeUntil, forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { NgApexchartsModule } from 'ng-apexcharts';
 import { CardComponent } from '../../../shared/components/card/card.component';
 import { ButtonComponent } from '../../../shared/components/button/button.component';
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
@@ -39,7 +40,8 @@ interface RecentActivity {
     ButtonComponent,
     KpiCardComponent,
     IconComponent,
-    BadgeComponent
+    BadgeComponent,
+    NgApexchartsModule
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
@@ -92,6 +94,68 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   eventsNeedingAttention = signal<EventDto[]>([]);
+
+  // Chart Options
+  redemptionChartOptions = computed(() => ({
+    series: [
+      this.redemptionSummary().pending,
+      this.redemptionSummary().approved,
+      this.redemptionSummary().delivered,
+      this.redemptionSummary().rejected,
+      this.redemptionSummary().cancelled
+    ],
+    chart: {
+      type: 'donut' as const,
+      height: 300,
+      events: {
+        dataPointSelection: () => {
+          this.navigateToPage('/admin/redemptions');
+        }
+      }
+    },
+    labels: ['Pending', 'Approved', 'Delivered', 'Rejected', 'Cancelled'],
+    colors: ['#F39C12', '#27AE60', '#3498DB', '#E74C3C', '#95A5A6'],
+    legend: {
+      position: 'bottom' as const
+    },
+    responsive: [{
+      breakpoint: 480,
+      options: {
+        chart: { height: 250 },
+        legend: { position: 'bottom' as const }
+      }
+    }]
+  }));
+
+  eventChartOptions = computed(() => ({
+    series: [
+      this.eventStatusSummary().draft,
+      this.eventStatusSummary().upcoming,
+      this.eventStatusSummary().active,
+      this.eventStatusSummary().completed
+    ],
+    chart: {
+      type: 'donut' as const,
+      height: 300,
+      events: {
+        dataPointSelection: () => {
+          this.navigateToPage('/admin/events');
+        }
+      }
+    },
+    labels: ['Draft', 'Upcoming', 'Active', 'Completed'],
+    colors: ['#95A5A6', '#3498DB', '#27AE60', '#34495E'],
+    legend: {
+      position: 'bottom' as const
+    },
+    responsive: [{
+      breakpoint: 480,
+      options: {
+        chart: { height: 250 },
+        legend: { position: 'bottom' as const }
+      }
+    }]
+  }));
 
   // Quick Action Modals
   showEventModal = signal(false);

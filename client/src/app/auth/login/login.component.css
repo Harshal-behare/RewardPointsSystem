@@ -112,13 +112,20 @@
   transition: background-color 0.15s ease;
 }
 
-.login-btn:hover {
-  background: var(--brand-dark);
-}
-
 .login-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  background: #95a5a6;
+}
+
+.login-btn.invalid {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: #95a5a6;
+}
+
+.login-btn:not(:disabled):not(.invalid):hover {
+  background: var(--brand-dark);
 }
 
 .forgot-link {

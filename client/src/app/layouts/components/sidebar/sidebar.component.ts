@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal, output } from '@angular/core';
 import { RouterModule } from '@angular/router';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 
@@ -7,14 +7,23 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   standalone: true,
   imports: [RouterModule, IconComponent],
   template: `
-    <aside class="sidebar">
-      <!-- Sidebar Header with Logo only -->
+    <aside class="sidebar" [class.collapsed]="isCollapsed()">
+      <!-- Sidebar Header with Logo and Toggle -->
       <div class="sidebar-header">
         <img
           src="assets/Agdata_logo.png"
           alt="AGDATA Logo"
           class="sidebar-logo"
+          [class.hidden]="isCollapsed()"
         />
+        <button
+          class="toggle-btn"
+          (click)="toggleSidebar()"
+          [attr.aria-label]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+          title="{{ isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar' }}"
+        >
+          <app-icon [name]="isCollapsed() ? 'chevron-right' : 'chevron-left'" [size]="20"></app-icon>
+        </button>
       </div>
 
       <!-- Navigation -->
@@ -24,9 +33,10 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
             [routerLink]="item.route"
             routerLinkActive="active"
             class="nav-item"
+            [title]="item.label"
           >
             <span class="nav-icon"><app-icon [name]="item.icon" [size]="20"></app-icon></span>
-            <span class="nav-label">{{ item.label }}</span>
+            <span class="nav-label" [class.hidden]="isCollapsed()">{{ item.label }}</span>
           </a>
         }
       </nav>
@@ -44,6 +54,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       display: flex;
       flex-direction: column;
       z-index: 100;
+      transition: width 0.3s ease;
+    }
+
+    .sidebar.collapsed {
+      width: 70px;
     }
 
     .sidebar-header {
@@ -53,12 +68,51 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       justify-content: center;
       border-bottom: 1px solid #F4F6F7;
       padding: 12px;
+      position: relative;
     }
 
     .sidebar-logo {
       max-height: 60px;
       max-width: 100%;
       object-fit: contain;
+      transition: opacity 0.2s ease;
+    }
+
+    .sidebar-logo.hidden {
+      opacity: 0;
+      width: 0;
+      height: 0;
+      visibility: hidden;
+    }
+
+    .toggle-btn {
+      position: absolute;
+      right: 8px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: transparent;
+      border: 1px solid #E8EBED;
+      border-radius: 6px;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #7A7A7A;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-btn:hover {
+      background-color: #F4F6F7;
+      color: #27AE60;
+      border-color: #27AE60;
+    }
+
+    .sidebar.collapsed .toggle-btn {
+      right: auto;
+      left: 50%;
+      transform: translate(-50%, -50%);
     }
 
     .sidebar-nav {
@@ -78,6 +132,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       font-weight: 500;
     }
 
+    .sidebar.collapsed .nav-item {
+      padding: 12px;
+      justify-content: center;
+    }
+
     .nav-item:hover {
       background-color: #F4F6F7;
       color: #27AE60;
@@ -92,14 +151,33 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
     .nav-icon {
       margin-right: 12px;
       font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .sidebar.collapsed .nav-icon {
+      margin-right: 0;
     }
 
     .nav-label {
       flex: 1;
+      white-space: nowrap;
+      overflow: hidden;
+      transition: opacity 0.2s ease;
+    }
+
+    .nav-label.hidden {
+      opacity: 0;
+      width: 0;
+      visibility: hidden;
     }
   `]
 })
 export class SidebarComponent {
+  isCollapsed = signal(false);
+  collapsedChange = output<boolean>();
+
   menuItems = [
     { icon: 'dashboard', label: 'Dashboard', route: '/admin/dashboard' },
     { icon: 'events', label: 'Events', route: '/admin/events' },
@@ -108,4 +186,9 @@ export class SidebarComponent {
     { icon: 'users', label: 'Users', route: '/admin/users' },
     { icon: 'user', label: 'Profile', route: '/admin/profile' },
   ];
+
+  toggleSidebar(): void {
+    this.isCollapsed.update(v => !v);
+    this.collapsedChange.emit(this.isCollapsed());
+  }
 }

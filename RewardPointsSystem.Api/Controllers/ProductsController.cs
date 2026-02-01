@@ -202,12 +202,12 @@ namespace RewardPointsSystem.Api.Controllers
                 // Create inventory record if stock quantity is provided
                 if (dto.StockQuantity > 0)
                 {
-                    await _inventoryService.CreateInventoryAsync(product.Id, dto.StockQuantity, 5); // Default reorder level of 5
+                    await _inventoryService.CreateInventoryAsync(product.Id, dto.StockQuantity, 10); // Default reorder level of 10
                 }
                 else
                 {
                     // Create inventory with 0 stock to ensure the record exists
-                    await _inventoryService.CreateInventoryAsync(product.Id, 0, 5);
+                    await _inventoryService.CreateInventoryAsync(product.Id, 0, 10);
                 }
 
                 var productDto = new ProductResponseDto
@@ -341,7 +341,7 @@ namespace RewardPointsSystem.Api.Controllers
                     {
                         _logger.LogInformation("Creating new inventory for product");
                         // Create new inventory if it doesn't exist
-                        await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 5);
+                        await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 10);
                         _logger.LogInformation("Inventory created successfully");
                     }
                 }

@@ -346,6 +346,25 @@ $bg: #F4F6F7;
   }
 }
 
+// Charts Section
+.charts-section {
+  margin-bottom: 30px;
+}
+
+.chart-card {
+  .chart-container {
+    padding: 16px;
+    min-height: 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    apx-chart {
+      width: 100%;
+    }
+  }
+}
+
 // Quick Actions Section
 .quick-actions-card {
   margin-bottom: 30px;
