@@ -13,8 +13,9 @@ $font: 'Roboto', -apple-system, sans-serif;
 
 .profile-page {
   font-family: $font;
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px;
 }
 
 // Loading

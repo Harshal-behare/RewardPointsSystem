@@ -391,11 +391,18 @@ export class EmployeeDashboardComponent implements OnInit {
     // Load my redemptions summary
     this.redemptionService.getMyRedemptions().subscribe({
       next: (response) => {
+        console.log('Dashboard redemptions API response:', response);
         if (response.success && response.data) {
-          const redemptions = response.data;
-          const pending = redemptions.filter((r: RedemptionDto) => r.status === 'Pending').length;
-          const approved = redemptions.filter((r: RedemptionDto) => r.status === 'Approved').length;
-          const delivered = redemptions.filter((r: RedemptionDto) => r.status === 'Delivered').length;
+          // Handle both array and paginated response formats
+          const redemptions = Array.isArray(response.data) ? response.data :
+                             (response.data as any).items || [];
+          console.log('Redemptions data:', redemptions);
+          // Use case-insensitive comparison for status
+          const pending = redemptions.filter((r: RedemptionDto) => r.status?.toLowerCase() === 'pending').length;
+          const approved = redemptions.filter((r: RedemptionDto) => r.status?.toLowerCase() === 'approved').length;
+          const delivered = redemptions.filter((r: RedemptionDto) => r.status?.toLowerCase() === 'delivered').length;
+          
+          console.log('Redemption counts:', { pending, approved, delivered });
           
           this.redemptionsSummary.set({
             pending,

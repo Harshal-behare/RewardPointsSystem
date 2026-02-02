@@ -17,9 +17,9 @@
   @if (!isLoading()) {
   <div class="summary-section">
     <div class="summary-card earned">
-      <div class="summary-icon"><app-icon name="trending-up" [size]="24"></app-icon></div>
+      <div class="summary-icon"><app-icon name="rupee" [size]="24"></app-icon></div>
       <div class="summary-info">
-        <span class="summary-label">Total Earned</span>
+        <span class="summary-label">Earned Points</span>
         <span class="summary-value">{{ totalEarned() }}</span>
       </div>
     </div>
@@ -59,7 +59,7 @@
         [class.active]="activeTab === 'points'"
         (click)="switchTab('points')"
       >
-        <app-icon name="trending-up" [size]="18"></app-icon> Earning History
+        <app-icon name="rupee" [size]="18"></app-icon> Earning History
       </button>
       <button
         class="tab-btn"

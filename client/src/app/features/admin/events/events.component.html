@@ -93,7 +93,7 @@
               Points Pool <span class="sort-icon">{{ getSortIcon('pointsPool') }}</span>
             </th>
             <th>Prizes</th>
-            <th class="sortable" (click)="toggleSort('participantCount')">
+            <th class="sortable centered-header" (click)="toggleSort('participantCount')">
               Participants <span class="sort-icon">{{ getSortIcon('participantCount') }}</span>
             </th>
             <th>Actions</th>
@@ -121,20 +121,20 @@
                 @if (event.firstPlacePoints || event.secondPlacePoints || event.thirdPlacePoints) {
                   <div class="prize-badges">
                     @if (event.firstPlacePoints) {
-                      <span class="prize-badge gold"><app-icon name="medal-gold" [size]="14"></app-icon> {{ event.firstPlacePoints }}</span>
+                      <span class="prize-badge gold">🥇 {{ event.firstPlacePoints }}</span>
                     }
                     @if (event.secondPlacePoints) {
-                      <span class="prize-badge silver"><app-icon name="medal-silver" [size]="14"></app-icon> {{ event.secondPlacePoints }}</span>
+                      <span class="prize-badge silver">🥈 {{ event.secondPlacePoints }}</span>
                     }
                     @if (event.thirdPlacePoints) {
-                      <span class="prize-badge bronze"><app-icon name="medal-bronze" [size]="14"></app-icon> {{ event.thirdPlacePoints }}</span>
+                      <span class="prize-badge bronze">🥉 {{ event.thirdPlacePoints }}</span>
                     }
                   </div>
                 } @else {
                   <span class="no-prizes">-</span>
                 }
               </td>
-              <td>
+              <td class="centered-cell">
                 <span class="participant-count">{{ event.participantCount }}</span>
               </td>
               <td>
