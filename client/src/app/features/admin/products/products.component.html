@@ -81,7 +81,7 @@
         @for (product of filteredProducts(); track product.id) {
           <div class="product-card">
             <div class="product-image">
-              <img [src]="product.imageUrl" [alt]="product.name" />
+              <img [src]="product.imageUrl" [alt]="product.name" (error)="handleImageError($event)" />
               <app-badge 
                 [variant]="getStatusVariant(product.status)" 
                 class="status-badge"
@@ -135,7 +135,7 @@
               <tr>
                 <td>
                   <div class="table-product">
-                    <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" />
+                    <img [src]="product.imageUrl" [alt]="product.name" class="table-product-image" (error)="handleImageError($event)" />
                     <div>
                       <strong>{{ product.name }}</strong>
                       <span class="table-description">{{ product.description }}</span>

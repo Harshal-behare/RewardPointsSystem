@@ -11,7 +11,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { AdminService, DashboardStats, EventStatusSummary, RedemptionSummary, InventoryAlert, PointsSummary } from '../../../core/services/admin.service';
 import { EventService, CreateEventDto, EventDto } from '../../../core/services/event.service';
-import { ProductService, CreateProductDto } from '../../../core/services/product.service';
+import { ProductService, CreateProductDto, CategoryDto } from '../../../core/services/product.service';
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 
@@ -53,11 +53,11 @@ export class AdminDashboardComponent implements OnInit {
   isLoading = signal(true);
   
   kpiData = signal<KpiData[]>([
-    { icon: 'users', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
-    { icon: 'events', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
-    { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
-    { icon: 'star', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
-    { icon: 'pending', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+    { icon: 'users', label: 'Active Users', value: 0, trend: 0, route: '/admin/users' },
+    { icon: 'events', label: 'Active Events', value: 0, trend: 0, route: '/admin/events' },
+    { icon: 'cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+    { icon: 'trending-up', label: 'Redemption Rate', value: '0%', trend: 0, route: '/admin/redemptions' },
+    { icon: 'warning', label: 'Low Stock Alerts', value: 0, trend: 0, route: '/admin/products' },
   ]);
 
   recentActivities = signal<RecentActivity[]>([]);
@@ -160,17 +160,32 @@ export class AdminDashboardComponent implements OnInit {
   // Quick Action Modals
   showEventModal = signal(false);
   showProductModal = signal(false);
-  newEvent = {
+  eventModalValidationErrors = signal<string[]>([]);
+  productModalValidationErrors = signal<string[]>([]);
+  categories = signal<CategoryDto[]>([]);
+
+  newEvent: any = {
     name: '',
     description: '',
     eventDate: '',
-    pointsPool: 0
+    eventEndDate: '',
+    maxParticipants: 0,
+    pointsPool: 0,
+    firstPlacePoints: 0,
+    secondPlacePoints: 0,
+    thirdPlacePoints: 0,
+    registrationStartDate: '',
+    registrationEndDate: '',
+    location: '',
+    virtualLink: '',
+    imageUrl: ''
   };
-  newProduct = {
+
+  newProduct: any = {
     name: '',
     description: '',
-    category: '',
-    pointsPrice: 0,
+    categoryId: '',
+    pointsPrice: 1,
     stock: 0,
     imageUrl: ''
   };
@@ -194,6 +209,20 @@ export class AdminDashboardComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadDashboardData();
+    this.loadCategories();
+  }
+
+  loadCategories(): void {
+    this.productService.getCategories().subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.categories.set(response.data);
+        }
+      },
+      error: (error) => {
+        console.error('Error loading categories:', error);
+      }
+    });
   }
 
   loadDashboardData(): void {
@@ -243,17 +272,53 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   private updateKpiData(stats: DashboardStats): void {
+    // Calculate useful metrics
+    const pointsInCirculation = (stats.totalPointsDistributed || 0) - (stats.totalPointsRedeemed || 0);
+    const redemptionRate = stats.totalPointsDistributed > 0
+      ? Math.round(((stats.totalPointsRedeemed || 0) / stats.totalPointsDistributed) * 100)
+      : 0;
+
     this.kpiData.set([
-      { icon: 'users', label: 'Total Users', value: stats.totalUsers || 0, trend: 0, route: '/admin/users' },
-      { icon: 'events', label: 'Total Events', value: stats.totalEvents || 0, trend: 0, route: '/admin/events' },
-      { icon: 'gift', label: 'Total Products', value: stats.totalProducts || 0, trend: 0, route: '/admin/products' },
-      { icon: 'star', label: 'Points Distributed', value: this.formatNumber(stats.totalPointsDistributed || 0), trend: 0, route: '/admin/dashboard' },
-      { icon: 'pending', label: 'Pending Redemptions', value: stats.pendingRedemptions || 0, trend: 0, route: '/admin/redemptions' },
+      {
+        icon: 'users',
+        label: 'Active Users',
+        value: stats.totalActiveUsers || 0,
+        trend: 0,
+        route: '/admin/users'
+      },
+      {
+        icon: 'events',
+        label: 'Active Events',
+        value: stats.activeEvents || 0,
+        trend: 0,
+        route: '/admin/events'
+      },
+      {
+        icon: 'cart',
+        label: 'Pending Redemptions',
+        value: stats.pendingRedemptions || 0,
+        trend: 0,
+        route: '/admin/redemptions'
+      },
+      {
+        icon: 'trending-up',
+        label: 'Redemption Rate',
+        value: `${redemptionRate}%`,
+        trend: 0,
+        route: '/admin/redemptions'
+      },
+      {
+        icon: 'warning',
+        label: 'Low Stock Alerts',
+        value: this.inventoryAlerts().length,
+        trend: 0,
+        route: '/admin/products'
+      },
     ]);
-    
+
     // Clear recent activities - no endpoint available yet
     this.recentActivities.set([]);
-    
+
     // Clear chart data - no historical data available yet
     this.chartData.set({
       labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
@@ -264,11 +329,11 @@ export class AdminDashboardComponent implements OnInit {
 
   private useFallbackData(): void {
     this.kpiData.set([
-      { icon: 'users', label: 'Total Users', value: 0, trend: 0, route: '/admin/users' },
-      { icon: 'events', label: 'Total Events', value: 0, trend: 0, route: '/admin/events' },
-      { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
-      { icon: 'star', label: 'Points Distributed', value: '0', trend: 0, route: '/admin/dashboard' },
-      { icon: 'pending', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+      { icon: 'users', label: 'Active Users', value: 0, trend: 0, route: '/admin/users' },
+      { icon: 'events', label: 'Active Events', value: 0, trend: 0, route: '/admin/events' },
+      { icon: 'cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+      { icon: 'trending-up', label: 'Redemption Rate', value: '0%', trend: 0, route: '/admin/redemptions' },
+      { icon: 'warning', label: 'Low Stock Alerts', value: 0, trend: 0, route: '/admin/products' },
     ]);
     this.recentActivities.set([]);
     this.chartData.set({
@@ -357,8 +422,19 @@ export class AdminDashboardComponent implements OnInit {
       name: '',
       description: '',
       eventDate: '',
-      pointsPool: 0
+      eventEndDate: '',
+      maxParticipants: 0,
+      pointsPool: 0,
+      firstPlacePoints: 0,
+      secondPlacePoints: 0,
+      thirdPlacePoints: 0,
+      registrationStartDate: '',
+      registrationEndDate: '',
+      location: '',
+      virtualLink: '',
+      imageUrl: ''
     };
+    this.eventModalValidationErrors.set([]);
     this.showEventModal.set(true);
   }
 
@@ -366,18 +442,124 @@ export class AdminDashboardComponent implements OnInit {
     this.showEventModal.set(false);
   }
 
+  validateEventModal(): boolean {
+    const errors: string[] = [];
+
+    // Event name: 3-200 chars
+    const name = (this.newEvent.name || '').trim();
+    if (!name) {
+      errors.push('Event name is required');
+    } else if (name.length < 3 || name.length > 200) {
+      errors.push('Event name must be between 3 and 200 characters');
+    }
+
+    // Description: max 1000 chars
+    const description = (this.newEvent.description || '').trim();
+    if (description && description.length > 1000) {
+      errors.push('Description cannot exceed 1000 characters');
+    }
+
+    // Event date required
+    if (!this.newEvent.eventDate) {
+      errors.push('Event start date is required');
+    }
+
+    // Points pool: 1-1,000,000
+    if (!this.newEvent.pointsPool || this.newEvent.pointsPool < 1) {
+      errors.push('Points pool must be at least 1');
+    } else if (this.newEvent.pointsPool > 1000000) {
+      errors.push('Points pool cannot exceed 1,000,000');
+    }
+
+    // Prize distribution validation (if any prize is set)
+    const first = this.newEvent.firstPlacePoints || 0;
+    const second = this.newEvent.secondPlacePoints || 0;
+    const third = this.newEvent.thirdPlacePoints || 0;
+
+    if (first > 0 || second > 0 || third > 0) {
+      if (first > 0 && second > 0 && first <= second) {
+        errors.push('1st place points must be greater than 2nd place points');
+      }
+      if (second > 0 && third > 0 && second <= third) {
+        errors.push('2nd place points must be greater than 3rd place points');
+      }
+      if (first > 0 && third > 0 && first <= third) {
+        errors.push('1st place points must be greater than 3rd place points');
+      }
+    }
+
+    this.eventModalValidationErrors.set(errors);
+    return errors.length === 0;
+  }
+
+  validateProductModal(): boolean {
+    const errors: string[] = [];
+
+    // Product name: 2-200 chars
+    const name = (this.newProduct.name || '').trim();
+    if (!name) {
+      errors.push('Product name is required');
+    } else if (name.length < 2 || name.length > 200) {
+      errors.push('Product name must be between 2 and 200 characters');
+    }
+
+    // Description: max 1000 chars
+    const description = (this.newProduct.description || '').trim();
+    if (description && description.length > 1000) {
+      errors.push('Description cannot exceed 1000 characters');
+    }
+
+    // Category required
+    if (!this.newProduct.categoryId) {
+      errors.push('Category is required');
+    }
+
+    // Points price: > 0
+    if (!this.newProduct.pointsPrice || this.newProduct.pointsPrice <= 0) {
+      errors.push('Points price must be greater than 0');
+    }
+
+    // Stock: >= 0
+    if (this.newProduct.stock !== undefined && this.newProduct.stock < 0) {
+      errors.push('Stock quantity cannot be negative');
+    }
+
+    // Image URL validation (if provided)
+    const imageUrl = (this.newProduct.imageUrl || '').trim();
+    if (imageUrl) {
+      if (imageUrl.length > 500) {
+        errors.push('Image URL cannot exceed 500 characters');
+      }
+      if (!imageUrl.startsWith('http://') && !imageUrl.startsWith('https://')) {
+        errors.push('Image URL must start with http:// or https://');
+      }
+    }
+
+    this.productModalValidationErrors.set(errors);
+    return errors.length === 0;
+  }
+
   createEvent(): void {
-    const event = this.newEvent;
-    if (!event.name || !event.eventDate) {
-      this.toast.error('Please fill in all required fields');
+    if (!this.validateEventModal()) {
       return;
     }
 
+    const event = this.newEvent;
     const eventData: CreateEventDto = {
-      name: event.name,
-      description: event.description,
+      name: event.name.trim(),
+      description: event.description?.trim() || '',
       eventDate: new Date(event.eventDate).toISOString(),
-      totalPointsPool: event.pointsPool
+      eventEndDate: event.eventEndDate ? new Date(event.eventEndDate).toISOString() : undefined,
+      maxParticipants: event.maxParticipants || undefined,
+      totalPointsPool: event.pointsPool,
+      firstPlacePoints: event.firstPlacePoints || undefined,
+      secondPlacePoints: event.secondPlacePoints || undefined,
+      thirdPlacePoints: event.thirdPlacePoints || undefined,
+      registrationStartDate: event.registrationStartDate ? new Date(event.registrationStartDate).toISOString() : undefined,
+      registrationEndDate: event.registrationEndDate ? new Date(event.registrationEndDate).toISOString() : undefined,
+      location: event.location?.trim() || undefined,
+      virtualLink: event.virtualLink?.trim() || undefined,
+      bannerImageUrl: event.imageUrl?.trim() || undefined
     };
 
     this.eventService.createEvent(eventData).subscribe({
@@ -392,7 +574,6 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating event:', error);
-        // Show backend validation errors
         this.toast.showValidationErrors(error);
       }
     });
@@ -402,11 +583,12 @@ export class AdminDashboardComponent implements OnInit {
     this.newProduct = {
       name: '',
       description: '',
-      category: 'Electronics',
-      pointsPrice: 0,
+      categoryId: '',
+      pointsPrice: 1,
       stock: 0,
       imageUrl: ''
     };
+    this.productModalValidationErrors.set([]);
     this.showProductModal.set(true);
   }
 
@@ -415,18 +597,18 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   createProduct(): void {
-    const product = this.newProduct;
-    if (!product.name || product.pointsPrice <= 0) {
-      this.toast.error('Please fill in all required fields');
+    if (!this.validateProductModal()) {
       return;
     }
 
+    const product = this.newProduct;
     const productData: CreateProductDto = {
-      name: product.name,
-      description: product.description,
+      name: product.name.trim(),
+      description: product.description?.trim() || '',
+      categoryId: product.categoryId || undefined,
       pointsPrice: product.pointsPrice,
       stockQuantity: product.stock,
-      imageUrl: product.imageUrl || 'https://via.placeholder.com/150'
+      imageUrl: product.imageUrl?.trim() || 'https://via.placeholder.com/150'
     };
 
     this.productService.createProduct(productData).subscribe({
@@ -441,7 +623,6 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error creating product:', error);
-        // Show backend validation errors
         this.toast.showValidationErrors(error);
       }
     });

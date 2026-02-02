@@ -1,5 +1,6 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, PLATFORM_ID, inject } from '@angular/core';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { isPlatformBrowser } from '@angular/common';
 
 // SVG icon paths - all icons are 24x24 viewBox
 const ICONS: { [key: string]: string } = {
@@ -95,15 +96,17 @@ const ICONS: { [key: string]: string } = {
   selector: 'app-icon',
   standalone: true,
   template: `
-    <svg 
-      [attr.width]="size" 
-      [attr.height]="size" 
-      viewBox="0 0 24 24" 
-      [attr.fill]="fill"
-      [class]="'icon icon-' + name"
-      [innerHTML]="getSvgPath()"
-    >
-    </svg>
+    @if (isBrowser) {
+      <svg
+        [attr.width]="size"
+        [attr.height]="size"
+        viewBox="0 0 24 24"
+        [attr.fill]="fill"
+        [class]="'icon icon-' + name"
+        [innerHTML]="getSvgPath()"
+      >
+      </svg>
+    }
   `,
   styles: [`
     :host {
@@ -125,6 +128,9 @@ export class IconComponent {
   @Input() name: string = 'dashboard';
   @Input() size: number = 24;
   @Input() fill: string = 'currentColor';
+
+  private platformId = inject(PLATFORM_ID);
+  isBrowser = isPlatformBrowser(this.platformId);
 
   constructor(private sanitizer: DomSanitizer) {}
 

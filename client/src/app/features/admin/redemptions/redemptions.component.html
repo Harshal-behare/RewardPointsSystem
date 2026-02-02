@@ -117,20 +117,20 @@
       <table class="redemptions-table">
         <thead>
           <tr>
-            <th class="sortable" (click)="toggleSort('userName')">
+            <th class="sortable" [class.active]="sortField() === 'userName'" (click)="toggleSort('userName')">
               Employee Name <span class="sort-icon">{{ getSortIcon('userName') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('productName')">
+            <th class="sortable" [class.active]="sortField() === 'productName'" (click)="toggleSort('productName')">
               Product Name <span class="sort-icon">{{ getSortIcon('productName') }}</span>
             </th>
             <th>Quantity</th>
-            <th class="sortable" (click)="toggleSort('pointsSpent')">
+            <th class="sortable" [class.active]="sortField() === 'pointsSpent'" (click)="toggleSort('pointsSpent')">
               Points Redeemed <span class="sort-icon">{{ getSortIcon('pointsSpent') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('requestedAt')">
+            <th class="sortable" [class.active]="sortField() === 'requestedAt'" (click)="toggleSort('requestedAt')">
               Request Date <span class="sort-icon">{{ getSortIcon('requestedAt') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('status')">
+            <th class="sortable" [class.active]="sortField() === 'status'" (click)="toggleSort('status')">
               Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
             </th>
             <th>Actions</th>
@@ -149,10 +149,7 @@
                 </div>
               </td>
               <td>
-                <div class="product-info">
-                  <div class="product-thumbnail"><app-icon name="box" [size]="20"></app-icon></div>
-                  <strong>{{ request.productName }}</strong>
-                </div>
+                <strong>{{ request.productName }}</strong>
               </td>
               <td>
                 <span class="quantity-value">{{ request.quantity || 1 }}</span>

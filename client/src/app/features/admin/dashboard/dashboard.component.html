@@ -20,104 +20,8 @@
     }
   </section>
 
-  <!-- Two Column Layout for Sections 2 & 3 -->
-  <div class="grid-2-col">
-    <!-- Section 2: Redemption Actions (Most Important) -->
-    <app-card title="Redemption Actions" class="redemption-actions-card">
-      <div class="stat-boxes">
-        <div class="stat-box pending" (click)="navigateToPage('/admin/redemptions')" style="cursor: pointer;">
-          <div class="stat-icon">⏳</div>
-          <div class="stat-content">
-            <div class="stat-label">Pending</div>
-            <div class="stat-value">{{ redemptionSummary().pending }}</div>
-          </div>
-        </div>
-
-        <div class="stat-box approved">
-          <div class="stat-icon">✓</div>
-          <div class="stat-content">
-            <div class="stat-label">Approved Today</div>
-            <div class="stat-value">{{ redemptionSummary().approved }}</div>
-          </div>
-        </div>
-
-        <div class="stat-box rejected">
-          <div class="stat-icon">✕</div>
-          <div class="stat-content">
-            <div class="stat-label">Rejected Today</div>
-            <div class="stat-value">{{ redemptionSummary().rejected }}</div>
-          </div>
-        </div>
-      </div>
-
-      @if (redemptionSummary().pending > 0) {
-        <div class="action-footer">
-          <button class="btn-link" (click)="navigateToPage('/admin/redemptions')">
-            <app-icon name="arrow-right" [size]="14"></app-icon> View All Redemptions
-          </button>
-        </div>
-      }
-    </app-card>
-
-    <!-- Section 3: Event Status Summary -->
-    <app-card title="Event Status Summary">
-      <div class="event-status-grid">
-        <div class="status-item">
-          <app-badge variant="secondary">{{ eventStatusSummary().draft }}</app-badge>
-          <span class="status-label">Draft</span>
-        </div>
-        <div class="status-item">
-          <app-badge variant="info">{{ eventStatusSummary().upcoming }}</app-badge>
-          <span class="status-label">Upcoming</span>
-        </div>
-        <div class="status-item">
-          <app-badge variant="success">{{ eventStatusSummary().active }}</app-badge>
-          <span class="status-label">Active</span>
-        </div>
-        <div class="status-item">
-          <app-badge variant="secondary">{{ eventStatusSummary().completed }}</app-badge>
-          <span class="status-label">Completed</span>
-        </div>
-      </div>
-    </app-card>
-  </div>
-
-  <!-- Two Column Layout for Sections 4 & 5 -->
-  <div class="grid-2-col">
-    <!-- Section 4: Events Needing Attention -->
-    <app-card title="Events Needing Attention">
-      @if (eventsNeedingAttention().length > 0) {
-        <div class="events-attention-list">
-          @for (event of eventsNeedingAttention(); track event.id) {
-            <div class="event-item" (click)="navigateToPage('/admin/events')" style="cursor: pointer;">
-              <div class="event-info">
-                <div class="event-name">{{ event.name }}</div>
-                <div class="event-meta">
-                  @if (event.status === 'Active') {
-                    <app-badge variant="success" size="sm">Active Now</app-badge>
-                  }
-                  @if (event.status === 'Completed' && event.remainingPoints === event.totalPointsPool) {
-                    <app-badge variant="warning" size="sm">Assign Winners</app-badge>
-                  }
-                  @if (event.status === 'Upcoming') {
-                    <app-badge variant="info" size="sm">Starting Soon</app-badge>
-                  }
-                </div>
-              </div>
-              <app-icon name="chevron-right" [size]="16"></app-icon>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="empty-state">
-          <app-icon name="check-circle" [size]="40"></app-icon>
-          <p>No events need attention</p>
-        </div>
-      }
-    </app-card>
-
-    <!-- Section 5: Inventory Snapshot -->
-    <app-card title="Inventory Alerts">
+  <!-- Inventory Alerts (Full Width) -->
+  <app-card title="Inventory Alerts">
       @if (inventoryAlerts().length > 0) {
         <div class="inventory-alerts-list">
           @for (alert of inventoryAlerts(); track alert.productId) {
@@ -145,7 +49,6 @@
         </div>
       }
     </app-card>
-  </div>
 
   <!-- Section 6: Points Summary -->
   <app-card title="Points Summary" class="points-summary-card">
@@ -224,6 +127,22 @@
   <!-- Quick Actions Section -->
   <app-card title="Quick Actions" class="quick-actions-card">
     <div class="quick-actions-grid">
+      <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
+        <span class="action-icon"><app-icon name="cart" [size]="20"></app-icon></span>
+        <div class="action-content">
+          <h3>Redemptions</h3>
+          <p>Process pending redemptions</p>
+        </div>
+      </button>
+
+      <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
+        <span class="action-icon"><app-icon name="users" [size]="20"></app-icon></span>
+        <div class="action-content">
+          <h3>Manage Users</h3>
+          <p>View and manage users</p>
+        </div>
+      </button>
+
       <button class="quick-action-btn event-btn" (click)="openEventModal()">
         <span class="action-icon"><app-icon name="calendar" [size]="20"></app-icon></span>
         <div class="action-content">
@@ -239,22 +158,6 @@
           <p>Add new product to catalog</p>
         </div>
       </button>
-
-      <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
-        <span class="action-icon"><app-icon name="users" [size]="20"></app-icon></span>
-        <div class="action-content">
-          <h3>Manage Users</h3>
-          <p>View and manage users</p>
-        </div>
-      </button>
-
-      <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
-        <span class="action-icon"><app-icon name="cart" [size]="20"></app-icon></span>
-        <div class="action-content">
-          <h3>Redemptions</h3>
-          <p>Process pending redemptions</p>
-        </div>
-      </button>
     </div>
   </app-card>
 </div>
@@ -264,12 +167,21 @@
   <div class="modal-overlay" (click)="closeEventModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3><app-icon name="events" [size]="20"></app-icon> Create New Event</h3>
-        <button class="close-btn" (click)="closeEventModal()"><app-icon name="close" [size]="18"></app-icon></button>
+        <h3>Create New Event</h3>
+        <button class="close-btn" (click)="closeEventModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
     <div class="modal-body">
       <form>
+        <!-- Validation Errors -->
+        @if (eventModalValidationErrors().length > 0) {
+          <div class="error-list">
+            @for (error of eventModalValidationErrors(); track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+
         <div class="form-group">
           <label for="eventName">Event Name *</label>
           <input
@@ -279,7 +191,10 @@
             name="name"
             placeholder="Enter event name"
             required
+            minlength="3"
+            maxlength="200"
           />
+          <small class="form-hint">3-200 characters required</small>
         </div>
 
         <div class="form-group">
@@ -290,21 +205,52 @@
             name="description"
             placeholder="Enter event description"
             rows="3"
+            maxlength="1000"
           ></textarea>
+          <small class="form-hint">Max 1000 characters</small>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="eventDate">Event Date *</label>
+            <label for="eventDate">Event Start Date *</label>
             <input
               id="eventDate"
               type="date"
               [(ngModel)]="newEvent.eventDate"
               name="eventDate"
               required
+              placeholder="YYYY-MM-DD"
             />
+            <small class="form-hint">Must be a future date</small>
           </div>
 
+          <div class="form-group">
+            <label for="eventEndDate">Event End Date</label>
+            <input
+              id="eventEndDate"
+              type="date"
+              [(ngModel)]="newEvent.eventEndDate"
+              name="eventEndDate"
+              placeholder="YYYY-MM-DD"
+            />
+            <small class="form-hint">Leave empty for single-day events</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="maxParticipants">Max Participants</label>
+          <input
+            id="maxParticipants"
+            type="number"
+            [(ngModel)]="newEvent.maxParticipants"
+            name="maxParticipants"
+            placeholder="0 (unlimited)"
+            min="0"
+          />
+          <small class="form-hint">Leave as 0 for unlimited participants</small>
+        </div>
+
+        <div class="form-row">
           <div class="form-group">
             <label for="pointsPool">Points Pool *</label>
             <input
@@ -314,8 +260,122 @@
               name="pointsPool"
               placeholder="0"
               required
+              min="1"
+              max="1000000"
+            />
+            <small class="form-hint">Must be greater than 0, max 1,000,000</small>
+          </div>
+        </div>
+
+        <!-- Prize Distribution Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution (Optional)</h4>
+          <p class="form-section-hint">Set point rewards for top performers</p>
+
+          <div class="form-row prize-row">
+            <div class="form-group prize-input first-place">
+              <label for="firstPlacePoints"><app-icon name="medal-gold" [size]="14"></app-icon> 1st Place</label>
+              <input
+                id="firstPlacePoints"
+                type="number"
+                [(ngModel)]="newEvent.firstPlacePoints"
+                name="firstPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group prize-input second-place">
+              <label for="secondPlacePoints"><app-icon name="medal-silver" [size]="14"></app-icon> 2nd Place</label>
+              <input
+                id="secondPlacePoints"
+                type="number"
+                [(ngModel)]="newEvent.secondPlacePoints"
+                name="secondPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+
+            <div class="form-group prize-input third-place">
+              <label for="thirdPlacePoints"><app-icon name="medal-bronze" [size]="14"></app-icon> 3rd Place</label>
+              <input
+                id="thirdPlacePoints"
+                type="number"
+                [(ngModel)]="newEvent.thirdPlacePoints"
+                name="thirdPlacePoints"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Registration Period Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period (Optional)</h4>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="registrationStartDate">Registration Opens</label>
+              <input
+                id="registrationStartDate"
+                type="date"
+                [(ngModel)]="newEvent.registrationStartDate"
+                name="registrationStartDate"
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="registrationEndDate">Registration Closes</label>
+              <input
+                id="registrationEndDate"
+                type="date"
+                [(ngModel)]="newEvent.registrationEndDate"
+                name="registrationEndDate"
+                placeholder="YYYY-MM-DD"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="location" [size]="18"></app-icon> Event Location (Optional)</h4>
+
+          <div class="form-group">
+            <label for="location">Physical Location</label>
+            <input
+              id="location"
+              type="text"
+              [(ngModel)]="newEvent.location"
+              name="location"
+              placeholder="e.g., Conference Room A, Building 1"
             />
           </div>
+
+          <div class="form-group">
+            <label for="virtualLink">Virtual Meeting Link</label>
+            <input
+              id="virtualLink"
+              type="url"
+              [(ngModel)]="newEvent.virtualLink"
+              name="virtualLink"
+              placeholder="https://zoom.us/j/meeting-id"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="imageUrl">Event Image URL</label>
+          <input
+            id="imageUrl"
+            type="url"
+            [(ngModel)]="newEvent.imageUrl"
+            name="imageUrl"
+            placeholder="https://example.com/image.jpg"
+          />
         </div>
       </form>
     </div>
@@ -337,12 +397,21 @@
   <div class="modal-overlay" (click)="closeProductModal()">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3><app-icon name="gift" [size]="20"></app-icon> Add New Product</h3>
+        <h3>Add New Product</h3>
         <button class="close-btn" (click)="closeProductModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">
       <form>
+        <!-- Validation Errors -->
+        @if (productModalValidationErrors().length > 0) {
+          <div class="error-list">
+            @for (error of productModalValidationErrors(); track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+
         <div class="form-group">
           <label for="productName">Product Name *</label>
           <input
@@ -352,7 +421,10 @@
             name="name"
             placeholder="Enter product name"
             required
+            minlength="2"
+            maxlength="200"
           />
+          <small class="form-hint">2-200 characters required</small>
         </div>
 
         <div class="form-group">
@@ -363,23 +435,24 @@
             name="description"
             placeholder="Enter product description"
             rows="3"
+            maxlength="1000"
           ></textarea>
+          <small class="form-hint">Max 1000 characters</small>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="productCategory">Category *</label>
+            <label for="category">Category *</label>
             <select
-              id="productCategory"
-              [(ngModel)]="newProduct.category"
-              name="category"
+              id="category"
+              [(ngModel)]="newProduct.categoryId"
+              name="categoryId"
               required
             >
-              <option value="Electronics">Electronics</option>
-              <option value="Appliances">Appliances</option>
-              <option value="Wearables">Wearables</option>
-              <option value="Office">Office</option>
-              <option value="Accessories">Accessories</option>
+              <option value="">Select a category</option>
+              @for (cat of categories(); track cat.id) {
+                <option [value]="cat.id">{{ cat.name }}</option>
+              }
             </select>
           </div>
 
@@ -392,33 +465,37 @@
               name="pointsPrice"
               placeholder="0"
               required
+              min="1"
             />
+            <small class="form-hint">Must be greater than 0</small>
           </div>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="stock">Stock Quantity *</label>
-            <input
-              id="stock"
-              type="number"
-              [(ngModel)]="newProduct.stock"
-              name="stock"
-              placeholder="0"
-              required
-            />
-          </div>
+        <div class="form-group">
+          <label for="stock">Stock Quantity *</label>
+          <input
+            id="stock"
+            type="number"
+            [(ngModel)]="newProduct.stock"
+            name="stock"
+            placeholder="0"
+            required
+            min="0"
+          />
+          <small class="form-hint">Cannot be negative</small>
+        </div>
 
-          <div class="form-group">
-            <label for="imageUrl">Image URL</label>
-            <input
-              id="imageUrl"
-              type="text"
-              [(ngModel)]="newProduct.imageUrl"
-              name="imageUrl"
-              placeholder="https://..."
-            />
-          </div>
+        <div class="form-group">
+          <label for="imageUrl">Image URL</label>
+          <input
+            id="imageUrl"
+            type="url"
+            [(ngModel)]="newProduct.imageUrl"
+            name="imageUrl"
+            placeholder="https://example.com/image.jpg"
+            maxlength="500"
+          />
+          <small class="form-hint">Must be a valid URL (http:// or https://), max 500 characters</small>
         </div>
       </form>
     </div>

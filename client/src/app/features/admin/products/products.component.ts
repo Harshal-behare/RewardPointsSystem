@@ -252,7 +252,11 @@ export class AdminProductsComponent implements OnInit {
     } else if (stock < 5) {
       return { label: 'Low Stock', variant: 'warning' };
     }
-    return { label: 'In Stock', variant: 'success' };
+    return { label: `${stock} units`, variant: 'success' };
+  }
+
+  handleImageError(event: Event): void {
+    (event.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
   }
 
   getStatusVariant(status: string): 'success' | 'secondary' {
@@ -266,7 +270,7 @@ export class AdminProductsComponent implements OnInit {
       description: '',
       category: '',
       categoryId: undefined,
-      pointsPrice: 0,
+      pointsPrice: 1,
       stock: 0,
       imageUrl: '',
       status: 'Active'

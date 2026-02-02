@@ -469,6 +469,32 @@ export class AdminEventsComponent implements OnInit {
       this.eventModalValidationErrors.push('Points pool cannot exceed 1,000,000');
     }
 
+    // Prize distribution validation (if any prize is set)
+    const first = this.selectedEvent.firstPlacePoints || 0;
+    const second = this.selectedEvent.secondPlacePoints || 0;
+    const third = this.selectedEvent.thirdPlacePoints || 0;
+
+    if (first > 0 || second > 0 || third > 0) {
+      // Validate descending order: 1st > 2nd > 3rd
+      if (first > 0 && second > 0 && first <= second) {
+        this.eventModalValidationErrors.push('1st place points must be greater than 2nd place points');
+      }
+      if (second > 0 && third > 0 && second <= third) {
+        this.eventModalValidationErrors.push('2nd place points must be greater than 3rd place points');
+      }
+      if (first > 0 && third > 0 && first <= third) {
+        this.eventModalValidationErrors.push('1st place points must be greater than 3rd place points');
+      }
+
+      // Validate total doesn't exceed points pool
+      const totalPrizePoints = first + second + third;
+      if (totalPrizePoints > pointsPool) {
+        this.eventModalValidationErrors.push(
+          `Total prize points (${totalPrizePoints}) cannot exceed points pool (${pointsPool})`
+        );
+      }
+    }
+
     // One-way status transition validation (only for edit mode)
     if (this.modalMode() === 'edit' && this.selectedEvent.id) {
       const originalEvent = this.events().find(e => e.id === this.selectedEvent.id);
