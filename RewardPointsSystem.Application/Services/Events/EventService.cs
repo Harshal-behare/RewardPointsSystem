@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
@@ -26,9 +27,9 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         public async Task<Event> CreateEventAsync(
-            string name, 
-            string description, 
-            DateTime date, 
+            string name,
+            string description,
+            DateTime date,
             int pointsPool,
             int? maxParticipants = null,
             DateTime? registrationStartDate = null,
@@ -43,16 +44,33 @@ namespace RewardPointsSystem.Application.Services.Events
         {
             if (string.IsNullOrWhiteSpace(name))
                 throw new InvalidEventDataException("Event name is required");
-            
+
             if (string.IsNullOrWhiteSpace(description))
                 throw new InvalidEventDataException("Event description is required");
-            
-            if (pointsPool <= 0)
-                throw new InvalidEventDataException("Points pool must be positive");
-            
+
             // Only validate future date for creation
             if (date < DateTime.UtcNow.Date)
                 throw new InvalidEventDataException("Cannot create events in the past");
+
+            // Auto-calculate points pool from rank points if all three are provided
+            var calculatedPool = (firstPlacePoints ?? 0) + (secondPlacePoints ?? 0) + (thirdPlacePoints ?? 0);
+            if (calculatedPool > 0)
+            {
+                pointsPool = calculatedPool;
+            }
+
+            // Validate points pool (either provided or calculated)
+            if (pointsPool <= 0)
+                throw new InvalidEventDataException("Points pool must be positive. Provide TotalPointsPool or all three rank points (1st, 2nd, 3rd).");
+
+            // Validate rank order: 1st > 2nd > 3rd
+            if (firstPlacePoints.HasValue && secondPlacePoints.HasValue && thirdPlacePoints.HasValue)
+            {
+                if (secondPlacePoints >= firstPlacePoints)
+                    throw new InvalidEventDataException("Second place points must be less than first place points.");
+                if (thirdPlacePoints >= secondPlacePoints)
+                    throw new InvalidEventDataException("Third place points must be less than second place points.");
+            }
 
             // Get or create system user for event creation
             var systemUser = await GetOrCreateSystemUserAsync();
@@ -76,25 +94,37 @@ namespace RewardPointsSystem.Application.Services.Events
 
             await _unitOfWork.Events.AddAsync(eventEntity);
             await _unitOfWork.SaveChangesAsync();
-            
+
             return eventEntity;
         }
 
         private async Task<User> GetOrCreateSystemUserAsync()
         {
+            const string systemEmail = "system@agdata.com";
+            
             // Try to find system user
-            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == "system@rewardpoints.com");
+            var systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == systemEmail);
             
             if (systemUser == null)
             {
                 // Create system user
                 systemUser = User.Create(
-                    "system@agdata.com",
+                    systemEmail,
                     "System",
                     "Administrator");
                 
-                await _unitOfWork.Users.AddAsync(systemUser);
-                await _unitOfWork.SaveChangesAsync();
+                try
+                {
+                    await _unitOfWork.Users.AddAsync(systemUser);
+                    await _unitOfWork.SaveChangesAsync();
+                }
+                catch (DbUpdateException)
+                {
+                    // Handle race condition - another request may have created the user
+                    systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == systemEmail);
+                    if (systemUser == null)
+                        throw; // Re-throw if it's a different error
+                }
             }
             
             return systemUser;
@@ -112,7 +142,6 @@ namespace RewardPointsSystem.Application.Services.Events
             var name = !string.IsNullOrWhiteSpace(updates.Name) ? updates.Name.Trim() : eventEntity.Name;
             var description = !string.IsNullOrWhiteSpace(updates.Description) ? updates.Description.Trim() : eventEntity.Description;
             var eventDate = updates.EventDate ?? eventEntity.EventDate;
-            var pointsPool = updates.TotalPointsPool ?? eventEntity.TotalPointsPool;
             var maxParticipants = updates.MaxParticipants ?? eventEntity.MaxParticipants;
             var location = updates.Location ?? eventEntity.Location;
             var virtualLink = updates.VirtualLink ?? eventEntity.VirtualLink;
@@ -123,6 +152,19 @@ namespace RewardPointsSystem.Application.Services.Events
             var firstPlacePoints = updates.FirstPlacePoints ?? eventEntity.FirstPlacePoints;
             var secondPlacePoints = updates.SecondPlacePoints ?? eventEntity.SecondPlacePoints;
             var thirdPlacePoints = updates.ThirdPlacePoints ?? eventEntity.ThirdPlacePoints;
+
+            // Auto-calculate points pool from rank points if all three are provided
+            var calculatedPool = (firstPlacePoints ?? 0) + (secondPlacePoints ?? 0) + (thirdPlacePoints ?? 0);
+            var pointsPool = calculatedPool > 0 ? calculatedPool : (updates.TotalPointsPool ?? eventEntity.TotalPointsPool);
+
+            // Validate rank order: 1st > 2nd > 3rd
+            if (firstPlacePoints.HasValue && secondPlacePoints.HasValue && thirdPlacePoints.HasValue)
+            {
+                if (secondPlacePoints >= firstPlacePoints)
+                    throw new InvalidEventDataException("Second place points must be less than first place points.");
+                if (thirdPlacePoints >= secondPlacePoints)
+                    throw new InvalidEventDataException("Third place points must be less than second place points.");
+            }
 
             eventEntity.UpdateDetails(
                 name, 
@@ -140,19 +182,19 @@ namespace RewardPointsSystem.Application.Services.Events
                 secondPlacePoints,
                 thirdPlacePoints);
 
-            // Handle status change if provided
+            // Handle status change if provided - enforce ONE-WAY FLOW ONLY
             if (!string.IsNullOrWhiteSpace(updates.Status))
             {
                 var targetStatus = updates.Status.ToLower();
                 var currentStatus = eventEntity.Status;
 
+                // Validate one-way flow: Draft → Upcoming → Active → Completed
+                // NO backward transitions allowed
+                ValidateOneWayStatusTransition(currentStatus, targetStatus, id);
+
                 // Apply status transitions based on target status
                 switch (targetStatus)
                 {
-                    case "draft":
-                        if (currentStatus == EventStatus.Upcoming)
-                            eventEntity.RevertToDraft();
-                        break;
                     case "upcoming":
                     case "published":
                         if (currentStatus == EventStatus.Draft)
@@ -175,6 +217,12 @@ namespace RewardPointsSystem.Application.Services.Events
                             eventEntity.Activate();
                             eventEntity.Complete();
                         }
+                        else if (currentStatus == EventStatus.Draft)
+                        {
+                            eventEntity.Publish();
+                            eventEntity.Activate();
+                            eventEntity.Complete();
+                        }
                         break;
                 }
             }
@@ -189,7 +237,15 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => e.Status == EventStatus.Upcoming,
                 e => e.Participants);
-            return events;
+
+            // Auto-update statuses before returning
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
+            // Return only still-upcoming events after status update
+            return events.Where(e => e.Status == EventStatus.Upcoming);
         }
 
         public async Task<IEnumerable<Event>> GetAllEventsAsync()
@@ -198,6 +254,13 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => true,  // All events
                 e => e.Participants);
+
+            // Auto-update statuses before returning
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
             return events;
         }
 
@@ -207,11 +270,18 @@ namespace RewardPointsSystem.Application.Services.Events
         public async Task<IEnumerable<Event>> GetVisibleEventsAsync()
         {
             // Include participants so we can count them
-            // Return events visible to employees: Upcoming, Active, Completed (not Draft)
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
-                e => e.Status != EventStatus.Draft,
+                e => true,  // Get all first to auto-update statuses
                 e => e.Participants);
-            return events;
+
+            // Auto-update statuses before filtering
+            foreach (var evt in events)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(evt);
+            }
+
+            // Return events visible to employees: Upcoming, Active, Completed (not Draft)
+            return events.Where(e => e.Status != EventStatus.Draft);
         }
 
         public async Task<Event> GetEventByIdAsync(Guid id)
@@ -220,7 +290,98 @@ namespace RewardPointsSystem.Application.Services.Events
             var events = await _unitOfWork.Events.FindWithIncludesAsync(
                 e => e.Id == id,
                 e => e.Participants);
-            return events.FirstOrDefault();
+            var eventEntity = events.FirstOrDefault();
+
+            if (eventEntity != null)
+            {
+                await UpdateEventStatusBasedOnDatesAsync(eventEntity);
+            }
+
+            return eventEntity;
+        }
+
+        /// <summary>
+        /// Auto-update event status based on dates (per System.txt requirements)
+        /// Draft → Upcoming: On RegistrationStartDate
+        /// Upcoming → Active: On EventDate
+        /// Active → Completed: After EventEndDate (or EventDate if no end date)
+        /// </summary>
+        private async Task UpdateEventStatusBasedOnDatesAsync(Event eventEntity)
+        {
+            var now = DateTime.UtcNow;
+            var originalStatus = eventEntity.Status;
+
+            // Draft → Upcoming: When registration start date is reached
+            if (eventEntity.Status == EventStatus.Draft &&
+                eventEntity.RegistrationStartDate.HasValue &&
+                now >= eventEntity.RegistrationStartDate.Value)
+            {
+                eventEntity.Publish(); // Changes to Upcoming
+            }
+
+            // Upcoming → Active: When event date is reached
+            if (eventEntity.Status == EventStatus.Upcoming &&
+                now >= eventEntity.EventDate)
+            {
+                eventEntity.Activate(); // Changes to Active
+            }
+
+            // Active → Completed: After event end date (or event date if no end date)
+            if (eventEntity.Status == EventStatus.Active)
+            {
+                var completionDate = eventEntity.EventEndDate ?? eventEntity.EventDate;
+                if (now > completionDate)
+                {
+                    eventEntity.Complete(); // Changes to Completed
+                }
+            }
+
+            // Save if status changed
+            if (eventEntity.Status != originalStatus)
+            {
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
+
+        /// <summary>
+        /// Validate that status transition follows one-way flow: Draft → Upcoming → Active → Completed
+        /// </summary>
+        private void ValidateOneWayStatusTransition(EventStatus currentStatus, string targetStatusString, Guid eventId)
+        {
+            // Parse target status
+            if (!Enum.TryParse<EventStatus>(targetStatusString, true, out var targetStatus))
+            {
+                // Try mapping common variations
+                targetStatus = targetStatusString.ToLower() switch
+                {
+                    "published" => EventStatus.Upcoming,
+                    _ => throw new InvalidEventStateException(eventId, $"Invalid status value: {targetStatusString}")
+                };
+            }
+
+            // Define status order for one-way flow
+            var statusOrder = new Dictionary<EventStatus, int>
+            {
+                { EventStatus.Draft, 0 },
+                { EventStatus.Upcoming, 1 },
+                { EventStatus.Active, 2 },
+                { EventStatus.Completed, 3 }
+            };
+
+            var currentIndex = statusOrder.GetValueOrDefault(currentStatus, -1);
+            var targetIndex = statusOrder.GetValueOrDefault(targetStatus, -1);
+
+            // Same status is allowed (no change)
+            if (currentIndex == targetIndex)
+                return;
+
+            // Backward transitions are NOT allowed
+            if (targetIndex < currentIndex)
+            {
+                throw new InvalidOperationException(
+                    $"Invalid status transition. Events can only move forward: Draft → Upcoming → Active → Completed. " +
+                    $"Cannot change from '{currentStatus}' to '{targetStatus}'.");
+            }
         }
 
         /// <summary>
@@ -275,20 +436,15 @@ namespace RewardPointsSystem.Application.Services.Events
         }
 
         /// <summary>
-        /// Revert to draft: Upcoming → Draft (hide event from employees)
+        /// Revert to draft: DISABLED - One-way flow only (Draft → Upcoming → Active → Completed)
+        /// This method now throws an error to enforce one-way status transitions.
         /// </summary>
+        [Obsolete("Backward status transitions are no longer allowed. Events can only move forward.")]
         public async Task RevertToDraftAsync(Guid id)
         {
-            var eventEntity = await _unitOfWork.Events.GetByIdAsync(id);
-            if (eventEntity == null)
-                throw new EventNotFoundException(id);
-
-            if (eventEntity.Status != EventStatus.Upcoming)
-                throw new InvalidEventStateException(id, $"Only upcoming events can be reverted to draft. Current status: {eventEntity.Status}");
-
-            eventEntity.RevertToDraft();
-
-            await _unitOfWork.SaveChangesAsync();
+            throw new InvalidOperationException(
+                "Backward status transitions are not allowed. Events can only move forward: " +
+                "Draft → Upcoming → Active → Completed.");
         }
 
         public async Task DeleteEventAsync(Guid id)

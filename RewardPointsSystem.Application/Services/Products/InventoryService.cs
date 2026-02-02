@@ -129,12 +129,16 @@ namespace RewardPointsSystem.Application.Services.Products
             var allInventory = await _unitOfWork.Inventory.GetAllAsync();
             var allProducts = await _unitOfWork.Products.GetAllAsync();
 
+            // Only show low stock alerts for active products
+            var activeProducts = allProducts.Where(p => p.IsActive).ToList();
+            var activeProductIds = activeProducts.Select(p => p.Id).ToHashSet();
+
             var lowStockItems = allInventory
-                .Where(i => i.QuantityAvailable <= i.ReorderLevel)
+                .Where(i => i.QuantityAvailable <= i.ReorderLevel && activeProductIds.Contains(i.ProductId))
                 .Select(i => new InventoryAlert
                 {
                     ProductId = i.ProductId,
-                    ProductName = allProducts.FirstOrDefault(p => p.Id == i.ProductId)?.Name ?? "Unknown",
+                    ProductName = activeProducts.FirstOrDefault(p => p.Id == i.ProductId)?.Name ?? "Unknown",
                     CurrentStock = i.QuantityAvailable,
                     ReorderLevel = i.ReorderLevel,
                     AlertType = i.QuantityAvailable == 0 ? "OUT_OF_STOCK" : "LOW_STOCK"

@@ -17,6 +17,40 @@ export interface DashboardStats {
   totalRedemptions: number;
 }
 
+// Event Status Summary
+export interface EventStatusSummary {
+  draft: number;
+  upcoming: number;
+  active: number;
+  completed: number;
+}
+
+// Redemption Summary
+export interface RedemptionSummary {
+  pending: number;
+  approved: number;
+  rejected: number;
+  delivered: number;
+  cancelled: number;
+}
+
+// Inventory Alert
+export interface InventoryAlert {
+  productId: string;
+  productName: string;
+  currentStock: number;
+  reorderLevel: number;
+  alertType: 'Low Stock' | 'Out of Stock';
+}
+
+// Points System Summary
+export interface PointsSummary {
+  totalPointsDistributed: number;
+  totalPointsRedeemed: number;
+  totalPointsInCirculation: number;
+  pendingPoints: number;
+}
+
 // Points Report Interface
 export interface PointsReport {
   totalPointsAwarded: number;
@@ -78,5 +112,10 @@ export class AdminService {
   // Admin count
   getAdminCount(): Observable<ApiResponse<{ count: number }>> {
     return this.api.get<{ count: number }>('Admin/admin-count');
+  }
+
+  // Get Points Summary
+  getPointsSummary(): Observable<ApiResponse<PointsSummary>> {
+    return this.api.get<PointsSummary>('Points/summary');
   }
 }

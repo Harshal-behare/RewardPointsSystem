@@ -1,6 +1,7 @@
 .redemptions-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px;
 }
 
 // Stats Grid
@@ -184,10 +185,20 @@
       &.sortable {
         cursor: pointer;
         user-select: none;
-        transition: background-color 0.2s;
+        transition: all 0.2s;
         
         &:hover {
           background-color: #E8EBED;
+        }
+        
+        &.active {
+          background-color: #E8F5E9;
+          color: #27AE60;
+          
+          .sort-icon {
+            opacity: 1;
+            color: #27AE60;
+          }
         }
         
         .sort-icon {
@@ -307,8 +318,8 @@
 // Quantity
 .quantity-value {
   font-weight: 600;
-  color: #3498DB;
-  background-color: #EBF5FB;
+  color: #27AE60;
+  background-color: #D5F4E6;
   padding: 4px 10px;
   border-radius: 12px;
   font-size: 14px;
@@ -362,11 +373,11 @@
 }
 
 .deliver-btn {
-  background-color: #9B59B6;
+  background-color: #229954;
   color: white;
 
   &:hover {
-    background-color: #8E44AD;
+    background-color: #1E8449;
   }
 }
 
@@ -706,11 +717,11 @@
 }
 
 .btn-primary {
-  background-color: #3498DB;
+  background-color: #27AE60;
   color: white;
 
   &:hover {
-    background-color: #2980B9;
+    background-color: #229954;
   }
 }
 

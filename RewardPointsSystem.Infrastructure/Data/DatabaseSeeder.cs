@@ -51,7 +51,6 @@ namespace RewardPointsSystem.Infrastructure.Data
             {
                 Role.Create("Admin", "System Administrator with full access"),
                 Role.Create("Employee", "Regular employee with limited access"),
-                Role.Create("Manager", "Manager with elevated access")
             };
 
             await context.Roles.AddRangeAsync(roles);

@@ -1,7 +1,7 @@
 <div class="employee-dashboard">
   <!-- Header Section -->
   <div class="dashboard-header">
-    <h1 class="dashboard-title">Welcome back, John!</h1>
+    <h1 class="dashboard-title">Welcome back, {{ userName }}!</h1>
     <p class="dashboard-subtitle">Here's your rewards summary</p>
   </div>
 
@@ -10,7 +10,7 @@
     <div class="balance-card main-balance">
       <div class="balance-icon"><app-icon name="trophy" [size]="28"></app-icon></div>
       <div class="balance-info">
-        <span class="balance-label">Total Points</span>
+        <span class="balance-label">Earned Points</span>
         <span class="balance-value">{{ pointsBalance().total }}</span>
       </div>
     </div>
@@ -18,7 +18,7 @@
     <div class="balance-card">
       <div class="balance-icon available"><app-icon name="wallet" [size]="28"></app-icon></div>
       <div class="balance-info">
-        <span class="balance-label">Available Points</span>
+        <span class="balance-label">Current Balance</span>
         <span class="balance-value">{{ pointsBalance().available }}</span>
       </div>
     </div>
@@ -36,6 +36,113 @@
       <div class="balance-info">
         <span class="balance-label">Redeemed Points</span>
         <span class="balance-value">{{ pointsBalance().redeemed }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Redemptions Summary Section -->
+  <div class="redemptions-summary-section">
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="cart" [size]="20"></app-icon> My Redemptions</h2>
+      <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+    </div>
+    <div class="chart-stats-container">
+      <!-- Pie Chart -->
+      <div class="chart-wrapper">
+        @if (redemptionsSummary().pending + redemptionsSummary().approved + redemptionsSummary().delivered > 0) {
+          <apx-chart
+            [series]="redemptionsChartSeries"
+            [chart]="redemptionsChartOptions.chart"
+            [labels]="redemptionsChartOptions.labels"
+            [colors]="redemptionsChartOptions.colors"
+            [legend]="redemptionsChartOptions.legend"
+            [dataLabels]="redemptionsChartOptions.dataLabels"
+            [plotOptions]="redemptionsChartOptions.plotOptions"
+            [fill]="redemptionsChartOptions.fill"
+            [stroke]="redemptionsChartOptions.stroke"
+            [tooltip]="redemptionsChartOptions.tooltip"
+            [responsive]="redemptionsChartOptions.responsive"
+          ></apx-chart>
+        } @else {
+          <div class="empty-chart-state">
+            <app-icon name="cart" [size]="48"></app-icon>
+            <p>No redemptions yet</p>
+          </div>
+        }
+      </div>
+      <!-- Stats Cards -->
+      <div class="redemptions-summary-grid">
+        <div class="redemption-stat pending-stat">
+          <div class="redemption-icon"><app-icon name="pending" [size]="24"></app-icon></div>
+          <div class="redemption-content">
+            <span class="redemption-label">Pending</span>
+            <span class="redemption-value">{{ redemptionsSummary().pending }}</span>
+          </div>
+        </div>
+        <div class="redemption-stat approved-stat">
+          <div class="redemption-icon"><app-icon name="check-circle" [size]="24"></app-icon></div>
+          <div class="redemption-content">
+            <span class="redemption-label">Approved</span>
+            <span class="redemption-value">{{ redemptionsSummary().approved }}</span>
+          </div>
+        </div>
+        <div class="redemption-stat delivered-stat">
+          <div class="redemption-icon"><app-icon name="gift" [size]="24"></app-icon></div>
+          <div class="redemption-content">
+            <span class="redemption-label">Delivered</span>
+            <span class="redemption-value">{{ redemptionsSummary().delivered }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- My Events Participation Section -->
+  <div class="events-participation-section">
+    <div class="section-header">
+      <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> My Events Participation</h2>
+      <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+    </div>
+    <div class="chart-stats-container">
+      <!-- Pie Chart -->
+      <div class="chart-wrapper">
+        @if (eventParticipationStats().registered + eventParticipationStats().completed > 0) {
+          <apx-chart
+            [series]="eventsParticipationChartSeries"
+            [chart]="eventsParticipationChartOptions.chart"
+            [labels]="eventsParticipationChartOptions.labels"
+            [colors]="eventsParticipationChartOptions.colors"
+            [legend]="eventsParticipationChartOptions.legend"
+            [dataLabels]="eventsParticipationChartOptions.dataLabels"
+            [plotOptions]="eventsParticipationChartOptions.plotOptions"
+            [fill]="eventsParticipationChartOptions.fill"
+            [stroke]="eventsParticipationChartOptions.stroke"
+            [tooltip]="eventsParticipationChartOptions.tooltip"
+            [responsive]="eventsParticipationChartOptions.responsive"
+          ></apx-chart>
+        } @else {
+          <div class="empty-chart-state">
+            <app-icon name="celebrate" [size]="48"></app-icon>
+            <p>No events participated yet</p>
+          </div>
+        }
+      </div>
+      <!-- Stats Cards -->
+      <div class="events-participation-grid">
+        <div class="participation-stat registered-stat">
+          <div class="participation-icon"><app-icon name="calendar" [size]="24"></app-icon></div>
+          <div class="participation-content">
+            <span class="participation-label">Registered</span>
+            <span class="participation-value">{{ eventParticipationStats().registered }}</span>
+          </div>
+        </div>
+        <div class="participation-stat completed-stat">
+          <div class="participation-icon"><app-icon name="check-circle" [size]="24"></app-icon></div>
+          <div class="participation-content">
+            <span class="participation-label">Completed</span>
+            <span class="participation-value">{{ eventParticipationStats().completed }}</span>
+          </div>
+        </div>
       </div>
     </div>
   </div>

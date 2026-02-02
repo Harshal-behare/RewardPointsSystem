@@ -23,6 +23,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         private readonly Lazy<IRepository<InventoryItem>> _inventoryItems;
         private readonly Lazy<IRepository<ProductCategory>> _productCategories;
         private readonly Lazy<IRepository<Redemption>> _redemptions;
+        private readonly Lazy<IRepository<AdminMonthlyBudget>> _adminMonthlyBudgets;
 
         private bool _disposed = false;
         private bool _inTransaction = false;
@@ -41,6 +42,7 @@ namespace RewardPointsSystem.Infrastructure.Repositories
             _inventoryItems = new Lazy<IRepository<InventoryItem>>(() => new InMemoryRepository<InventoryItem>());
             _productCategories = new Lazy<IRepository<ProductCategory>>(() => new InMemoryRepository<ProductCategory>());
             _redemptions = new Lazy<IRepository<Redemption>>(() => new InMemoryRepository<Redemption>());
+            _adminMonthlyBudgets = new Lazy<IRepository<AdminMonthlyBudget>>(() => new InMemoryRepository<AdminMonthlyBudget>());
         }
 
         // Core repositories
@@ -65,10 +67,12 @@ namespace RewardPointsSystem.Infrastructure.Repositories
         // Operation repositories
         public IRepository<Redemption> Redemptions => _redemptions.Value;
 
+        // Admin repositories
+        public IRepository<AdminMonthlyBudget> AdminMonthlyBudgets => _adminMonthlyBudgets.Value;
+
         public Task<int> SaveChangesAsync()
         {
-            // In-memory implementation doesn't need explicit saves
-            // Changes are persisted immediately in memory
+            
             return Task.FromResult(0);
         }
 
@@ -96,8 +100,6 @@ namespace RewardPointsSystem.Infrastructure.Repositories
                 throw new InvalidOperationException("No active transaction to rollback");
             }
             
-            // Note: In a real implementation, you would rollback changes
-            // For in-memory, we'll just clear the transaction state
             _inTransaction = false;
             return Task.CompletedTask;
         }

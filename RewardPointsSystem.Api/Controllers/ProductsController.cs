@@ -202,12 +202,12 @@ namespace RewardPointsSystem.Api.Controllers
                 // Create inventory record if stock quantity is provided
                 if (dto.StockQuantity > 0)
                 {
-                    await _inventoryService.CreateInventoryAsync(product.Id, dto.StockQuantity, 5); // Default reorder level of 5
+                    await _inventoryService.CreateInventoryAsync(product.Id, dto.StockQuantity, 10); // Default reorder level of 10
                 }
                 else
                 {
                     // Create inventory with 0 stock to ensure the record exists
-                    await _inventoryService.CreateInventoryAsync(product.Id, 0, 5);
+                    await _inventoryService.CreateInventoryAsync(product.Id, 0, 10);
                 }
 
                 var productDto = new ProductResponseDto
@@ -325,23 +325,26 @@ namespace RewardPointsSystem.Api.Controllers
                     var existingInventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
                     if (existingInventory != null)
                     {
-                        // Update existing inventory - set the stock to the new value
+                        // The frontend displays and expects stock as (QuantityAvailable - QuantityReserved)
+                        // So the target QuantityAvailable should be: newDisplayedStock + QuantityReserved
+                        var targetQuantityAvailable = dto.StockQuantity.Value + existingInventory.QuantityReserved;
                         var currentStock = existingInventory.QuantityAvailable;
-                        var difference = dto.StockQuantity.Value - currentStock;
-                        _logger.LogInformation("Current stock: {Current}, Difference: {Diff}", currentStock, difference);
+                        var difference = targetQuantityAvailable - currentStock;
+                        _logger.LogInformation("Current QuantityAvailable: {Current}, Reserved: {Reserved}, Target: {Target}, Difference: {Diff}", 
+                            currentStock, existingInventory.QuantityReserved, targetQuantityAvailable, difference);
                         if (difference != 0)
                         {
                             // Use Adjust method which handles both positive and negative changes
                             existingInventory.Adjust(difference, userId);
                             await _unitOfWork.SaveChangesAsync();
-                            _logger.LogInformation("Stock adjusted successfully");
+                            _logger.LogInformation("Stock adjusted successfully. New QuantityAvailable: {New}", existingInventory.QuantityAvailable);
                         }
                     }
                     else
                     {
                         _logger.LogInformation("Creating new inventory for product");
                         // Create new inventory if it doesn't exist
-                        await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 5);
+                        await _inventoryService.CreateInventoryAsync(id, dto.StockQuantity.Value, 10);
                         _logger.LogInformation("Inventory created successfully");
                     }
                 }

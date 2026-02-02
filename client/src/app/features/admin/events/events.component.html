@@ -93,7 +93,7 @@
               Points Pool <span class="sort-icon">{{ getSortIcon('pointsPool') }}</span>
             </th>
             <th>Prizes</th>
-            <th class="sortable" (click)="toggleSort('participantCount')">
+            <th class="sortable centered-header" (click)="toggleSort('participantCount')">
               Participants <span class="sort-icon">{{ getSortIcon('participantCount') }}</span>
             </th>
             <th>Actions</th>
@@ -121,21 +121,21 @@
                 @if (event.firstPlacePoints || event.secondPlacePoints || event.thirdPlacePoints) {
                   <div class="prize-badges">
                     @if (event.firstPlacePoints) {
-                      <span class="prize-badge gold"><app-icon name="medal-gold" [size]="14"></app-icon> {{ event.firstPlacePoints }}</span>
+                      <span class="prize-badge gold">🥇 {{ event.firstPlacePoints }}</span>
                     }
                     @if (event.secondPlacePoints) {
-                      <span class="prize-badge silver"><app-icon name="medal-silver" [size]="14"></app-icon> {{ event.secondPlacePoints }}</span>
+                      <span class="prize-badge silver">🥈 {{ event.secondPlacePoints }}</span>
                     }
                     @if (event.thirdPlacePoints) {
-                      <span class="prize-badge bronze"><app-icon name="medal-bronze" [size]="14"></app-icon> {{ event.thirdPlacePoints }}</span>
+                      <span class="prize-badge bronze">🥉 {{ event.thirdPlacePoints }}</span>
                     }
                   </div>
                 } @else {
                   <span class="no-prizes">-</span>
                 }
               </td>
-              <td>
-                <span class="participant-count">{{ event.participantCount }} users</span>
+              <td class="centered-cell">
+                <span class="participant-count">{{ event.participantCount }}</span>
               </td>
               <td>
                 <div class="action-buttons">
@@ -176,11 +176,10 @@
 
 <!-- Event Modal -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-overlay">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
-        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -200,11 +199,13 @@
             id="eventName"
             type="text"
             [(ngModel)]="selectedEvent.name"
+            (ngModelChange)="validateEventModalRealtime()"
             name="name"
             placeholder="Enter event name"
             required
             minlength="3"
             maxlength="200"
+            [class.invalid]="selectedEvent.name !== undefined && (selectedEvent.name.trim().length || 0) < 3"
           />
           <small class="form-hint">3-200 characters required</small>
         </div>
@@ -214,6 +215,7 @@
           <textarea
             id="eventDescription"
             [(ngModel)]="selectedEvent.description"
+            (ngModelChange)="validateEventModalRealtime()"
             name="description"
             placeholder="Enter event description"
             rows="3"
@@ -229,9 +231,11 @@
               id="eventDate"
               type="date"
               [(ngModel)]="selectedEvent.eventDate"
+              (ngModelChange)="validateEventModalRealtime()"
               name="eventDate"
               required
               placeholder="YYYY-MM-DD"
+              [class.invalid]="!selectedEvent.eventDate"
             />
             <small class="form-hint">Must be a future date</small>
           </div>
@@ -242,10 +246,12 @@
               id="eventEndDate"
               type="date"
               [(ngModel)]="selectedEvent.eventEndDate"
+              (ngModelChange)="validateEventModalRealtime()"
               name="eventEndDate"
               placeholder="YYYY-MM-DD"
+              [min]="selectedEvent.eventDate"
             />
-            <small class="form-hint">Leave empty for single-day events</small>
+            <small class="form-hint">Must be after start date</small>
           </div>
         </div>
 
@@ -255,14 +261,17 @@
             <select
               id="eventStatus"
               [(ngModel)]="selectedEvent.status"
+              (ngModelChange)="validateEventModalRealtime()"
               name="status"
               required
             >
-              <option value="Draft">Draft</option>
-              <option value="Upcoming">Upcoming</option>
-              <option value="Active">Active</option>
-              <option value="Completed">Completed</option>
+              @for (status of getAvailableStatuses(); track status) {
+                <option [value]="status">{{ status }}</option>
+              }
             </select>
+            @if (modalMode() === 'create') {
+              <small class="form-hint">New events can only be Draft or Upcoming</small>
+            }
           </div>
 
           <div class="form-group">
@@ -271,10 +280,12 @@
               id="maxParticipants"
               type="number"
               [(ngModel)]="selectedEvent.maxParticipants"
+              (ngModelChange)="validateEventModalRealtime()"
               name="maxParticipants"
-              placeholder="0 (unlimited)"
-              min="0"
+              placeholder="Leave empty for unlimited"
+              min="1"
             />
+            <small class="form-hint">Leave empty for unlimited participants</small>
           </div>
         </div>
 
@@ -285,11 +296,13 @@
               id="pointsPool"
               type="number"
               [(ngModel)]="selectedEvent.pointsPool"
+              (ngModelChange)="validateEventModalRealtime()"
               name="pointsPool"
-              placeholder="0"
+              placeholder="Enter points pool"
               required
               min="1"
               max="1000000"
+              [class.invalid]="selectedEvent.pointsPool !== undefined && (selectedEvent.pointsPool || 0) <= 0"
             />
             <small class="form-hint">Must be greater than 0, max 1,000,000</small>
           </div>
@@ -297,46 +310,77 @@
 
         <!-- Prize Distribution Section -->
         <div class="form-section">
-          <h4 class="form-section-title"><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution (Optional)</h4>
-          <p class="form-section-hint">Set point rewards for top performers</p>
+          <h4 class="form-section-title"><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution (Required)</h4>
+          <p class="form-section-hint">Sum of all prizes must equal the points pool. 1st > 2nd > 3rd place.</p>
           
           <div class="form-row prize-row">
             <div class="form-group prize-input first-place">
-              <label for="firstPlacePoints"><app-icon name="medal-gold" [size]="14"></app-icon> 1st Place</label>
+              <label for="firstPlacePoints">🥇 1st Place *</label>
               <input
                 id="firstPlacePoints"
                 type="number"
                 [(ngModel)]="selectedEvent.firstPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
                 name="firstPlacePoints"
-                placeholder="0"
-                min="0"
+                placeholder="Points for 1st place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.firstPlacePoints !== undefined && (selectedEvent.firstPlacePoints || 0) <= 0"
               />
             </div>
 
             <div class="form-group prize-input second-place">
-              <label for="secondPlacePoints"><app-icon name="medal-silver" [size]="14"></app-icon> 2nd Place</label>
+              <label for="secondPlacePoints">🥈 2nd Place *</label>
               <input
                 id="secondPlacePoints"
                 type="number"
                 [(ngModel)]="selectedEvent.secondPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
                 name="secondPlacePoints"
-                placeholder="0"
-                min="0"
+                placeholder="Points for 2nd place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.secondPlacePoints !== undefined && (selectedEvent.secondPlacePoints || 0) <= 0"
               />
             </div>
 
             <div class="form-group prize-input third-place">
-              <label for="thirdPlacePoints"><app-icon name="medal-bronze" [size]="14"></app-icon> 3rd Place</label>
+              <label for="thirdPlacePoints">🥉 3rd Place *</label>
               <input
                 id="thirdPlacePoints"
                 type="number"
                 [(ngModel)]="selectedEvent.thirdPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
                 name="thirdPlacePoints"
-                placeholder="0"
-                min="0"
+                placeholder="Points for 3rd place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.thirdPlacePoints !== undefined && (selectedEvent.thirdPlacePoints || 0) <= 0"
               />
             </div>
           </div>
+          
+          <!-- Prize Summary -->
+          @if ((selectedEvent.pointsPool || 0) > 0) {
+            @let totalPrizes = (selectedEvent.firstPlacePoints || 0) + (selectedEvent.secondPlacePoints || 0) + (selectedEvent.thirdPlacePoints || 0);
+            @let remainingPool = (selectedEvent.pointsPool || 0) - totalPrizes;
+            <div class="prize-summary" [class.valid]="remainingPool === 0 && totalPrizes > 0" [class.invalid]="remainingPool !== 0">
+              <div class="pool-info">
+                <span class="pool-label">Remaining Pool:</span>
+                <span class="pool-value" [class.negative]="remainingPool < 0">{{ remainingPool }} pts</span>
+              </div>
+              <small class="pool-detail">Assigned: {{ totalPrizes }} / {{ selectedEvent.pointsPool }} pts</small>
+              @if (remainingPool === 0 && totalPrizes > 0) {
+                <app-icon name="check" [size]="16"></app-icon>
+              }
+              @if (remainingPool < 0) {
+                <small class="pool-error">⚠️ Prize total exceeds points pool!</small>
+              }
+              @if (remainingPool > 0) {
+                <small class="pool-warning">⚠️ {{ remainingPool }} pts still unassigned</small>
+              }
+            </div>
+          }
         </div>
 
         <!-- Registration Period Section -->
@@ -350,6 +394,7 @@
                 id="registrationStartDate"
                 type="date"
                 [(ngModel)]="selectedEvent.registrationStartDate"
+                (ngModelChange)="validateEventModalRealtime()"
                 name="registrationStartDate"
                 placeholder="YYYY-MM-DD"
               />
@@ -361,9 +406,12 @@
                 id="registrationEndDate"
                 type="date"
                 [(ngModel)]="selectedEvent.registrationEndDate"
+                (ngModelChange)="validateEventModalRealtime()"
                 name="registrationEndDate"
                 placeholder="YYYY-MM-DD"
+                [max]="selectedEvent.eventDate"
               />
+              <small class="form-hint">Must close before or on event start</small>
             </div>
           </div>
         </div>
@@ -412,7 +460,10 @@
       <app-button variant="secondary" (clicked)="closeModal()">
         Cancel
       </app-button>
-      <app-button (clicked)="saveEvent()">
+      <app-button 
+        (clicked)="saveEvent()" 
+        [disabled]="!isEventFormValid()"
+        [class.disabled-btn]="!isEventFormValid()">
         {{ modalMode() === 'create' ? 'Create Event' : 'Save Changes' }}
       </app-button>
     </div>
@@ -422,7 +473,7 @@
 
 <!-- Participants Modal -->
 @if (showParticipantsModal()) {
-  <div class="modal-overlay" (click)="closeParticipantsModal()">
+  <div class="modal-overlay">
     <div class="modal-content participants-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <div>
@@ -435,7 +486,6 @@
             </span>
           </p>
         </div>
-        <button class="close-btn" (click)="closeParticipantsModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
     <div class="modal-body">
       <!-- Search Bar -->
@@ -512,7 +562,7 @@
               }
               @if (filteredParticipants().length === 0) {
                 <tr>
-                  <td colspan="5" style="text-align: center; padding: 32px; color: #7A7A7A;">
+                  <td colspan="7" style="text-align: center; padding: 32px; color: #7A7A7A;">
                     No participants found
                   </td>
                 </tr>
@@ -520,17 +570,23 @@
             </tbody>
           </table>
         </div>
+        
+        <!-- Close Button at Bottom -->
+        <div class="modal-footer">
+          <app-button variant="secondary" (clicked)="closeParticipantsModal()">
+            Close
+          </app-button>
+        </div>
       </div>
     </div>
   </div>
 }
 <!-- Winner Selection Modal -->
 @if (showWinnerModal()) {
-  <div class="modal-overlay" (click)="closeWinnerModal()">
+  <div class="modal-overlay">
     <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="trophy" [size]="20"></app-icon> Award Points</h3>
-        <button class="close-btn" (click)="closeWinnerModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -540,38 +596,28 @@
           <p><strong>Event:</strong> {{ selectedEventForParticipants()?.name }}</p>
         </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label for="winnerRank">Rank Position *</label>
-            <input
-              id="winnerRank"
-              type="number"
-              [ngModel]="winnerRank()"
-              (ngModelChange)="winnerRank.set($event)"
-              name="winnerRank"
-              placeholder="Enter rank (1, 2, 3...)"
-              min="1"
-              required
-            />
-            <span class="input-hint">Winner's rank position (1st, 2nd, 3rd, etc.)</span>
-          </div>
+        <div class="form-group">
+          <label for="winnerRank">Select Rank Position *</label>
+          <select
+            id="winnerRank"
+            [ngModel]="winnerRank()"
+            (ngModelChange)="onRankChange($event)"
+            name="winnerRank"
+            required
+            class="rank-select"
+          >
+            <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
+            <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
+            <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+          </select>
+          <span class="input-hint">Select rank to auto-assign points</span>
+        </div>
 
-          <div class="form-group">
-            <label for="pointsToAward">Points to Award *</label>
-            <input
-              id="pointsToAward"
-              type="number"
-              [ngModel]="pointsToAward()"
-              (ngModelChange)="pointsToAward.set($event)"
-              name="pointsToAward"
-              placeholder="Enter points"
-              min="1"
-              [max]="selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0"
-              required
-            />
-            <span class="input-hint">
-              Remaining pool: {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0 }} / {{ selectedEventForParticipants()?.pointsPool ?? 0 }} points
-            </span>
+        <div class="points-display">
+          <div class="points-label">Points to Award:</div>
+          <div class="points-value-large">{{ pointsToAward() }} pts</div>
+          <div class="points-remaining">
+            Remaining pool after award: {{ (selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0) - pointsToAward() }} / {{ selectedEventForParticipants()?.pointsPool ?? 0 }} pts
           </div>
         </div>
 

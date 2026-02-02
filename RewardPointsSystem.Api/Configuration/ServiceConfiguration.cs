@@ -10,6 +10,7 @@ using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Products;
 using RewardPointsSystem.Application.Services.Orchestrators;
 using RewardPointsSystem.Application.Services.Admin;
+using RewardPointsSystem.Application.Services.Employee;
 using RewardPointsSystem.Infrastructure.Services;
 
 namespace RewardPointsSystem.Api.Configuration
@@ -51,8 +52,14 @@ namespace RewardPointsSystem.Api.Configuration
             // Orchestrators
             services.AddScoped<IEventRewardOrchestrator, EventRewardOrchestrator>();
             services.AddScoped<IRedemptionOrchestrator, RedemptionOrchestrator>();
+
+            // Dashboard Services
             services.AddScoped<IAdminDashboardService, AdminDashboardService>();
-            
+            services.AddScoped<IEmployeeDashboardService, EmployeeDashboardService>();
+
+            // Budget Services
+            services.AddScoped<IAdminBudgetService, AdminBudgetService>();
+
             return services;
         }
     }

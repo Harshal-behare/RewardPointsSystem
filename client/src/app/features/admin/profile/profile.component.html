@@ -73,9 +73,11 @@
           <div>
             <strong>Password Requirements:</strong>
             <ul>
-              <li>At least 8 characters long</li>
-              <li>Include uppercase and lowercase letters</li>
-              <li>Include at least one number</li>
+              <li>8-20 characters long</li>
+              <li>At least one uppercase letter (A-Z)</li>
+              <li>At least one lowercase letter (a-z)</li>
+              <li>At least one number (0-9)</li>
+              <li>At least one special character (!&#64;#$%^&amp;*)</li>
             </ul>
           </div>
         </div>
@@ -89,6 +91,7 @@
               [(ngModel)]="passwordData.currentPassword"
               name="currentPassword"
               placeholder="Enter current password"
+              (ngModelChange)="validateNewPassword()"
               required
             />
             <button
@@ -110,6 +113,7 @@
               [(ngModel)]="passwordData.newPassword"
               name="newPassword"
               placeholder="Enter new password"
+              (ngModelChange)="validateNewPassword()"
               required
             />
             <button
@@ -120,6 +124,31 @@
               <app-icon [name]="showNewPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
             </button>
           </div>
+          <!-- Real-time password validation -->
+          @if (passwordData.newPassword) {
+            <div class="password-validation">
+              <div class="validation-item" [class.valid]="passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20">
+                <span class="validation-icon">{{ passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20 ? '✓' : '✗' }}</span>
+                8-20 characters
+              </div>
+              <div class="validation-item" [class.valid]="hasUppercase(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasUppercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one uppercase letter
+              </div>
+              <div class="validation-item" [class.valid]="hasLowercase(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasLowercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one lowercase letter
+              </div>
+              <div class="validation-item" [class.valid]="hasNumber(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasNumber(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one number
+              </div>
+              <div class="validation-item" [class.valid]="hasSpecialChar(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasSpecialChar(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one special character
+              </div>
+            </div>
+          }
         </div>
 
         <div class="form-group">
@@ -131,6 +160,7 @@
               [(ngModel)]="passwordData.confirmPassword"
               name="confirmPassword"
               placeholder="Confirm new password"
+              (ngModelChange)="validateNewPassword()"
               required
             />
             <button
@@ -141,11 +171,14 @@
               <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
             </button>
           </div>
+          @if (passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword) {
+            <span class="error-text">Passwords do not match</span>
+          }
         </div>
 
         <div class="form-actions">
-          <app-button type="submit" [fullWidth]="true">
-            <app-icon name="lock" [size]="16"></app-icon> Update Password
+          <app-button type="submit" [fullWidth]="true" [disabled]="!isPasswordFormValid()">
+            <app-icon name="lock" [size]="16"></app-icon> Change Password
           </app-button>
         </div>
       </form>

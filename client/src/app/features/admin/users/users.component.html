@@ -167,11 +167,10 @@
 
 <!-- User Modal -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-overlay">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Add New User' : 'Edit User' }}</h3>
-        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -192,11 +191,13 @@
               id="firstName"
               type="text"
               [(ngModel)]="selectedUser.firstName"
+              (ngModelChange)="validateUserModalRealtime()"
               name="firstName"
               placeholder="Enter first name"
               required
               maxlength="20"
               pattern="^[a-zA-Z][a-zA-Z ]*$"
+              [class.invalid]="selectedUser.firstName !== undefined && (!selectedUser.firstName.trim() || selectedUser.firstName.trim().length === 0)"
             />
             <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
           </div>
@@ -207,11 +208,13 @@
               id="lastName"
               type="text"
               [(ngModel)]="selectedUser.lastName"
+              (ngModelChange)="validateUserModalRealtime()"
               name="lastName"
               placeholder="Enter last name"
               required
               maxlength="20"
               pattern="^[a-zA-Z][a-zA-Z ]*$"
+              [class.invalid]="selectedUser.lastName !== undefined && (!selectedUser.lastName.trim() || selectedUser.lastName.trim().length === 0)"
             />
             <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
           </div>
@@ -223,12 +226,14 @@
             id="email"
             type="email"
             [(ngModel)]="selectedUser.email"
+            (ngModelChange)="validateUserModalRealtime()"
             name="email"
             placeholder="user@agdata.com"
             required
             maxlength="255"
             [readonly]="modalMode() === 'edit'"
             [class.readonly]="modalMode() === 'edit'"
+            [class.invalid]="selectedUser.email !== undefined && (!selectedUser.email.trim() || !selectedUser.email.endsWith('@agdata.com'))"
           />
           @if (modalMode() === 'create') {
             <small class="form-hint">Must be an @agdata.com email address</small>
@@ -243,6 +248,7 @@
             <select
               id="role"
               [(ngModel)]="selectedUser.role"
+              (ngModelChange)="validateUserModalRealtime()"
               name="role"
               required
               [disabled]="isLastAdminRoleProtected()"
@@ -262,6 +268,7 @@
             <select
               id="status"
               [(ngModel)]="selectedUser.status"
+              (ngModelChange)="validateUserModalRealtime()"
               name="status"
               required
               [disabled]="isLastAdminStatusProtected()"
@@ -277,17 +284,31 @@
         </div>
 
         @if (modalMode() === 'create') {
-          <div class="form-group">
+          <div class="form-group password-field">
             <label for="password">Initial Password *</label>
-            <input
-              id="password"
-              type="password"
-              [(ngModel)]="selectedUser.password"
-              placeholder="Enter initial password"
-              name="password"
-              required
-              minlength="8"
-            />
+            <div class="password-input-wrapper">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                [(ngModel)]="selectedUser.password"
+                (ngModelChange)="validateUserModalRealtime()"
+                placeholder="Enter initial password"
+                name="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+                [class.invalid]="selectedUser.password !== undefined && (selectedUser.password.length || 0) < 8"
+              />
+              <button 
+                type="button" 
+                class="toggle-password"
+                (mouseenter)="showPassword.set(true)"
+                (mouseleave)="showPassword.set(false)"
+                tabindex="-1"
+              >
+                <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+              </button>
+            </div>
             <small class="form-help">Min 8 characters, must include: uppercase, lowercase, number, and special character</small>
           </div>
         }
@@ -304,7 +325,10 @@
       <app-button variant="secondary" (clicked)="closeModal()">
         Cancel
       </app-button>
-      <app-button (clicked)="saveUser()">
+      <app-button 
+        (clicked)="saveUser()"
+        [disabled]="!isUserFormValid()"
+        [class.disabled-btn]="!isUserFormValid()">
         {{ modalMode() === 'create' ? 'Create User' : 'Save Changes' }}
       </app-button>
     </div>

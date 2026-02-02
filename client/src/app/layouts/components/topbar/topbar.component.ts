@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, signal } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, signal, input } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { AuthService } from '../../../auth/auth.service';
@@ -10,7 +10,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   standalone: true,
   imports: [IconComponent],
   template: `
-    <header class="topbar">
+    <header class="topbar" [class.sidebar-collapsed]="sidebarCollapsed()">
       <div class="topbar-left">
         <h1>{{ pageTitle() }}</h1>
       </div>
@@ -75,6 +75,11 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       justify-content: space-between;
       padding: 0 32px;
       z-index: 90;
+      transition: left 0.3s ease;
+    }
+
+    .topbar.sidebar-collapsed {
+      left: 70px;
     }
 
     .topbar-left h1 {
@@ -239,9 +244,27 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       margin: 4px 0;
     }
 
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      .topbar {
+        left: 0;
+        padding: 0 16px;
+      }
+
+      .topbar-left h1 {
+        font-size: 18px;
+      }
+
+      .user-info {
+        display: none;
+      }
+    }
+
   `]
 })
 export class TopbarComponent implements OnInit, OnDestroy {
+  sidebarCollapsed = input<boolean>(false);
+
   pageTitle = signal('Dashboard');
   userName = signal('Admin User');
   userRole = signal('Administrator');
@@ -251,8 +274,10 @@ export class TopbarComponent implements OnInit, OnDestroy {
   isAdmin = false;
   userRoles: string[] = [];
   private profileLoaded = false;
-  
+
   private routerSubscription?: Subscription;
+  private nameUpdateSubscription?: Subscription;
+  private clickHandler = (event: Event) => this.handleDocumentClick(event);
   
   // Route to page title mapping
   private readonly pageTitleMap: { [key: string]: string } = {
@@ -290,18 +315,34 @@ export class TopbarComponent implements OnInit, OnDestroy {
       this.updatePageTitle(event.urlAfterRedirects || event.url);
     });
     
-    // Close dropdown when clicking outside
-    document.addEventListener('click', (event) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest('.user-menu')) {
-        this.showDropdown = false;
+    // Subscribe to user name changes (e.g., from Profile page updates)
+    this.nameUpdateSubscription = this.authService.userNameUpdated$.subscribe(nameData => {
+      if (nameData) {
+        const fullName = `${nameData.firstName} ${nameData.lastName}`.trim();
+        this.userName.set(fullName);
+        this.userInitials.set(this.getInitials(nameData.firstName, nameData.lastName));
       }
     });
+    
+    // Close dropdown when clicking outside
+    document.addEventListener('click', this.clickHandler);
   }
-  
+
   ngOnDestroy(): void {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    if (this.nameUpdateSubscription) {
+      this.nameUpdateSubscription.unsubscribe();
+    }
+    // Remove document click listener to prevent memory leak
+    document.removeEventListener('click', this.clickHandler);
+  }
+
+  private handleDocumentClick(event: Event): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.user-menu')) {
+      this.showDropdown = false;
     }
   }
   

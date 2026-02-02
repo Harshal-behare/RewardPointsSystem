@@ -36,13 +36,6 @@
         <div class="stat-label">Rejected</div>
       </div>
     </div>
-    <div class="stat-card">
-      <div class="stat-icon" style="background-color: #F5F5F5;"><app-icon name="cancelled" [size]="24"></app-icon></div>
-      <div class="stat-content">
-        <div class="stat-value">{{ stats().cancelled }}</div>
-        <div class="stat-label">Cancelled</div>
-      </div>
-    </div>
   </div>
 
   <app-card>
@@ -87,12 +80,6 @@
           (click)="setFilter('Rejected')">
           Rejected ({{ stats().rejected }})
         </button>
-        <button 
-          class="tab-button" 
-          [class.active]="currentFilter() === 'Cancelled'"
-          (click)="setFilter('Cancelled')">
-          Cancelled ({{ stats().cancelled }})
-        </button>
       </div>
       
       <div class="search-row">
@@ -117,20 +104,20 @@
       <table class="redemptions-table">
         <thead>
           <tr>
-            <th class="sortable" (click)="toggleSort('userName')">
+            <th class="sortable" [class.active]="sortField() === 'userName'" (click)="toggleSort('userName')">
               Employee Name <span class="sort-icon">{{ getSortIcon('userName') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('productName')">
+            <th class="sortable" [class.active]="sortField() === 'productName'" (click)="toggleSort('productName')">
               Product Name <span class="sort-icon">{{ getSortIcon('productName') }}</span>
             </th>
             <th>Quantity</th>
-            <th class="sortable" (click)="toggleSort('pointsSpent')">
+            <th class="sortable" [class.active]="sortField() === 'pointsSpent'" (click)="toggleSort('pointsSpent')">
               Points Redeemed <span class="sort-icon">{{ getSortIcon('pointsSpent') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('requestedAt')">
+            <th class="sortable" [class.active]="sortField() === 'requestedAt'" (click)="toggleSort('requestedAt')">
               Request Date <span class="sort-icon">{{ getSortIcon('requestedAt') }}</span>
             </th>
-            <th class="sortable" (click)="toggleSort('status')">
+            <th class="sortable" [class.active]="sortField() === 'status'" (click)="toggleSort('status')">
               Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
             </th>
             <th>Actions</th>
@@ -149,10 +136,7 @@
                 </div>
               </td>
               <td>
-                <div class="product-info">
-                  <div class="product-thumbnail"><app-icon name="box" [size]="20"></app-icon></div>
-                  <strong>{{ request.productName }}</strong>
-                </div>
+                <strong>{{ request.productName }}</strong>
               </td>
               <td>
                 <span class="quantity-value">{{ request.quantity || 1 }}</span>
@@ -224,11 +208,10 @@
 
 <!-- Approve Confirmation Modal -->
 @if (showApproveModal()) {
-  <div class="modal-overlay" (click)="closeApproveModal()">
+  <div class="modal-overlay">
     <div class="modal-content approve-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="check" [size]="20"></app-icon> Approve Redemption</h3>
-        <button class="close-btn" (click)="closeApproveModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -259,11 +242,10 @@
 
 <!-- Reject Confirmation Modal -->
 @if (showRejectModal()) {
-  <div class="modal-overlay" (click)="closeRejectModal()">
+  <div class="modal-overlay">
     <div class="modal-content reject-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="close" [size]="20"></app-icon> Reject Redemption</h3>
-        <button class="close-btn" (click)="closeRejectModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -304,11 +286,10 @@
 
 <!-- View Details Modal -->
 @if (showDetailsModal()) {
-  <div class="modal-overlay" (click)="closeDetailsModal()">
+  <div class="modal-overlay">
     <div class="modal-content details-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="clipboard" [size]="20"></app-icon> Redemption Details</h3>
-        <button class="close-btn" (click)="closeDetailsModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -408,11 +389,10 @@
 
 <!-- Deliver Confirmation Modal -->
 @if (showDeliverModal()) {
-  <div class="modal-overlay" (click)="closeDeliverModal()">
+  <div class="modal-overlay">
     <div class="modal-content deliver-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="package" [size]="20"></app-icon> Mark as Delivered</h3>
-        <button class="close-btn" (click)="closeDeliverModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">

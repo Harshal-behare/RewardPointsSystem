@@ -26,7 +26,7 @@ namespace RewardPointsSystem.Infrastructure.Configuration
                             errorNumbersToAdd: null);
                     }));
 
-            // Add repositories here when implemented
+           
             // services.AddScoped<IUserRepository, UserRepository>();
             // services.AddScoped<IUnitOfWork, UnitOfWork>();
 

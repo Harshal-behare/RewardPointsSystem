@@ -1,135 +1,163 @@
 .login-page {
-  height: 100vh;
+  min-height: 100vh;
   width: 100%;
-  background: radial-gradient(circle at top, #ffffff, #f2f2f2);
+  background: var(--bg-secondary);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: "Segoe UI", sans-serif;
+  padding: var(--space-md);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
 }
 
 .login-card {
-  background: white;
-  width: 420px;
-  padding: 40px 30px;
-  border-radius: 12px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  background: var(--bg-primary);
+  width: 100%;
+  max-width: 400px;
+  padding: var(--space-xl);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
   text-align: center;
 }
 
-.brand {
-  color: #1f6b3a;
-  font-size: 36px;
-  font-weight: 600;
-  margin-bottom: 20px;
+.brand-logo {
+  margin-bottom: var(--space-lg);
 }
 
 .login-box {
-  border: 1px solid #e5e5e5;
-  border-radius: 10px;
-  padding: 30px 25px;
+  border: 1px solid #e0e0e0;
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
 }
 
 .login-box h2 {
-  margin-bottom: 20px;
-  font-size: 22px;
+  margin-bottom: var(--space-lg);
+  font-size: var(--font-size-2xl);
+  font-weight: 500;
+  color: var(--text-primary);
 }
 
 .form-group {
   text-align: left;
-  margin-bottom: 18px;
+  margin-bottom: var(--space-md);
 }
 
 .form-group label {
-  font-size: 14px;
-  color: #333;
-  margin-bottom: 6px;
   display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-xs);
 }
 
 .form-group input {
   width: 100%;
-  padding: 10px;
-  border-radius: 6px;
-  border: 1px solid #dcdcdc;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--text-placeholder);
   outline: none;
-  font-size: 14px;
+  font-size: var(--font-size-base);
+  font-family: var(--font-family);
+  color: var(--text-primary);
+  transition: border-color 0.15s ease;
+}
+
+.form-group input::placeholder {
+  color: var(--text-placeholder);
 }
 
 .form-group input:focus {
-  border-color: #1f6b3a;
+  border-color: var(--brand-primary);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
 }
 
 .error {
-  color: #dc3545;
-  font-size: 13px;
-  margin-top: 5px;
+  color: var(--status-error);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-xs);
   text-align: left;
 }
 
 .error-list {
-  margin: 15px 0;
-  padding: 12px;
-  background-color: #fff3f3;
-  border: 1px solid #ffcdd2;
-  border-radius: 6px;
+  margin: var(--space-md) 0;
+  padding: var(--space-md);
+  background-color: var(--status-error-bg);
+  border: 1px solid var(--status-error);
+  border-radius: var(--radius-sm);
   text-align: left;
 }
 
 .error-list .error {
-  margin: 4px 0;
-  padding-left: 16px;
+  margin: var(--space-xs) 0;
+  padding-left: var(--space-md);
   position: relative;
 }
 
 .error-list .error::before {
   content: "•";
   position: absolute;
-  left: 4px;
+  left: var(--space-xs);
 }
 
 .login-btn {
   width: 100%;
-  margin-top: 15px;
+  margin-top: var(--space-md);
   padding: 12px;
-  background: linear-gradient(135deg, #1f6b3a, #155a30);
-  color: white;
+  background: #174F2A;
+  color: var(--text-on-color);
   border: none;
-  border-radius: 8px;
-  font-size: 15px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
   font-weight: 500;
+  font-family: var(--font-family);
   cursor: pointer;
+  transition: background-color 0.15s ease;
 }
 
-.login-btn:hover {
-  background: linear-gradient(135deg, #155a30, #104524);
-}
-
-.login-btn:disabled {
-  opacity: 0.7;
+.login-btn:disabled,
+.login-btn.disabled {
+  opacity: 0.6;
   cursor: not-allowed;
+  background: #95a5a6;
+}
+
+.login-btn:not(:disabled):not(.disabled):hover {
+  background: #174F2A;
 }
 
 .forgot-link {
   display: block;
-  margin-top: 15px;
-  font-size: 14px;
-  color: #333;
+  margin-top: var(--space-md);
+  font-size: var(--font-size-sm);
+  color: #4caf50;
   text-decoration: none;
+}
+
+.forgot-link:hover {
+  color: #388e3c;
 }
 
 .footer-links {
-  margin-top: 25px;
+  margin-top: var(--space-lg);
   display: flex;
   justify-content: center;
-  gap: 20px;
-  font-size: 14px;
+  gap: var(--space-lg);
+  font-size: var(--font-size-sm);
 }
 
 .footer-links a {
-  color: #333;
+  color:  #174F2A;
   text-decoration: none;
 }
+
+.footer-links a:hover {
+  color: var(--brand-primary);
+}
+
 .password-wrapper {
   position: relative;
   display: flex;
@@ -138,10 +166,17 @@
 
 .password-wrapper input {
   width: 100%;
-  padding-right: 44px; /* space for the icon */
+  padding-right: 44px;
 }
 
-/* Always visible icon */
+/* Hide browser's native password reveal button */
+.password-wrapper input::-ms-reveal,
+.password-wrapper input::-ms-clear,
+.password-wrapper input::-webkit-clear-button,
+.password-wrapper input::-webkit-inner-spin-button {
+  display: none;
+}
+
 .toggle-password {
   position: absolute;
   right: 10px;
@@ -150,18 +185,55 @@
   border: none;
   background: transparent;
   cursor: pointer;
-  padding: 0;
+  padding: 4px;
   line-height: 1;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: var(--text-secondary);
+  transition: color 0.15s ease;
+  border-radius: 4px;
 }
 
-.toggle-password .eye {
-  font-size: 16px;
-  opacity: 0.8;
+.toggle-password:hover,
+.toggle-password:focus {
+  color:  #174F2A;
+  outline: none;
 }
 
-.toggle-password:hover .eye {
-  opacity: 1;
+.toggle-password .password-icon {
+  display: block;
+}
+
+.form-hint {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--text-secondary);
+  margin-top: var(--space-xs);
+  text-align: left;
+}
+
+/* Input states for real-time validation */
+.form-group input.ng-invalid.ng-touched,
+.form-group input.ng-invalid.ng-dirty {
+  border-color: var(--status-error);
+}
+
+.form-group input.ng-valid.ng-touched,
+.form-group input.ng-valid.ng-dirty {
+  border-color: #174F2A;
+}
+
+/* Validation message animation */
+.error {
+  color: var(--status-error);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-xs);
+  text-align: left;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }

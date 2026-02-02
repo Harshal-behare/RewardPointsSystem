@@ -32,6 +32,7 @@ interface UserProfileResponse {
 export class AdminProfileComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
+  isPasswordFormValid = signal(false);
   
   userId = '';
   
@@ -153,6 +154,11 @@ export class AdminProfileComponent implements OnInit {
       return;
     }
 
+    if (this.passwordData.newPassword.length > 20) {
+      this.toast.error('Password cannot exceed 20 characters!');
+      return;
+    }
+
     // Validate password strength
     if (!/[A-Z]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one uppercase letter');
@@ -164,6 +170,10 @@ export class AdminProfileComponent implements OnInit {
     }
     if (!/[0-9]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one number');
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
       return;
     }
 
@@ -202,5 +212,38 @@ export class AdminProfileComponent implements OnInit {
         this.showConfirmPassword = !this.showConfirmPassword;
         break;
     }
+  }
+
+  // Password validation helper methods
+  hasUppercase(password: string): boolean {
+    return /[A-Z]/.test(password);
+  }
+
+  hasLowercase(password: string): boolean {
+    return /[a-z]/.test(password);
+  }
+
+  hasNumber(password: string): boolean {
+    return /[0-9]/.test(password);
+  }
+
+  hasSpecialChar(password: string): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  }
+
+  validateNewPassword(): void {
+    const pwd = this.passwordData.newPassword;
+    const isValid = 
+      this.passwordData.currentPassword.length > 0 &&
+      pwd.length >= 8 &&
+      pwd.length <= 20 &&
+      this.hasUppercase(pwd) &&
+      this.hasLowercase(pwd) &&
+      this.hasNumber(pwd) &&
+      this.hasSpecialChar(pwd) &&
+      this.passwordData.confirmPassword === pwd &&
+      this.passwordData.confirmPassword.length > 0;
+    
+    this.isPasswordFormValid.set(isValid);
   }
 }

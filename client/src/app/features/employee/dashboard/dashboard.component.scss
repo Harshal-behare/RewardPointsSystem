@@ -1,6 +1,7 @@
 .employee-dashboard {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px;
 }
 
 /* ===== HEADER ===== */
@@ -89,6 +90,262 @@
         font-size: 28px;
         font-weight: 700;
         color: #2C3E50;
+      }
+    }
+  }
+}
+
+/* ===== MY REDEMPTIONS SUMMARY ===== */
+.redemptions-summary-section,
+.events-participation-section {
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border: 1px solid #F4F6F7;
+  margin-bottom: 30px;
+
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+
+    .section-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #2c3e50;
+      margin: 0;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .view-all-btn {
+      background: none;
+      border: none;
+      color: #27AE60;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s;
+
+      &:hover {
+        color: #229954;
+        gap: 8px;
+      }
+    }
+  }
+  
+  .chart-stats-container {
+    display: grid;
+    grid-template-columns: 250px 1fr;
+    gap: 24px;
+    align-items: center;
+    
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+    
+    .chart-wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      
+      .empty-chart-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 20px;
+        color: #95A5A6;
+        
+        p {
+          margin: 12px 0 0;
+          font-size: 14px;
+        }
+      }
+    }
+  }
+
+  .redemptions-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .redemption-stat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+
+      &.pending-stat {
+        background-color: #FFF3CD;
+        border-color: #F39C12;
+
+        .redemption-icon {
+          color: #F39C12;
+        }
+
+        .redemption-value {
+          color: #F39C12;
+        }
+
+        &:hover {
+          background-color: #FFE99D;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(243, 156, 18, 0.2);
+        }
+      }
+
+      &.approved-stat {
+        background-color: #D5F4E6;
+        border-color: #27AE60;
+
+        .redemption-icon {
+          color: #27AE60;
+        }
+
+        .redemption-value {
+          color: #27AE60;
+        }
+
+        &:hover {
+          background-color: #B8EDD2;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+        }
+      }
+
+      &.delivered-stat {
+        background-color: #EBF5FB;
+        border-color: #3498DB;
+
+        .redemption-icon {
+          color: #3498DB;
+        }
+
+        .redemption-value {
+          color: #3498DB;
+        }
+
+        &:hover {
+          background-color: #D6EAF8;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(52, 152, 219, 0.2);
+        }
+      }
+
+      .redemption-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+      }
+
+      .redemption-content {
+        display: flex;
+        flex-direction: column;
+
+        .redemption-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #7A7A7A;
+          margin-bottom: 4px;
+        }
+
+        .redemption-value {
+          font-size: 24px;
+          font-weight: 700;
+        }
+      }
+    }
+  }
+  
+  .events-participation-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .participation-stat {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 2px solid transparent;
+      transition: all 0.2s;
+
+      &.registered-stat {
+        background-color: #F5EEF8;
+        border-color: #9B59B6;
+
+        .participation-icon {
+          color: #9B59B6;
+        }
+
+        .participation-value {
+          color: #9B59B6;
+        }
+
+        &:hover {
+          background-color: #E8DAEF;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(155, 89, 182, 0.2);
+        }
+      }
+
+      &.completed-stat {
+        background-color: #D5F4E6;
+        border-color: #27AE60;
+
+        .participation-icon {
+          color: #27AE60;
+        }
+
+        .participation-value {
+          color: #27AE60;
+        }
+
+        &:hover {
+          background-color: #B8EDD2;
+          transform: translateY(-2px);
+          box-shadow: 0 4px 12px rgba(39, 174, 96, 0.2);
+        }
+      }
+
+      .participation-icon {
+        font-size: 32px;
+        flex-shrink: 0;
+      }
+
+      .participation-content {
+        display: flex;
+        flex-direction: column;
+
+        .participation-label {
+          font-size: 13px;
+          font-weight: 500;
+          color: #7A7A7A;
+          margin-bottom: 4px;
+        }
+
+        .participation-value {
+          font-size: 24px;
+          font-weight: 700;
+        }
       }
     }
   }

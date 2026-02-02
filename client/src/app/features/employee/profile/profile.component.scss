@@ -1,6 +1,7 @@
-// AGDATA Green Theme
-$primary: #1B5E20;
-$primary-light: #2E7D32;
+// AGDATA Green Theme - Standardized Colors
+$primary: #27AE60;
+$primary-dark: #229954;
+$primary-light: #D5F4E6;
 $text: #2C3E50;
 $text-muted: #7A7A7A;
 $border: #E8EBED;
@@ -12,8 +13,8 @@ $font: 'Roboto', -apple-system, sans-serif;
 
 .profile-page {
   font-family: $font;
-  max-width: 1000px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   padding: 20px;
 }
 
@@ -43,17 +44,17 @@ $font: 'Roboto', -apple-system, sans-serif;
 
 // Page Header
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
 
   h1 {
-    margin: 0 0 4px;
-    font-size: 24px;
-    font-weight: 600;
+    margin: 0 0 8px;
+    font-size: 32px;
+    font-weight: 700;
     color: $text;
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 16px;
     color: $text-muted;
   }
 }
@@ -62,30 +63,31 @@ $font: 'Roboto', -apple-system, sans-serif;
 .profile-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 24px;
+  gap: 32px;
 }
 
 // Card
 .card {
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   overflow: hidden;
+  height: fit-content;
 
   .card-header {
-    padding: 16px 20px;
+    padding: 20px 24px;
     border-bottom: 1px solid $border;
 
     h2 {
       margin: 0;
-      font-size: 16px;
+      font-size: 18px;
       font-weight: 600;
       color: $text;
     }
   }
 
   .card-body {
-    padding: 20px;
+    padding: 24px;
   }
 }
 
@@ -93,27 +95,28 @@ $font: 'Roboto', -apple-system, sans-serif;
 .avatar-section {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
+  gap: 24px;
+  margin-bottom: 24px;
 
   .avatar {
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, $primary 0%, $primary-light 100%);
+    background: linear-gradient(135deg, $primary 0%, #2ECC71 100%);
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 22px;
+    font-size: 28px;
     font-weight: 700;
     flex-shrink: 0;
+    box-shadow: 0px 4px 12px rgba(39, 174, 96, 0.3);
   }
 
   .avatar-info {
     h3 {
-      margin: 0 0 6px;
-      font-size: 18px;
+      margin: 0 0 8px;
+      font-size: 24px;
       font-weight: 600;
       color: $text;
     }
@@ -133,33 +136,33 @@ $font: 'Roboto', -apple-system, sans-serif;
 .divider {
   height: 1px;
   background: $border;
-  margin: 20px 0;
+  margin: 24px 0;
 }
 
 // Form Styles
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .form-group {
-  margin-bottom: 16px;
+  margin-bottom: 20px;
 
   label {
     display: block;
-    margin-bottom: 6px;
-    font-size: 13px;
+    margin-bottom: 8px;
+    font-size: 14px;
     font-weight: 600;
     color: $text;
   }
 
   input {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid $border;
-    border-radius: 6px;
-    font-size: 14px;
+    border-radius: 8px;
+    font-size: 15px;
     font-family: $font;
     transition: border-color 0.2s;
 
@@ -224,6 +227,36 @@ $font: 'Roboto', -apple-system, sans-serif;
 
     &:hover {
       background: $bg;
+    }
+  }
+}
+
+// Password Validation Checklist
+.password-validation {
+  margin-top: 10px;
+  padding: 12px;
+  background: $bg;
+  border-radius: 6px;
+  
+  .validation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: $error;
+    margin-bottom: 4px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .validation-icon {
+      width: 16px;
+      font-weight: 700;
+    }
+    
+    &.valid {
+      color: $primary;
     }
   }
 }

@@ -50,6 +50,9 @@ export class AdminProductsComponent implements OnInit {
     
     // Validation errors for modal
     modalValidationErrors: string[] = [];
+    
+    // Track form validity for disabling save button
+    isProductFormValid = signal(false);
 
     // Client-side validators matching backend rules
     validateProductModal(): boolean {
@@ -65,6 +68,11 @@ export class AdminProductsComponent implements OnInit {
         }
       }
       
+      // Category is required
+      if (!this.selectedProduct.categoryId) {
+        this.modalValidationErrors.push('Category is required');
+      }
+      
       // Description: max 1000 chars
       const description = (this.selectedProduct.description || '').trim();
       if (description && description.length > 1000) {
@@ -72,12 +80,12 @@ export class AdminProductsComponent implements OnInit {
       }
       
       // Points price: > 0
-      if (!this.selectedProduct.pointsPrice || this.selectedProduct.pointsPrice <= 0) {
-        this.modalValidationErrors.push('Points price must be greater than 0');
+      if (!this.selectedProduct.pointsPrice || this.selectedProduct.pointsPrice < 1) {
+        this.modalValidationErrors.push('Points price must be at least 1');
       }
       
       // Stock: >= 0
-      if (this.selectedProduct.stock !== undefined && this.selectedProduct.stock < 0) {
+      if (this.selectedProduct.stock === undefined || this.selectedProduct.stock === null || this.selectedProduct.stock < 0) {
         this.modalValidationErrors.push('Stock quantity cannot be negative');
       }
       
@@ -92,7 +100,14 @@ export class AdminProductsComponent implements OnInit {
         }
       }
       
-      return this.modalValidationErrors.length === 0;
+      const isValid = this.modalValidationErrors.length === 0;
+      this.isProductFormValid.set(isValid);
+      return isValid;
+    }
+    
+    // Real-time validation for form input changes
+    validateProductModalRealtime(): void {
+      this.validateProductModal();
     }
   products = signal<DisplayProduct[]>([]);
   isLoading = signal(true);
@@ -252,7 +267,11 @@ export class AdminProductsComponent implements OnInit {
     } else if (stock < 5) {
       return { label: 'Low Stock', variant: 'warning' };
     }
-    return { label: 'In Stock', variant: 'success' };
+    return { label: `${stock} units`, variant: 'success' };
+  }
+
+  handleImageError(event: Event): void {
+    (event.target as HTMLImageElement).src = 'https://via.placeholder.com/150?text=No+Image';
   }
 
   getStatusVariant(status: string): 'success' | 'secondary' {
@@ -266,11 +285,13 @@ export class AdminProductsComponent implements OnInit {
       description: '',
       category: '',
       categoryId: undefined,
-      pointsPrice: 0,
+      pointsPrice: 1,  // Default to 1 (must be > 0)
       stock: 0,
       imageUrl: '',
       status: 'Active'
     };
+    this.modalValidationErrors = [];
+    this.isProductFormValid.set(false);
     this.showModal.set(true);
   }
 
@@ -288,6 +309,8 @@ export class AdminProductsComponent implements OnInit {
       imageUrl: product.imageUrl,
       status: product.status
     };
+    this.modalValidationErrors = [];
+    this.validateProductModalRealtime();
     this.showModal.set(true);
   }
 

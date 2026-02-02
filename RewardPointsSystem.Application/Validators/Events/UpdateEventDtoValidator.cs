@@ -30,6 +30,24 @@ namespace RewardPointsSystem.Application.Validators.Events
                 RuleFor(x => x.TotalPointsPool)
                     .LessThanOrEqualTo(1000000).WithMessage("Points pool cannot exceed 1,000,000");
             });
+
+            // Prize distribution validation: 1st > 2nd > 3rd
+            RuleFor(x => x.FirstPlacePoints)
+                .GreaterThan(0).WithMessage("First place points must be greater than 0")
+                .LessThanOrEqualTo(1000000).WithMessage("First place points cannot exceed 1,000,000")
+                .When(x => x.FirstPlacePoints.HasValue);
+
+            RuleFor(x => x.SecondPlacePoints)
+                .GreaterThan(0).WithMessage("Second place points must be greater than 0")
+                .LessThan(x => x.FirstPlacePoints ?? int.MaxValue)
+                    .WithMessage("Second place points must be less than first place points")
+                .When(x => x.SecondPlacePoints.HasValue && x.FirstPlacePoints.HasValue);
+
+            RuleFor(x => x.ThirdPlacePoints)
+                .GreaterThan(0).WithMessage("Third place points must be greater than 0")
+                .LessThan(x => x.SecondPlacePoints ?? int.MaxValue)
+                    .WithMessage("Third place points must be less than second place points")
+                .When(x => x.ThirdPlacePoints.HasValue && x.SecondPlacePoints.HasValue);
         }
     }
 }

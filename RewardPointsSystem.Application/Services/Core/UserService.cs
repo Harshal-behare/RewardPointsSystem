@@ -92,17 +92,70 @@ namespace RewardPointsSystem.Application.Services.Core
 
             // Check for pending or approved (not yet delivered) redemptions
             var pendingRedemptions = await _unitOfWork.Redemptions.FindAsync(
-                r => r.UserId == id && 
+                r => r.UserId == id &&
                      (r.Status == RedemptionStatus.Pending || r.Status == RedemptionStatus.Approved));
-            
+
             if (pendingRedemptions.Any())
                 throw new InvalidOperationException(
                     $"Cannot deactivate user with {pendingRedemptions.Count()} pending redemption(s). " +
                     "Please process all redemptions before deactivating the user.");
 
+            // Check if this is the last admin
+            await ValidateLastAdminProtectionAsync(id, "deactivate");
+
             user.Deactivate(id);
             await _unitOfWork.Users.UpdateAsync(user);
             await _unitOfWork.SaveChangesAsync();
+        }
+
+        /// <summary>
+        /// Get count of active admins in the system
+        /// </summary>
+        public async Task<int> GetActiveAdminCountAsync()
+        {
+            var adminRole = await _unitOfWork.Roles.SingleOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole == null)
+                return 0;
+
+            var adminUserRoles = await _unitOfWork.UserRoles.FindAsync(ur => ur.RoleId == adminRole.Id && ur.IsActive);
+            var activeAdminCount = 0;
+
+            foreach (var userRole in adminUserRoles)
+            {
+                var user = await _unitOfWork.Users.GetByIdAsync(userRole.UserId);
+                if (user != null && user.IsActive)
+                {
+                    activeAdminCount++;
+                }
+            }
+
+            return activeAdminCount;
+        }
+
+        /// <summary>
+        /// Validate that the last admin is not being deactivated or having their role changed
+        /// </summary>
+        private async Task ValidateLastAdminProtectionAsync(Guid userId, string action)
+        {
+            // Check if user is an admin
+            var adminRole = await _unitOfWork.Roles.SingleOrDefaultAsync(r => r.Name == "Admin");
+            if (adminRole == null)
+                return;
+
+            var userRoles = await _unitOfWork.UserRoles.FindAsync(
+                ur => ur.UserId == userId && ur.RoleId == adminRole.Id && ur.IsActive);
+
+            if (!userRoles.Any())
+                return; // User is not an admin, no protection needed
+
+            // Count active admins
+            var activeAdminCount = await GetActiveAdminCountAsync();
+
+            if (activeAdminCount <= 1)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot {action} the last remaining admin. At least one admin must exist in the system.");
+            }
         }
     }
 }

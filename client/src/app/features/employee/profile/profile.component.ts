@@ -24,6 +24,7 @@ export class EmployeeProfileComponent implements OnInit {
   // Use signals for reactive state
   isLoading = signal(true);
   isSaving = signal(false);
+  isPasswordFormValid = signal(false);
 
   userId = '';
 
@@ -172,6 +173,11 @@ export class EmployeeProfileComponent implements OnInit {
       return;
     }
 
+    if (this.passwordData.newPassword.length > 20) {
+      this.toast.error('Password cannot exceed 20 characters!');
+      return;
+    }
+
     // Validate password strength
     if (!/[A-Z]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one uppercase letter');
@@ -183,6 +189,10 @@ export class EmployeeProfileComponent implements OnInit {
     }
     if (!/[0-9]/.test(this.passwordData.newPassword)) {
       this.toast.error('Password must contain at least one number');
+      return;
+    }
+    if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.passwordData.newPassword)) {
+      this.toast.error('Password must contain at least one special character (!@#$%^&*()_+-=[]{};\':"|,.<>/?)');
       return;
     }
 
@@ -227,5 +237,38 @@ export class EmployeeProfileComponent implements OnInit {
     const first = this.profileData().firstName?.charAt(0) || '';
     const last = this.profileData().lastName?.charAt(0) || '';
     return (first + last).toUpperCase();
+  }
+
+  // Password validation helper methods
+  hasUppercase(password: string): boolean {
+    return /[A-Z]/.test(password);
+  }
+
+  hasLowercase(password: string): boolean {
+    return /[a-z]/.test(password);
+  }
+
+  hasNumber(password: string): boolean {
+    return /[0-9]/.test(password);
+  }
+
+  hasSpecialChar(password: string): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  }
+
+  validateNewPassword(): void {
+    const pwd = this.passwordData.newPassword;
+    const isValid = 
+      this.passwordData.currentPassword.length > 0 &&
+      pwd.length >= 8 &&
+      pwd.length <= 20 &&
+      this.hasUppercase(pwd) &&
+      this.hasLowercase(pwd) &&
+      this.hasNumber(pwd) &&
+      this.hasSpecialChar(pwd) &&
+      this.passwordData.confirmPassword === pwd &&
+      this.passwordData.confirmPassword.length > 0;
+    
+    this.isPasswordFormValid.set(isValid);
   }
 }

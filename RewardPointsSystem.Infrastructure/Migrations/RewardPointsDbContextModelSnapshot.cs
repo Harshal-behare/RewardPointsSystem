@@ -115,6 +115,53 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                     b.ToTable("UserPointsTransactions", (string)null);
                 });
 
+            modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.AdminMonthlyBudget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AdminUserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("BudgetLimit")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsHardLimit")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("MonthYear")
+                        .HasColumnType("int");
+
+                    b.Property<int>("PointsAwarded")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("WarningThreshold")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MonthYear");
+
+                    b.HasIndex("AdminUserId", "MonthYear")
+                        .IsUnique();
+
+                    b.ToTable("AdminMonthlyBudgets", t =>
+                        {
+                            t.HasCheckConstraint("CK_AdminMonthlyBudget_BudgetLimit", "[BudgetLimit] > 0");
+
+                            t.HasCheckConstraint("CK_AdminMonthlyBudget_PointsAwarded", "[PointsAwarded] >= 0");
+
+                            t.HasCheckConstraint("CK_AdminMonthlyBudget_WarningThreshold", "[WarningThreshold] >= 0 AND [WarningThreshold] <= 100");
+                        });
+                });
+
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.RefreshToken", b =>
                 {
                     b.Property<Guid>("Id")
@@ -643,6 +690,17 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.AdminMonthlyBudget", b =>
+                {
+                    b.HasOne("RewardPointsSystem.Domain.Entities.Core.User", "AdminUser")
+                        .WithMany()
+                        .HasForeignKey("AdminUserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("AdminUser");
                 });
 
             modelBuilder.Entity("RewardPointsSystem.Domain.Entities.Core.RefreshToken", b =>
