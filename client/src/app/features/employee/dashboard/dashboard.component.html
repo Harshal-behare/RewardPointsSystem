@@ -160,7 +160,7 @@
 
         <div class="events-list">
           @for (event of upcomingEvents(); track event.id) {
-            <div class="event-item">
+            <div class="event-item clickable" (click)="navigateToEvent(event.name)">
               <img [src]="event.image" [alt]="event.name" class="event-image" />
               <div class="event-details">
                 <h3 class="event-name">{{ event.name }}</h3>
@@ -173,7 +173,7 @@
                   @if (!event.registered) {
                     <button
                       class="register-btn"
-                      (click)="registerForEvent(event)"
+                      (click)="registerForEvent(event); $event.stopPropagation()"
                     >
                       Register
                     </button>

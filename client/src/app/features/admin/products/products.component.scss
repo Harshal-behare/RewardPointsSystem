@@ -227,11 +227,26 @@
   border-radius: 12px;
   border: 1px solid #F4F6F7;
   overflow: hidden;
-  transition: all 0.2s ease;
+  transition: all 0.3s ease;
 
   &:hover {
     box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.1);
     transform: translateY(-2px);
+  }
+
+  &.highlighted {
+    border: 2px solid #F39C12;
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+    animation: highlightPulse 1.5s ease-in-out 3;
+  }
+}
+
+@keyframes highlightPulse {
+  0%, 100% {
+    box-shadow: 0 0 20px rgba(243, 156, 18, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 30px rgba(243, 156, 18, 0.6);
   }
 }
 
@@ -370,10 +385,26 @@
   tbody {
     tr {
       border-bottom: 1px solid #F4F6F7;
-      transition: background-color 0.2s ease;
+      transition: background-color 0.2s ease, box-shadow 0.3s ease;
 
       &:hover {
         background-color: #F4F6F7;
+      }
+
+      &.highlighted {
+        background-color: rgba(243, 156, 18, 0.1);
+        border-left: 4px solid #F39C12;
+        box-shadow: 0 2px 8px rgba(243, 156, 18, 0.2);
+        animation: highlightRowPulse 1.5s ease-in-out 3;
+      }
+    }
+
+    @keyframes highlightRowPulse {
+      0%, 100% {
+        background-color: rgba(243, 156, 18, 0.1);
+      }
+      50% {
+        background-color: rgba(243, 156, 18, 0.25);
       }
     }
 

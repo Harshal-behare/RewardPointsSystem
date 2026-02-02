@@ -304,7 +304,6 @@ namespace RewardPointsSystem.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(200);
                 entity.Property(e => e.Description).HasMaxLength(1000);
-                entity.Property(e => e.Category).HasMaxLength(100);
                 entity.Property(e => e.ImageUrl).HasMaxLength(500);
                 entity.Property(e => e.IsActive).IsRequired();
                 entity.Property(e => e.CreatedAt).IsRequired();
@@ -342,7 +341,6 @@ namespace RewardPointsSystem.Infrastructure.Data
 
                 // Indexes
                 entity.HasIndex(e => e.Name);
-                entity.HasIndex(e => e.Category);
                 entity.HasIndex(e => e.CategoryId);
                 entity.HasIndex(e => e.IsActive);
             });

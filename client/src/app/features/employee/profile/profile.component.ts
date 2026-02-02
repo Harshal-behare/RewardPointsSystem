@@ -142,7 +142,7 @@ export class EmployeeProfileComponent implements OnInit {
       next: (response: any) => {
         if (response.success) {
           this.toast.success('Profile updated successfully!');
-          // Update auth service with new name
+          // Update auth service with new name (this also updates localStorage)
           this.authService.updateUserName(
             this.profileData().firstName.trim(),
             this.profileData().lastName.trim()

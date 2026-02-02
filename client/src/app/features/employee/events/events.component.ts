@@ -1,6 +1,8 @@
-import { Component, OnInit, signal, computed } from '@angular/core';
+import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { EventService, EventWinnerDto } from '../../../core/services/event.service';
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
@@ -41,6 +43,8 @@ interface DisplayEvent {
   styleUrl: './events.component.scss'
 })
 export class EmployeeEventsComponent implements OnInit {
+  private destroyRef = inject(DestroyRef);
+  
   events = signal<DisplayEvent[]>([]);
   filteredEvents = signal<DisplayEvent[]>([]);
   selectedFilter = signal<'all' | 'Upcoming' | 'Active' | 'Completed'>('all');
@@ -63,6 +67,8 @@ export class EmployeeEventsComponent implements OnInit {
   });
 
   constructor(
+    private router: Router,
+    private route: ActivatedRoute,
     private eventService: EventService,
     private authService: AuthService,
     private toast: ToastService
@@ -87,6 +93,22 @@ export class EmployeeEventsComponent implements OnInit {
     }
     
     this.loadEvents();
+    
+    // Check for search query from URL params (from dashboard)
+    this.route.queryParams.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
+      if (params['search']) {
+        this.searchQuery.set(params['search']);
+        this.applyFilters();
+        // Remove the query param from URL without reloading
+        this.router.navigate([], { 
+          relativeTo: this.route, 
+          queryParams: {}, 
+          replaceUrl: true 
+        });
+      }
+    });
   }
 
   loadEvents(): void {
