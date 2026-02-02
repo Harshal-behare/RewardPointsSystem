@@ -86,7 +86,7 @@ export class AdminEventsComponent implements OnInit {
     remainingPoints: 0,
     status: 'Draft',  // New events start as Draft
     imageUrl: '',
-    maxParticipants: 0,
+    maxParticipants: undefined,  // undefined means unlimited
     location: '',
     virtualLink: '',
     registrationStartDate: '',
@@ -95,6 +95,9 @@ export class AdminEventsComponent implements OnInit {
     secondPlacePoints: 0,
     thirdPlacePoints: 0
   };
+  
+  // Track form validity for disabling save button
+  isEventFormValid = signal(false);
 
   // Participants Modal
   showParticipantsModal = signal(false);
@@ -333,7 +336,7 @@ export class AdminEventsComponent implements OnInit {
       status: 'Draft',  // New events start as Draft
       pointsPool: 0,
       remainingPoints: 0,
-      maxParticipants: 0,
+      maxParticipants: undefined,  // undefined means unlimited
       imageUrl: '',
       location: '',
       virtualLink: '',
@@ -343,6 +346,8 @@ export class AdminEventsComponent implements OnInit {
       secondPlacePoints: 0,
       thirdPlacePoints: 0
     };
+    this.isEventFormValid.set(false);
+    this.eventModalValidationErrors = [];
     this.showModal.set(true);
   }
 
@@ -359,7 +364,7 @@ export class AdminEventsComponent implements OnInit {
       pointsPool: event.pointsPool,
       remainingPoints: event.remainingPoints,
       participantCount: event.participantCount,
-      maxParticipants: event.maxParticipants,
+      maxParticipants: event.maxParticipants || undefined,  // undefined means unlimited
       imageUrl: event.imageUrl,
       location: event.location || '',
       virtualLink: event.virtualLink || '',
@@ -369,6 +374,8 @@ export class AdminEventsComponent implements OnInit {
       secondPlacePoints: event.secondPlacePoints || 0,
       thirdPlacePoints: event.thirdPlacePoints || 0
     };
+    this.eventModalValidationErrors = [];
+    this.validateEventModalRealtime();
     this.showModal.set(true);
   }
 
@@ -450,13 +457,42 @@ export class AdminEventsComponent implements OnInit {
     // Event date validation (must be in the future for new events)
     const eventDate = this.selectedEvent.eventDate;
     if (!eventDate) {
-      this.eventModalValidationErrors.push('Event date is required');
+      this.eventModalValidationErrors.push('Event start date is required');
     } else {
       const selectedDate = new Date(eventDate);
       const now = new Date();
       now.setHours(0, 0, 0, 0); // Compare dates only
       if (this.modalMode() === 'create' && selectedDate <= now) {
-        this.eventModalValidationErrors.push('Event date must be in the future');
+        this.eventModalValidationErrors.push('Event start date must be in the future');
+      }
+    }
+
+    // Event end date validation
+    const eventEndDate = this.selectedEvent.eventEndDate;
+    if (eventDate && eventEndDate) {
+      const startDate = new Date(eventDate);
+      const endDate = new Date(eventEndDate);
+      if (endDate < startDate) {
+        this.eventModalValidationErrors.push('Event end date must be after start date');
+      }
+    }
+
+    // Registration dates validation
+    const regStartDate = this.selectedEvent.registrationStartDate;
+    const regEndDate = this.selectedEvent.registrationEndDate;
+    if (regStartDate && regEndDate) {
+      const regStart = new Date(regStartDate);
+      const regEnd = new Date(regEndDate);
+      if (regEnd < regStart) {
+        this.eventModalValidationErrors.push('Registration end date must be after registration start date');
+      }
+    }
+    // Registration should end before or on event start
+    if (regEndDate && eventDate) {
+      const regEnd = new Date(regEndDate);
+      const evtStart = new Date(eventDate);
+      if (regEnd > evtStart) {
+        this.eventModalValidationErrors.push('Registration must close before or on event start date');
       }
     }
 
@@ -469,29 +505,48 @@ export class AdminEventsComponent implements OnInit {
       this.eventModalValidationErrors.push('Points pool cannot exceed 1,000,000');
     }
 
-    // Prize distribution validation (if any prize is set)
+    // Prize distribution validation - MANDATORY and must equal points pool
     const first = this.selectedEvent.firstPlacePoints || 0;
     const second = this.selectedEvent.secondPlacePoints || 0;
     const third = this.selectedEvent.thirdPlacePoints || 0;
 
-    if (first > 0 || second > 0 || third > 0) {
-      // Validate descending order: 1st > 2nd > 3rd
-      if (first > 0 && second > 0 && first <= second) {
-        this.eventModalValidationErrors.push('1st place points must be greater than 2nd place points');
-      }
-      if (second > 0 && third > 0 && second <= third) {
-        this.eventModalValidationErrors.push('2nd place points must be greater than 3rd place points');
-      }
-      if (first > 0 && third > 0 && first <= third) {
-        this.eventModalValidationErrors.push('1st place points must be greater than 3rd place points');
-      }
+    // Prizes are mandatory
+    if (first <= 0) {
+      this.eventModalValidationErrors.push('1st place points are required and must be greater than 0');
+    }
+    if (second <= 0) {
+      this.eventModalValidationErrors.push('2nd place points are required and must be greater than 0');
+    }
+    if (third <= 0) {
+      this.eventModalValidationErrors.push('3rd place points are required and must be greater than 0');
+    }
 
-      // Validate total doesn't exceed points pool
-      const totalPrizePoints = first + second + third;
-      if (totalPrizePoints > pointsPool) {
+    // Validate descending order: 1st > 2nd > 3rd
+    if (first > 0 && second > 0 && first <= second) {
+      this.eventModalValidationErrors.push('1st place points must be greater than 2nd place points');
+    }
+    if (second > 0 && third > 0 && second <= third) {
+      this.eventModalValidationErrors.push('2nd place points must be greater than 3rd place points');
+    }
+    if (first > 0 && third > 0 && first <= third) {
+      this.eventModalValidationErrors.push('1st place points must be greater than 3rd place points');
+    }
+
+    // Total prize points must equal points pool
+    const totalPrizePoints = first + second + third;
+    if (pointsPool > 0 && first > 0 && second > 0 && third > 0) {
+      if (totalPrizePoints !== pointsPool) {
         this.eventModalValidationErrors.push(
-          `Total prize points (${totalPrizePoints}) cannot exceed points pool (${pointsPool})`
+          `Total prize points (${totalPrizePoints}) must equal points pool (${pointsPool})`
         );
+      }
+    }
+
+    // Status validation for create mode - only Draft or Upcoming allowed
+    if (this.modalMode() === 'create') {
+      const status = this.selectedEvent.status;
+      if (status !== 'Draft' && status !== 'Upcoming') {
+        this.eventModalValidationErrors.push('New events can only be created as Draft or Upcoming');
       }
     }
 
@@ -508,7 +563,27 @@ export class AdminEventsComponent implements OnInit {
       }
     }
 
-    return this.eventModalValidationErrors.length === 0;
+    const isValid = this.eventModalValidationErrors.length === 0;
+    this.isEventFormValid.set(isValid);
+    return isValid;
+  }
+
+  // Real-time validation for form input changes
+  validateEventModalRealtime(): void {
+    this.validateEventModal();
+  }
+
+  // Get available statuses based on mode
+  getAvailableStatuses(): string[] {
+    if (this.modalMode() === 'create') {
+      return ['Draft', 'Upcoming'];
+    }
+    // For edit mode, get allowed transitions
+    const originalEvent = this.events().find(e => e.id === this.selectedEvent.id);
+    if (originalEvent) {
+      return this.getAvailableStatusTransitions(originalEvent.status);
+    }
+    return ['Draft', 'Upcoming', 'Active', 'Completed'];
   }
 
   saveEvent(): void {
@@ -672,10 +747,33 @@ export class AdminEventsComponent implements OnInit {
       return;
     }
     this.selectedParticipant.set(participant);
-    this.pointsToAward.set(0);
     this.winnerRank.set(1);
+    // Auto-set points based on 1st place by default
+    const event = this.selectedEventForParticipants();
+    this.pointsToAward.set(event?.firstPlacePoints || 0);
     this.winnerValidationError.set('');
     this.showWinnerModal.set(true);
+  }
+
+  // Handler for rank dropdown change - auto-updates points
+  onRankChange(rank: number): void {
+    this.winnerRank.set(rank);
+    const event = this.selectedEventForParticipants();
+    if (event) {
+      switch (Number(rank)) {
+        case 1:
+          this.pointsToAward.set(event.firstPlacePoints || 0);
+          break;
+        case 2:
+          this.pointsToAward.set(event.secondPlacePoints || 0);
+          break;
+        case 3:
+          this.pointsToAward.set(event.thirdPlacePoints || 0);
+          break;
+        default:
+          this.pointsToAward.set(0);
+      }
+    }
   }
 
   closeWinnerModal(): void {

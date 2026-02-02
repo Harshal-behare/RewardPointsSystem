@@ -1,6 +1,7 @@
 .users-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px;
 }
 
 // Quick Actions Bar
@@ -542,4 +543,57 @@
   .form-row {
     grid-template-columns: 1fr;
   }
+}
+
+// Password field styling
+.password-field {
+  .password-input-wrapper {
+    position: relative;
+    display: flex;
+    align-items: center;
+    
+    input {
+      width: 100%;
+      padding-right: 48px;
+    }
+    
+    .toggle-password {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #7A7A7A;
+      padding: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: color 0.2s ease;
+      
+      &:hover {
+        color: #27AE60;
+      }
+    }
+  }
+}
+
+// Input validation styles
+input.invalid,
+select.invalid,
+textarea.invalid {
+  border-color: #E74C3C !important;
+  background-color: #FFF5F5 !important;
+  
+  &:focus {
+    box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1) !important;
+  }
+}
+
+// Disabled button styling
+app-button.disabled-btn,
+.modal-footer app-button[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }

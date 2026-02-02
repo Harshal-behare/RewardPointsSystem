@@ -32,6 +32,7 @@ interface UserProfileResponse {
 export class AdminProfileComponent implements OnInit {
   isLoading = signal(true);
   isSaving = signal(false);
+  isPasswordFormValid = signal(false);
   
   userId = '';
   
@@ -211,5 +212,38 @@ export class AdminProfileComponent implements OnInit {
         this.showConfirmPassword = !this.showConfirmPassword;
         break;
     }
+  }
+
+  // Password validation helper methods
+  hasUppercase(password: string): boolean {
+    return /[A-Z]/.test(password);
+  }
+
+  hasLowercase(password: string): boolean {
+    return /[a-z]/.test(password);
+  }
+
+  hasNumber(password: string): boolean {
+    return /[0-9]/.test(password);
+  }
+
+  hasSpecialChar(password: string): boolean {
+    return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+  }
+
+  validateNewPassword(): void {
+    const pwd = this.passwordData.newPassword;
+    const isValid = 
+      this.passwordData.currentPassword.length > 0 &&
+      pwd.length >= 8 &&
+      pwd.length <= 20 &&
+      this.hasUppercase(pwd) &&
+      this.hasLowercase(pwd) &&
+      this.hasNumber(pwd) &&
+      this.hasSpecialChar(pwd) &&
+      this.passwordData.confirmPassword === pwd &&
+      this.passwordData.confirmPassword.length > 0;
+    
+    this.isPasswordFormValid.set(isValid);
   }
 }

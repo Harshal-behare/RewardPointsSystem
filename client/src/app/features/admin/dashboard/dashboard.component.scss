@@ -8,8 +8,8 @@ $border: #E8EBED;
 $bg: #F4F6F7;
 
 .dashboard-container {
-  max-width: 1400px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
   padding: 20px;
 }
 
@@ -214,6 +214,10 @@ $bg: #F4F6F7;
 }
 
 // Section 5: Inventory Alerts
+.inventory-section {
+  margin-bottom: 24px;
+}
+
 .inventory-alerts-list {
   display: flex;
   flex-direction: column;
@@ -362,6 +366,16 @@ $bg: #F4F6F7;
     apx-chart {
       width: 100%;
     }
+  }
+}
+
+.clickable-card {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 20px rgba(39, 174, 96, 0.15);
   }
 }
 
@@ -616,6 +630,62 @@ $bg: #F4F6F7;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
+  }
+}
+
+// Prize Summary Display
+.prize-summary {
+  margin-top: 16px;
+  padding: 14px 16px;
+  background: #F8F9FA;
+  border-radius: 8px;
+  border: 1px solid $border;
+  
+  &.valid {
+    background: rgba($primary, 0.05);
+    border-color: rgba($primary, 0.2);
+  }
+  
+  &.warning {
+    background: #FFF5F5;
+    border-color: #E74C3C;
+  }
+  
+  .pool-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  
+  .pool-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: $text-muted;
+  }
+  
+  .pool-value {
+    font-size: 18px;
+    font-weight: 700;
+    color: $primary;
+    
+    &.negative {
+      color: #E74C3C;
+    }
+  }
+  
+  .pool-detail {
+    display: block;
+    font-size: 12px;
+    color: $text-muted;
+  }
+  
+  .pool-error {
+    display: block;
+    font-size: 12px;
+    color: #E74C3C;
+    margin-top: 4px;
+    font-weight: 500;
   }
 }
 

@@ -135,6 +135,12 @@ export class AdminUsersComponent implements OnInit {
   
   // Validation errors for modal
   modalValidationErrors: string[] = [];
+  
+  // Track form validity for disabling save button
+  isUserFormValid = signal(false);
+  
+  // Password visibility
+  showPassword = signal(false);
 
   constructor(
     private router: Router,
@@ -339,6 +345,9 @@ export class AdminUsersComponent implements OnInit {
       status: 'Active',
       password: ''
     };
+    this.modalValidationErrors = [];
+    this.isUserFormValid.set(false);
+    this.showPassword.set(false);
     this.showModal.set(true);
   }
 
@@ -355,6 +364,8 @@ export class AdminUsersComponent implements OnInit {
       pointsBalance: user.pointsBalance,
       createdAt: user.createdAt
     };
+    this.modalValidationErrors = [];
+    this.validateUserModalRealtime();
     this.showModal.set(true);
   }
 
@@ -452,6 +463,12 @@ export class AdminUsersComponent implements OnInit {
     }
     
     return this.modalValidationErrors.length === 0;
+  }
+
+  // Real-time validation for form input changes
+  validateUserModalRealtime(): void {
+    const isValid = this.validateUserModal();
+    this.isUserFormValid.set(isValid);
   }
 
   saveUser(): void {

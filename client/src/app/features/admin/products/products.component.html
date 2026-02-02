@@ -99,10 +99,13 @@
                   <span class="points-value">{{ product.pointsPrice }}</span>
                 </div>
                 <div class="product-stock">
-                  <app-badge [variant]="getStockStatus(product.stock).variant" size="sm">
-                    {{ getStockStatus(product.stock).label }}
-                  </app-badge>
-                  <span class="stock-count">{{ product.stock }} units</span>
+                  @if (product.stock === 0) {
+                    <app-badge variant="danger" size="sm">Out of Stock</app-badge>
+                  } @else if (product.stock < 10) {
+                    <app-badge variant="warning" size="sm">{{ product.stock }} units</app-badge>
+                  } @else {
+                    <app-badge variant="success" size="sm">{{ product.stock }} units</app-badge>
+                  }
                 </div>
               </div>
               <div class="product-actions">
@@ -176,11 +179,10 @@
 
 <!-- Product Modal -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="closeModal()">
+  <div class="modal-overlay">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ modalMode() === 'create' ? 'Add New Product' : 'Edit Product' }}</h3>
-        <button class="close-btn" (click)="closeModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -200,11 +202,13 @@
             id="productName"
             type="text"
             [(ngModel)]="selectedProduct.name"
+            (ngModelChange)="validateProductModalRealtime()"
             name="name"
             placeholder="Enter product name"
             required
             minlength="2"
             maxlength="200"
+            [class.invalid]="selectedProduct.name !== undefined && (selectedProduct.name.trim().length || 0) < 2"
           />
           <small class="form-hint">2-200 characters required</small>
         </div>
@@ -213,6 +217,7 @@
           <textarea
             id="productDescription"
             [(ngModel)]="selectedProduct.description"
+            (ngModelChange)="validateProductModalRealtime()"
             name="description"
             placeholder="Enter product description"
             rows="3"
@@ -226,8 +231,10 @@
             <select
               id="category"
               [(ngModel)]="selectedProduct.categoryId"
+              (ngModelChange)="validateProductModalRealtime()"
               name="categoryId"
               required
+              [class.invalid]="!selectedProduct.categoryId"
             >
               <option value="">Select a category</option>
               @for (cat of dbCategories(); track cat.id) {
@@ -241,12 +248,14 @@
               id="pointsPrice"
               type="number"
               [(ngModel)]="selectedProduct.pointsPrice"
+              (ngModelChange)="validateProductModalRealtime()"
               name="pointsPrice"
-              placeholder="0"
+              placeholder="Enter points price"
               required
               min="1"
+              [class.invalid]="selectedProduct.pointsPrice !== undefined && (selectedProduct.pointsPrice || 0) < 1"
             />
-            <small class="form-hint">Must be greater than 0</small>
+            <small class="form-hint">Must be at least 1</small>
           </div>
         </div>
         <div class="form-row">
@@ -256,10 +265,12 @@
               id="stock"
               type="number"
               [(ngModel)]="selectedProduct.stock"
+              (ngModelChange)="validateProductModalRealtime()"
               name="stock"
-              placeholder="0"
+              placeholder="Enter stock quantity"
               required
               min="0"
+              [class.invalid]="selectedProduct.stock !== undefined && selectedProduct.stock < 0"
             />
             <small class="form-hint">Cannot be negative</small>
           </div>
@@ -268,6 +279,7 @@
             <select
               id="status"
               [(ngModel)]="selectedProduct.status"
+              (ngModelChange)="validateProductModalRealtime()"
               name="status"
               required
             >
@@ -282,11 +294,19 @@
             id="imageUrl"
             type="url"
             [(ngModel)]="selectedProduct.imageUrl"
+            (ngModelChange)="validateProductModalRealtime()"
             name="imageUrl"
             placeholder="https://example.com/image.jpg"
             maxlength="500"
           />
           <small class="form-hint">Must be a valid URL (http:// or https://), max 500 characters</small>
+          
+          <!-- Image Preview -->
+          @if (selectedProduct.imageUrl) {
+            <div class="image-preview">
+              <img [src]="selectedProduct.imageUrl" alt="Product Preview" (error)="handleImageError($event)" />
+            </div>
+          }
         </div>
       </form>
     </div>
@@ -295,7 +315,10 @@
       <app-button variant="secondary" (clicked)="closeModal()">
         Cancel
       </app-button>
-      <app-button (clicked)="saveProduct()">
+      <app-button 
+        (clicked)="saveProduct()"
+        [disabled]="!isProductFormValid()"
+        [class.disabled-btn]="!isProductFormValid()">
         {{ modalMode() === 'create' ? 'Add Product' : 'Save Changes' }}
       </app-button>
     </div>
@@ -305,11 +328,10 @@
 
 <!-- Category Management Modal -->
 @if (showCategoryModal()) {
-  <div class="modal-overlay" (click)="closeCategoryModal()">
+  <div class="modal-overlay">
     <div class="modal-content category-modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3><app-icon name="folder" [size]="20"></app-icon> Manage Categories</h3>
-        <button class="close-btn" (click)="closeCategoryModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">
@@ -358,9 +380,11 @@
                         <button 
                           class="action-btn toggle-btn" 
                           (click)="toggleCategoryStatus(category)" 
-                          [title]="category.isActive ? 'Deactivate' : 'Activate'">
+                          [title]="category.isActive ? 'Deactivate' : 'Activate'"
+                          [class.deactivate]="category.isActive"
+                          [class.activate]="!category.isActive">
                           @if (category.isActive) {
-                            <app-icon name="close" [size]="14"></app-icon>
+                            <app-icon name="ban" [size]="14"></app-icon>
                           } @else {
                             <app-icon name="check" [size]="14"></app-icon>
                           }
@@ -397,7 +421,7 @@
 
 <!-- Category Form Modal (Add/Edit) -->
 @if (showCategoryFormModal()) {
-  <div class="modal-overlay" (click)="closeCategoryFormModal()">
+  <div class="modal-overlay">
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>
@@ -407,7 +431,6 @@
             <app-icon name="edit" [size]="18"></app-icon> Edit Category
           }
         </h3>
-        <button class="close-btn" (click)="closeCategoryFormModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
       <div class="modal-body">

@@ -7,6 +7,7 @@ import { RedemptionService, RedemptionDto } from '../../../core/services/redempt
 import { AuthService } from '../../../auth/auth.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { NgApexchartsModule, ApexNonAxisChartSeries, ApexChart, ApexResponsive, ApexLegend, ApexDataLabels, ApexPlotOptions, ApexFill, ApexStroke, ApexTooltip } from 'ng-apexcharts';
 
 interface PointsBalance {
   total: number;
@@ -50,7 +51,7 @@ interface Transaction {
 @Component({
   selector: 'app-employee-dashboard',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, NgApexchartsModule],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.scss'
 })
@@ -66,6 +67,169 @@ export class EmployeeDashboardComponent implements OnInit {
     pending: 0,
     approved: 0,
     delivered: 0
+  });
+
+  // Redemptions Pie Chart Configuration
+  redemptionsChartSeries: ApexNonAxisChartSeries = [0, 0, 0];
+  redemptionsChartOptions: {
+    chart: ApexChart;
+    labels: string[];
+    colors: string[];
+    legend: ApexLegend;
+    dataLabels: ApexDataLabels;
+    plotOptions: ApexPlotOptions;
+    fill: ApexFill;
+    stroke: ApexStroke;
+    tooltip: ApexTooltip;
+    responsive: ApexResponsive[];
+  } = {
+    chart: {
+      type: 'donut',
+      height: 220,
+      toolbar: { show: false }
+    },
+    labels: ['Pending', 'Approved', 'Delivered'],
+    colors: ['#F39C12', '#27AE60', '#3498DB'],
+    legend: {
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '13px',
+      markers: { strokeWidth: 0, fillColors: ['#F39C12', '#27AE60', '#3498DB'] },
+      itemMargin: { horizontal: 10, vertical: 5 }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number, opts: any) => opts.w.globals.series[opts.seriesIndex],
+      style: {
+        fontSize: '12px',
+        fontWeight: 600
+      },
+      dropShadow: { enabled: false }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '55%',
+          labels: {
+            show: true,
+            name: { fontSize: '14px', fontWeight: 600 },
+            value: { fontSize: '20px', fontWeight: 700, color: '#2C3E50' },
+            total: {
+              show: true,
+              label: 'Total',
+              fontSize: '14px',
+              color: '#7A7A7A',
+              formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)
+            }
+          }
+        }
+      }
+    },
+    fill: {
+      type: 'solid'
+    },
+    stroke: {
+      width: 2,
+      colors: ['#fff']
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => `${val} redemption${val !== 1 ? 's' : ''}`
+      }
+    },
+    responsive: [
+      {
+        breakpoint: 480,
+        options: {
+          chart: { height: 200 },
+          legend: { position: 'bottom' }
+        }
+      }
+    ]
+  };
+
+  // Events Participation Chart Configuration
+  eventsParticipationChartSeries: ApexNonAxisChartSeries = [0, 0];
+  eventsParticipationChartOptions: {
+    chart: ApexChart;
+    labels: string[];
+    colors: string[];
+    legend: ApexLegend;
+    dataLabels: ApexDataLabels;
+    plotOptions: ApexPlotOptions;
+    fill: ApexFill;
+    stroke: ApexStroke;
+    tooltip: ApexTooltip;
+    responsive: ApexResponsive[];
+  } = {
+    chart: {
+      type: 'donut',
+      height: 220,
+      toolbar: { show: false }
+    },
+    labels: ['Registered', 'Completed'],
+    colors: ['#9B59B6', '#27AE60'],
+    legend: {
+      position: 'bottom',
+      horizontalAlign: 'center',
+      fontSize: '13px',
+      markers: { strokeWidth: 0, fillColors: ['#9B59B6', '#27AE60'] },
+      itemMargin: { horizontal: 10, vertical: 5 }
+    },
+    dataLabels: {
+      enabled: true,
+      formatter: (val: number, opts: any) => opts.w.globals.series[opts.seriesIndex],
+      style: {
+        fontSize: '12px',
+        fontWeight: 600
+      },
+      dropShadow: { enabled: false }
+    },
+    plotOptions: {
+      pie: {
+        donut: {
+          size: '55%',
+          labels: {
+            show: true,
+            name: { fontSize: '14px', fontWeight: 600 },
+            value: { fontSize: '20px', fontWeight: 700, color: '#2C3E50' },
+            total: {
+              show: true,
+              label: 'Total',
+              fontSize: '14px',
+              color: '#7A7A7A',
+              formatter: (w: any) => w.globals.seriesTotals.reduce((a: number, b: number) => a + b, 0)
+            }
+          }
+        }
+      }
+    },
+    fill: {
+      type: 'solid'
+    },
+    stroke: {
+      width: 2,
+      colors: ['#fff']
+    },
+    tooltip: {
+      y: {
+        formatter: (val: number) => `${val} event${val !== 1 ? 's' : ''}`
+      }
+    },
+    responsive: [
+      {
+        breakpoint: 480,
+        options: {
+          chart: { height: 200 },
+          legend: { position: 'bottom' }
+        }
+      }
+    ]
+  };
+
+  eventParticipationStats = signal({
+    registered: 0,
+    completed: 0
   });
 
   upcomingEvents = signal<Event[]>([]);
@@ -214,6 +378,9 @@ export class EmployeeDashboardComponent implements OnInit {
           
           // Check registration status for each event
           this.checkEventRegistrations();
+          
+          // Load event participation stats for pie chart
+          this.loadEventParticipationStats(events);
         }
       },
       error: (error) => {
@@ -226,11 +393,18 @@ export class EmployeeDashboardComponent implements OnInit {
       next: (response) => {
         if (response.success && response.data) {
           const redemptions = response.data;
+          const pending = redemptions.filter((r: RedemptionDto) => r.status === 'Pending').length;
+          const approved = redemptions.filter((r: RedemptionDto) => r.status === 'Approved').length;
+          const delivered = redemptions.filter((r: RedemptionDto) => r.status === 'Delivered').length;
+          
           this.redemptionsSummary.set({
-            pending: redemptions.filter((r: RedemptionDto) => r.status === 'Pending').length,
-            approved: redemptions.filter((r: RedemptionDto) => r.status === 'Approved').length,
-            delivered: redemptions.filter((r: RedemptionDto) => r.status === 'Delivered').length
+            pending,
+            approved,
+            delivered
           });
+          
+          // Update pie chart data
+          this.redemptionsChartSeries = [pending, approved, delivered];
         }
       },
       error: (error) => {
@@ -287,6 +461,58 @@ export class EmployeeDashboardComponent implements OnInit {
         },
         error: (error) => {
           console.error(`Error checking registration for event ${event.id}:`, error);
+        }
+      });
+    });
+  }
+
+  private loadEventParticipationStats(events: EventDto[]): void {
+    if (!this.currentUserId) return;
+    
+    let registeredCount = 0;
+    let completedCount = 0;
+    let processed = 0;
+    const totalEvents = events.length;
+    
+    if (totalEvents === 0) {
+      this.eventParticipationStats.set({ registered: 0, completed: 0 });
+      this.eventsParticipationChartSeries = [0, 0];
+      return;
+    }
+    
+    events.forEach(event => {
+      this.eventService.getEventParticipants(event.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const isParticipant = response.data.some((p: any) => p.userId === this.currentUserId);
+            if (isParticipant) {
+              if (event.status === 'Completed') {
+                completedCount++;
+              } else if (event.status === 'Upcoming' || event.status === 'Active') {
+                registeredCount++;
+              }
+            }
+          }
+          processed++;
+          
+          // Update stats when all events are processed
+          if (processed === totalEvents) {
+            this.eventParticipationStats.set({
+              registered: registeredCount,
+              completed: completedCount
+            });
+            this.eventsParticipationChartSeries = [registeredCount, completedCount];
+          }
+        },
+        error: () => {
+          processed++;
+          if (processed === totalEvents) {
+            this.eventParticipationStats.set({
+              registered: registeredCount,
+              completed: completedCount
+            });
+            this.eventsParticipationChartSeries = [registeredCount, completedCount];
+          }
         }
       });
     });

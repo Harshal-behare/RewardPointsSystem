@@ -1,6 +1,7 @@
 .profile-container {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100%;
+  margin: 0;
+  padding: 20px;
 }
 
 .profile-grid {
@@ -182,6 +183,43 @@
       background-color: #F4F6F7;
     }
   }
+}
+
+// Password Validation Checklist
+.password-validation {
+  margin-top: 10px;
+  padding: 12px;
+  background: #F4F6F7;
+  border-radius: 6px;
+  
+  .validation-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #e74c3c;
+    margin-bottom: 4px;
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+    
+    .validation-icon {
+      width: 16px;
+      font-weight: 700;
+    }
+    
+    &.valid {
+      color: #27AE60;
+    }
+  }
+}
+
+.error-text {
+  display: block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #e74c3c;
 }
 
 .form-actions {

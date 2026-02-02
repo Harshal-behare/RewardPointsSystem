@@ -2,7 +2,7 @@ import { Injectable, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { tap, map, catchError } from 'rxjs/operators';
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, of, throwError, BehaviorSubject } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 interface LoginRequest {
@@ -36,6 +36,10 @@ export class AuthService {
   private readonly accessKey = 'rp_access_token';
   private readonly refreshKey = 'rp_refresh_token';
   private isBrowser: boolean;
+  
+  // Subject to broadcast user name changes to all subscribed components
+  private userNameUpdated = new BehaviorSubject<{firstName: string, lastName: string} | null>(null);
+  userNameUpdated$ = this.userNameUpdated.asObservable();
 
   constructor(
     private http: HttpClient,
@@ -202,12 +206,26 @@ export class AuthService {
   }
 
   /**
-   * Updates user name in local state (for UI consistency after profile update)
-   * Note: This doesn't persist to localStorage as name is stored in JWT
+   * Updates user name in local storage and broadcasts change to subscribed components
    */
   updateUserName(firstName: string, lastName: string): void {
-    // The name is stored in the JWT, so we can't update it locally
-    // The UI should refresh from the API to get updated info
-    // This method is a placeholder for potential future state management
+    if (this.isBrowser) {
+      // Update localStorage user data
+      const userDataStr = localStorage.getItem('user');
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          userData.firstName = firstName;
+          userData.lastName = lastName;
+          userData.FirstName = firstName;
+          userData.LastName = lastName;
+          localStorage.setItem('user', JSON.stringify(userData));
+        } catch (e) {
+          console.error('Error updating user data in localStorage:', e);
+        }
+      }
+      // Broadcast the name change to all subscribed components
+      this.userNameUpdated.next({ firstName, lastName });
+    }
   }
 }

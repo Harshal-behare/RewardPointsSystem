@@ -86,13 +86,13 @@
             <div class="meta-row">
               <div class="prizes">
                 @if (event.firstPlacePoints) {
-                  <span class="prize gold"><app-icon name="medal-gold" [size]="16"></app-icon>{{ event.firstPlacePoints }}</span>
+                  <span class="prize gold">🥇 {{ event.firstPlacePoints }}</span>
                 }
                 @if (event.secondPlacePoints) {
-                  <span class="prize silver"><app-icon name="medal-silver" [size]="16"></app-icon>{{ event.secondPlacePoints }}</span>
+                  <span class="prize silver">🥈 {{ event.secondPlacePoints }}</span>
                 }
                 @if (event.thirdPlacePoints) {
-                  <span class="prize bronze"><app-icon name="medal-bronze" [size]="16"></app-icon>{{ event.thirdPlacePoints }}</span>
+                  <span class="prize bronze">🥉 {{ event.thirdPlacePoints }}</span>
                 }
               </div>
               <span class="participants"><app-icon name="users" [size]="14"></app-icon> {{ event.participantCount }}@if (event.maxParticipants) {/{{ event.maxParticipants }}}</span>

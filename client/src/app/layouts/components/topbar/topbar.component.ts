@@ -276,6 +276,7 @@ export class TopbarComponent implements OnInit, OnDestroy {
   private profileLoaded = false;
 
   private routerSubscription?: Subscription;
+  private nameUpdateSubscription?: Subscription;
   private clickHandler = (event: Event) => this.handleDocumentClick(event);
   
   // Route to page title mapping
@@ -314,6 +315,15 @@ export class TopbarComponent implements OnInit, OnDestroy {
       this.updatePageTitle(event.urlAfterRedirects || event.url);
     });
     
+    // Subscribe to user name changes (e.g., from Profile page updates)
+    this.nameUpdateSubscription = this.authService.userNameUpdated$.subscribe(nameData => {
+      if (nameData) {
+        const fullName = `${nameData.firstName} ${nameData.lastName}`.trim();
+        this.userName.set(fullName);
+        this.userInitials.set(this.getInitials(nameData.firstName, nameData.lastName));
+      }
+    });
+    
     // Close dropdown when clicking outside
     document.addEventListener('click', this.clickHandler);
   }
@@ -321,6 +331,9 @@ export class TopbarComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    if (this.nameUpdateSubscription) {
+      this.nameUpdateSubscription.unsubscribe();
     }
     // Remove document click listener to prevent memory leak
     document.removeEventListener('click', this.clickHandler);

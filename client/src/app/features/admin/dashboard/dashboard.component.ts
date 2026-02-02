@@ -55,9 +55,8 @@ export class AdminDashboardComponent implements OnInit {
   kpiData = signal<KpiData[]>([
     { icon: 'users', label: 'Active Users', value: 0, trend: 0, route: '/admin/users' },
     { icon: 'events', label: 'Active Events', value: 0, trend: 0, route: '/admin/events' },
-    { icon: 'cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
-    { icon: 'trending-up', label: 'Redemption Rate', value: '0%', trend: 0, route: '/admin/redemptions' },
-    { icon: 'warning', label: 'Low Stock Alerts', value: 0, trend: 0, route: '/admin/products' },
+    { icon: 'shopping-cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+    { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
   ]);
 
   recentActivities = signal<RecentActivity[]>([]);
@@ -234,7 +233,8 @@ export class AdminDashboardComponent implements OnInit {
       inventoryAlerts: this.adminService.getInventoryAlerts(),
       pointsSummary: this.adminService.getPointsSummary(),
       allEvents: this.eventService.getAllEventsAdmin(),
-      allRedemptions: this.redemptionService.getRedemptions()
+      allRedemptions: this.redemptionService.getRedemptions(),
+      allProducts: this.productService.getAllProductsAdmin()
     }).subscribe({
       next: (results) => {
         // Update KPI data
@@ -248,9 +248,24 @@ export class AdminDashboardComponent implements OnInit {
         // Update redemption summary
         this.updateRedemptionSummary(results.allRedemptions);
 
-        // Update inventory alerts
-        if (results.inventoryAlerts.success && results.inventoryAlerts.data) {
-          this.inventoryAlerts.set(results.inventoryAlerts.data);
+        // Update inventory alerts - filter products with stock < 10
+        if (results.inventoryAlerts.success && results.inventoryAlerts.data && results.inventoryAlerts.data.length > 0) {
+          // Filter to only show items with stock < 10
+          const lowStockAlerts = results.inventoryAlerts.data.filter((alert: InventoryAlert) => alert.currentStock < 10);
+          this.inventoryAlerts.set(lowStockAlerts);
+        } else if (results.allProducts.success && results.allProducts.data) {
+          // Fallback: create inventory alerts from products with stock < 10
+          const products = Array.isArray(results.allProducts.data) ? results.allProducts.data : [];
+          const lowStockProducts = products
+            .filter((p: any) => (p.stockQuantity ?? p.stock ?? 0) < 10 && p.isActive !== false)
+            .map((p: any) => ({
+              productId: p.id,
+              productName: p.name,
+              currentStock: p.stockQuantity ?? p.stock ?? 0,
+              reorderLevel: 10,
+              alertType: (p.stockQuantity ?? p.stock ?? 0) === 0 ? 'Out of Stock' : 'Low Stock'
+            } as InventoryAlert));
+          this.inventoryAlerts.set(lowStockProducts);
         }
 
         // Update points summary
@@ -272,12 +287,6 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   private updateKpiData(stats: DashboardStats): void {
-    // Calculate useful metrics
-    const pointsInCirculation = (stats.totalPointsDistributed || 0) - (stats.totalPointsRedeemed || 0);
-    const redemptionRate = stats.totalPointsDistributed > 0
-      ? Math.round(((stats.totalPointsRedeemed || 0) / stats.totalPointsDistributed) * 100)
-      : 0;
-
     this.kpiData.set([
       {
         icon: 'users',
@@ -294,23 +303,16 @@ export class AdminDashboardComponent implements OnInit {
         route: '/admin/events'
       },
       {
-        icon: 'cart',
+        icon: 'shopping-cart',
         label: 'Pending Redemptions',
         value: stats.pendingRedemptions || 0,
         trend: 0,
         route: '/admin/redemptions'
       },
       {
-        icon: 'trending-up',
-        label: 'Redemption Rate',
-        value: `${redemptionRate}%`,
-        trend: 0,
-        route: '/admin/redemptions'
-      },
-      {
-        icon: 'warning',
-        label: 'Low Stock Alerts',
-        value: this.inventoryAlerts().length,
+        icon: 'gift',
+        label: 'Total Products',
+        value: stats.activeProducts || stats.totalProducts || 0,
         trend: 0,
         route: '/admin/products'
       },
@@ -331,9 +333,8 @@ export class AdminDashboardComponent implements OnInit {
     this.kpiData.set([
       { icon: 'users', label: 'Active Users', value: 0, trend: 0, route: '/admin/users' },
       { icon: 'events', label: 'Active Events', value: 0, trend: 0, route: '/admin/events' },
-      { icon: 'cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
-      { icon: 'trending-up', label: 'Redemption Rate', value: '0%', trend: 0, route: '/admin/redemptions' },
-      { icon: 'warning', label: 'Low Stock Alerts', value: 0, trend: 0, route: '/admin/products' },
+      { icon: 'shopping-cart', label: 'Pending Redemptions', value: 0, trend: 0, route: '/admin/redemptions' },
+      { icon: 'gift', label: 'Total Products', value: 0, trend: 0, route: '/admin/products' },
     ]);
     this.recentActivities.set([]);
     this.chartData.set({
@@ -406,10 +407,21 @@ export class AdminDashboardComponent implements OnInit {
     this.eventsNeedingAttention.set(needingAttention);
   }
 
-  formatNumber(num: number): string {
+  formatNumber(num: number | undefined | null): string {
+    if (num === undefined || num === null) return '0';
     if (num >= 1000000) return (num / 1000000).toFixed(1) + 'M';
     if (num >= 1000) return (num / 1000).toFixed(1) + 'K';
     return num.toString();
+  }
+
+  getTotalPrizes(): number {
+    return (this.newEvent.firstPlacePoints || 0) + 
+           (this.newEvent.secondPlacePoints || 0) + 
+           (this.newEvent.thirdPlacePoints || 0);
+  }
+
+  getRemainingPool(): number {
+    return (this.newEvent.pointsPool || 0) - this.getTotalPrizes();
   }
 
   navigateToPage(route: string): void {

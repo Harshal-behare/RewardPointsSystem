@@ -21,21 +21,22 @@
   </section>
 
   <!-- Inventory Alerts (Full Width) -->
-  <app-card title="Inventory Alerts">
+  <section class="inventory-section">
+    <app-card title="Inventory Alerts" subtitle="Low stock products requiring attention">
       @if (inventoryAlerts().length > 0) {
         <div class="inventory-alerts-list">
           @for (alert of inventoryAlerts(); track alert.productId) {
             <div class="inventory-alert-item">
-              <div class="alert-icon" [class.critical]="alert.alertType === 'Out of Stock'">
+              <div class="alert-icon" [class.critical]="alert.currentStock === 0">
                 <app-icon name="warning" [size]="18"></app-icon>
               </div>
               <div class="alert-content">
                 <div class="alert-product">{{ alert.productName }}</div>
                 <div class="alert-status">
-                  @if (alert.alertType === 'Out of Stock') {
+                  @if (alert.currentStock === 0) {
                     <app-badge variant="danger" size="sm">Out of Stock</app-badge>
                   } @else {
-                    <app-badge variant="warning" size="sm">Low Stock ({{ alert.currentStock }})</app-badge>
+                    <app-badge variant="warning" size="sm">Low Stock ({{ alert.currentStock }} units)</app-badge>
                   }
                 </div>
               </div>
@@ -45,59 +46,15 @@
       } @else {
         <div class="empty-state">
           <app-icon name="check-circle" [size]="40"></app-icon>
-          <p>All products in stock</p>
+          <p>All products have sufficient stock</p>
         </div>
       }
     </app-card>
-
-  <!-- Section 6: Points Summary -->
-  <app-card title="Points Summary" class="points-summary-card">
-    <div class="points-grid">
-      <div class="points-stat">
-        <div class="points-icon issued">
-          <app-icon name="trending-up" [size]="24"></app-icon>
-        </div>
-        <div class="points-content">
-          <div class="points-label">Total Issued</div>
-          <div class="points-value">{{ formatNumber(pointsSummary().totalPointsDistributed) }}</div>
-        </div>
-      </div>
-
-      <div class="points-stat">
-        <div class="points-icon redeemed">
-          <app-icon name="trending-down" [size]="24"></app-icon>
-        </div>
-        <div class="points-content">
-          <div class="points-label">Total Redeemed</div>
-          <div class="points-value">{{ formatNumber(pointsSummary().totalPointsRedeemed) }}</div>
-        </div>
-      </div>
-
-      <div class="points-stat">
-        <div class="points-icon circulation">
-          <app-icon name="refresh" [size]="24"></app-icon>
-        </div>
-        <div class="points-content">
-          <div class="points-label">In Circulation</div>
-          <div class="points-value">{{ formatNumber(pointsSummary().totalPointsInCirculation) }}</div>
-        </div>
-      </div>
-
-      <div class="points-stat">
-        <div class="points-icon pending">
-          <app-icon name="clock" [size]="24"></app-icon>
-        </div>
-        <div class="points-content">
-          <div class="points-label">Pending</div>
-          <div class="points-value">{{ formatNumber(pointsSummary().pendingPoints) }}</div>
-        </div>
-      </div>
-    </div>
-  </app-card>
+  </section>
 
   <!-- Charts Section -->
   <div class="grid-2-col charts-section">
-    <app-card title="Redemption Status Distribution" class="chart-card">
+    <app-card title="Redemption Status Distribution" class="chart-card clickable-card" (click)="navigateToPage('/admin/redemptions')">
       <div class="chart-container">
         <apx-chart
           [series]="redemptionChartOptions().series"
@@ -110,7 +67,7 @@
       </div>
     </app-card>
 
-    <app-card title="Event Status Distribution" class="chart-card">
+    <app-card title="Event Status Distribution" class="chart-card clickable-card" (click)="navigateToPage('/admin/events')">
       <div class="chart-container">
         <apx-chart
           [series]="eventChartOptions().series"
@@ -128,7 +85,7 @@
   <app-card title="Quick Actions" class="quick-actions-card">
     <div class="quick-actions-grid">
       <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
-        <span class="action-icon"><app-icon name="cart" [size]="20"></app-icon></span>
+        <span class="action-icon"><app-icon name="shopping-cart" [size]="24"></app-icon></span>
         <div class="action-content">
           <h3>Redemptions</h3>
           <p>Process pending redemptions</p>
@@ -136,7 +93,7 @@
       </button>
 
       <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
-        <span class="action-icon"><app-icon name="users" [size]="20"></app-icon></span>
+        <span class="action-icon"><app-icon name="users" [size]="24"></app-icon></span>
         <div class="action-content">
           <h3>Manage Users</h3>
           <p>View and manage users</p>
@@ -144,7 +101,7 @@
       </button>
 
       <button class="quick-action-btn event-btn" (click)="openEventModal()">
-        <span class="action-icon"><app-icon name="calendar" [size]="20"></app-icon></span>
+        <span class="action-icon"><app-icon name="calendar" [size]="24"></app-icon></span>
         <div class="action-content">
           <h3>Create Event</h3>
           <p>Add a new reward event</p>
@@ -152,7 +109,7 @@
       </button>
 
       <button class="quick-action-btn product-btn" (click)="openProductModal()">
-        <span class="action-icon"><app-icon name="gift" [size]="20"></app-icon></span>
+        <span class="action-icon"><app-icon name="gift" [size]="24"></app-icon></span>
         <div class="action-content">
           <h3>Add Product</h3>
           <p>Add new product to catalog</p>
@@ -168,7 +125,6 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Create New Event</h3>
-        <button class="close-btn" (click)="closeEventModal()"><app-icon name="close" [size]="16"></app-icon></button>
       </div>
 
     <div class="modal-body">
@@ -274,7 +230,7 @@
 
           <div class="form-row prize-row">
             <div class="form-group prize-input first-place">
-              <label for="firstPlacePoints"><app-icon name="medal-gold" [size]="14"></app-icon> 1st Place</label>
+              <label for="firstPlacePoints">🥇 1st Place</label>
               <input
                 id="firstPlacePoints"
                 type="number"
@@ -286,7 +242,7 @@
             </div>
 
             <div class="form-group prize-input second-place">
-              <label for="secondPlacePoints"><app-icon name="medal-silver" [size]="14"></app-icon> 2nd Place</label>
+              <label for="secondPlacePoints">🥈 2nd Place</label>
               <input
                 id="secondPlacePoints"
                 type="number"
@@ -298,7 +254,7 @@
             </div>
 
             <div class="form-group prize-input third-place">
-              <label for="thirdPlacePoints"><app-icon name="medal-bronze" [size]="14"></app-icon> 3rd Place</label>
+              <label for="thirdPlacePoints">🥉 3rd Place</label>
               <input
                 id="thirdPlacePoints"
                 type="number"
@@ -308,6 +264,20 @@
                 min="0"
               />
             </div>
+          </div>
+
+          <!-- Remaining Pool Display -->
+          <div class="prize-summary" [class.warning]="getRemainingPool() < 0" [class.valid]="getRemainingPool() >= 0 && getTotalPrizes() > 0">
+            <div class="pool-info">
+              <span class="pool-label">Remaining Pool:</span>
+              <span class="pool-value" [class.negative]="getRemainingPool() < 0">{{ getRemainingPool() }} pts</span>
+            </div>
+            @if (getTotalPrizes() > 0) {
+              <small class="pool-detail">Assigned: {{ getTotalPrizes() }} / {{ newEvent.pointsPool || 0 }} pts</small>
+            }
+            @if (getRemainingPool() < 0) {
+              <small class="pool-error">⚠️ Prize total exceeds points pool!</small>
+            }
           </div>
         </div>
 
@@ -398,7 +368,6 @@
     <div class="modal-content" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>Add New Product</h3>
-        <button class="close-btn" (click)="closeProductModal()"><app-icon name="close" [size]="18"></app-icon></button>
       </div>
 
     <div class="modal-body">

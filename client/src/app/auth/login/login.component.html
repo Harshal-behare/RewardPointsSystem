@@ -13,21 +13,18 @@
 
         <div class="form-group">
           <label for="email">Email</label>
-          <input id="email" type="email" formControlName="email" placeholder="" maxlength="255" />
+          <input id="email" type="email" formControlName="email" placeholder="" maxlength="255" autocomplete="email" />
 
-          @if (form.get('email')?.invalid && (form.get('email')?.dirty || form.get('email')?.touched)) {
+          @if (form.get('email')?.invalid && form.get('email')?.dirty) {
             <div class="error">
               @if (form.get('email')?.errors?.['required']) {
-                <span>Email is required</span><br />
-              }
-              @if (form.get('email')?.errors?.['email']) {
+                <span>Email is required</span>
+              } @else if (form.get('email')?.errors?.['email']) {
                 <span>Invalid email format</span>
-              }
-              @if (form.get('email')?.errors?.['maxlength']) {
+              } @else if (form.get('email')?.errors?.['maxlength']) {
                 <span>Email cannot exceed 255 characters</span>
-              }
-              @if (form.get('email')?.errors?.['agdataEmail']) {
-                <span> Only @agdata.com email can login</span>
+              } @else if (form.get('email')?.errors?.['agdataEmail']) {
+                <span>Only @agdata.com email can login</span>
               }
             </div>
           }
@@ -42,36 +39,37 @@
               [type]="showPassword ? 'text' : 'password'"
               formControlName="password"
               placeholder=""
+              autocomplete="current-password"
             />
 
             <button
               type="button"
               class="toggle-password"
-              (click)="togglePassword()"
+              (mouseenter)="showPassword = true"
+              (mouseleave)="showPassword = false"
+              (focus)="showPassword = true"
+              (blur)="showPassword = false"
               [attr.aria-label]="showPassword ? 'Hide password' : 'Show password'"
             >
-              <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+              <app-icon [name]="showPassword ? 'eye-off' : 'eye'" [size]="18" class="password-icon"></app-icon>
             </button>
           </div>
 
           @let pwd = form.get('password');
-          @if (pwd?.invalid && (pwd?.dirty || pwd?.touched)) {
+          @if (pwd?.invalid && pwd?.dirty) {
             <div class="error">
               @if (pwd?.errors?.['required']) {
                 <span>Password is required</span>
-              }
-              @if (pwd?.errors?.['minlength']) {
+              } @else if (pwd?.errors?.['minlength']) {
                 <span>Password must be at least 8 characters</span>
-              }
-              @if (pwd?.errors?.['maxlength']) {
+              } @else if (pwd?.errors?.['maxlength']) {
                 <span>Password cannot exceed 20 characters</span>
-              }
-              @if (pwd?.errors?.['pattern']) {
+              } @else if (pwd?.errors?.['pattern']) {
                 <span>Password must include uppercase, lowercase, number, and special character</span>
               }
             </div>
           }
-          <small class="form-hint">8-20 chars, uppercase, lowercase, number, special char</small>
+          <small class="form-hint">Requirement: 8-20 chars, uppercase, lowercase, number, special char</small>
         </div>
 
         <!-- Show all validation errors from backend -->
@@ -90,7 +88,7 @@
 
         <button class="login-btn" type="submit"
                 [disabled]="loading() || form.invalid"
-                [class.invalid]="form.invalid">
+                [class.disabled]="form.invalid">
           {{ loading() ? 'Signing in...' : 'Login' }}
         </button>
 

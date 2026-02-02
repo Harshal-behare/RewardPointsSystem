@@ -325,16 +325,19 @@ namespace RewardPointsSystem.Api.Controllers
                     var existingInventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == id);
                     if (existingInventory != null)
                     {
-                        // Update existing inventory - set the stock to the new value
+                        // The frontend displays and expects stock as (QuantityAvailable - QuantityReserved)
+                        // So the target QuantityAvailable should be: newDisplayedStock + QuantityReserved
+                        var targetQuantityAvailable = dto.StockQuantity.Value + existingInventory.QuantityReserved;
                         var currentStock = existingInventory.QuantityAvailable;
-                        var difference = dto.StockQuantity.Value - currentStock;
-                        _logger.LogInformation("Current stock: {Current}, Difference: {Diff}", currentStock, difference);
+                        var difference = targetQuantityAvailable - currentStock;
+                        _logger.LogInformation("Current QuantityAvailable: {Current}, Reserved: {Reserved}, Target: {Target}, Difference: {Diff}", 
+                            currentStock, existingInventory.QuantityReserved, targetQuantityAvailable, difference);
                         if (difference != 0)
                         {
                             // Use Adjust method which handles both positive and negative changes
                             existingInventory.Adjust(difference, userId);
                             await _unitOfWork.SaveChangesAsync();
-                            _logger.LogInformation("Stock adjusted successfully");
+                            _logger.LogInformation("Stock adjusted successfully. New QuantityAvailable: {New}", existingInventory.QuantityAvailable);
                         }
                     }
                     else
