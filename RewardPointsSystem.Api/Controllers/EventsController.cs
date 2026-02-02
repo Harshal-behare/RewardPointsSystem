@@ -508,7 +508,9 @@ namespace RewardPointsSystem.Api.Controllers
                         return Error($"Third place points must be {eventEntity.ThirdPlacePoints.Value}", 400);
                 }
 
-                await _pointsAwardingService.BulkAwardPointsAsync(id, dto.Awards);
+                // Get the current admin's user ID for budget tracking
+                var adminId = GetCurrentUserId();
+                await _pointsAwardingService.BulkAwardPointsAsync(id, dto.Awards, adminId);
 
                 var updatedEvent = await _eventService.GetEventByIdAsync(id);
                 var userNames = await GetUserNamesForEventsAsync(new[] { updatedEvent });
@@ -585,17 +587,6 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error unregistering participant {UserId} from event {EventId}", userId, id);
                 return Error("Failed to unregister participant");
             }
-        }
-
-        private Guid? GetCurrentUserId()
-        {
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
-                ?? User.FindFirst("sub")?.Value;
-
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                return null;
-
-            return userId;
         }
     }
 }

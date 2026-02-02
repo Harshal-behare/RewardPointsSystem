@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
+using Moq;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Application.Interfaces;
@@ -10,6 +11,7 @@ using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Orchestrators;
+using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Infrastructure.Repositories;
 using Xunit;
@@ -44,6 +46,7 @@ namespace RewardPointsSystem.Tests.IntegrationTests
         private readonly UserPointsTransactionService _transactionService;
         private readonly PointsAwardingService _pointsAwardingService;
         private readonly EventRewardOrchestrator _rewardOrchestrator;
+        private readonly Mock<IAdminBudgetService> _mockBudgetService;
         private Guid _adminUserId;
 
         public EventWorkflowIntegrationTests()
@@ -60,7 +63,10 @@ namespace RewardPointsSystem.Tests.IntegrationTests
             _participationService = new EventParticipationService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
             _transactionService = new UserPointsTransactionService(_unitOfWork);
-            _pointsAwardingService = new PointsAwardingService(_unitOfWork);
+            _mockBudgetService = new Mock<IAdminBudgetService>();
+            _mockBudgetService.Setup(x => x.ValidatePointsAwardAsync(It.IsAny<Guid>(), It.IsAny<int>()))
+                .ReturnsAsync(new BudgetValidationResult { IsAllowed = true });
+            _pointsAwardingService = new PointsAwardingService(_unitOfWork, _mockBudgetService.Object);
             _rewardOrchestrator = new EventRewardOrchestrator(
                 _eventService,
                 _participationService,

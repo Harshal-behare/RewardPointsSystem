@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 
 namespace RewardPointsSystem.Api.Controllers
@@ -127,6 +128,20 @@ namespace RewardPointsSystem.Api.Controllers
                 Path = HttpContext.Request.Path
             };
             return StatusCode(StatusCodes.Status422UnprocessableEntity, response);
+        }
+
+        /// <summary>
+        /// Gets the current authenticated user's ID from claims
+        /// </summary>
+        protected Guid? GetCurrentUserId()
+        {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value;
+
+            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                return null;
+
+            return userId;
         }
     }
 }

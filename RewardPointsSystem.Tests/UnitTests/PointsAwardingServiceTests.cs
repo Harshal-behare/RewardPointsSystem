@@ -1,9 +1,12 @@
 using System;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Core;
+using RewardPointsSystem.Application.Interfaces;
+using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Domain.Exceptions;
 using Xunit;
 
@@ -16,6 +19,7 @@ namespace RewardPointsSystem.Tests.UnitTests
         private readonly EventService _eventService;
         private readonly EventParticipationService _participationService;
         private readonly PointsAwardingService _pointsAwardingService;
+        private readonly Mock<IAdminBudgetService> _mockBudgetService;
 
         public PointsAwardingServiceTests()
         {
@@ -23,7 +27,10 @@ namespace RewardPointsSystem.Tests.UnitTests
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);
-            _pointsAwardingService = new PointsAwardingService(_unitOfWork);
+            _mockBudgetService = new Mock<IAdminBudgetService>();
+            _mockBudgetService.Setup(x => x.ValidatePointsAwardAsync(It.IsAny<Guid>(), It.IsAny<int>()))
+                .ReturnsAsync(new BudgetValidationResult { IsAllowed = true });
+            _pointsAwardingService = new PointsAwardingService(_unitOfWork, _mockBudgetService.Object);
         }
 
         public void Dispose()

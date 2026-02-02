@@ -72,6 +72,51 @@ export interface RecentActivity {
   user: string;
 }
 
+// Admin Budget Response Interface
+export interface AdminBudgetResponse {
+  id: string;
+  monthYear: number;
+  monthYearDisplay: string;
+  budgetLimit: number;
+  pointsAwarded: number;
+  remainingBudget: number;
+  usagePercentage: number;
+  isHardLimit: boolean;
+  warningThreshold: number;
+  isOverBudget: boolean;
+  isWarningZone: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Set Budget Request Interface
+export interface SetBudgetRequest {
+  budgetLimit: number;
+  isHardLimit: boolean;
+  warningThreshold: number;
+}
+
+// Budget History Item Interface
+export interface BudgetHistoryItem {
+  monthYear: number;
+  monthYearDisplay: string;
+  budgetLimit: number;
+  pointsAwarded: number;
+  remainingBudget: number;
+  usagePercentage: number;
+  wasOverBudget: boolean;
+}
+
+// Budget Validation Result Interface
+export interface BudgetValidationResult {
+  isAllowed: boolean;
+  isWarning: boolean;
+  message: string | null;
+  remainingBudget: number;
+  pointsToAward: number;
+  pointsAfterAward: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -117,5 +162,27 @@ export class AdminService {
   // Get Points Summary
   getPointsSummary(): Observable<ApiResponse<PointsSummary>> {
     return this.api.get<PointsSummary>('Points/summary');
+  }
+
+  // Budget Management
+  /**
+   * Get current admin's monthly budget status
+   */
+  getBudget(): Observable<ApiResponse<AdminBudgetResponse | null>> {
+    return this.api.get<AdminBudgetResponse | null>('Admin/budget');
+  }
+
+  /**
+   * Set or update monthly budget limit
+   */
+  setBudget(request: SetBudgetRequest): Observable<ApiResponse<AdminBudgetResponse>> {
+    return this.api.put<AdminBudgetResponse>('Admin/budget', request);
+  }
+
+  /**
+   * Get budget usage history for last N months
+   */
+  getBudgetHistory(months: number = 12): Observable<ApiResponse<BudgetHistoryItem[]>> {
+    return this.api.get<BudgetHistoryItem[]>('Admin/budget/history', { months });
   }
 }

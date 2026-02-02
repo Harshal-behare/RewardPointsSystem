@@ -215,7 +215,9 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                await _awardingService.AwardPointsAsync(dto.UserId, dto.Points, dto.Description, dto.EventId);
+                // Get the current admin's user ID for budget tracking
+                var adminId = GetCurrentUserId();
+                await _awardingService.AwardPointsAsync(dto.UserId, dto.Points, dto.Description, dto.EventId, adminId);
                 return Success<object>(null, $"Successfully awarded {dto.Points} points");
             }
             catch (KeyNotFoundException)

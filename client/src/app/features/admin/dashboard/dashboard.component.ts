@@ -1,6 +1,7 @@
 import { Component, OnInit, signal, computed, effect, model, DestroyRef, inject } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { FormsModule } from '@angular/forms';
+import { DecimalPipe } from '@angular/common';
 import { filter, takeUntil, forkJoin } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NgApexchartsModule } from 'ng-apexcharts';
@@ -9,7 +10,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { KpiCardComponent } from './components/kpi-card/kpi-card.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
-import { AdminService, DashboardStats, EventStatusSummary, RedemptionSummary, InventoryAlert, PointsSummary } from '../../../core/services/admin.service';
+import { AdminService, DashboardStats, EventStatusSummary, RedemptionSummary, InventoryAlert, PointsSummary, AdminBudgetResponse, SetBudgetRequest, BudgetHistoryItem } from '../../../core/services/admin.service';
 import { EventService, CreateEventDto, EventDto } from '../../../core/services/event.service';
 import { ProductService, CreateProductDto, CategoryDto } from '../../../core/services/product.service';
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
@@ -36,6 +37,7 @@ interface RecentActivity {
   standalone: true,
   imports: [
     FormsModule,
+    DecimalPipe,
     CardComponent,
     ButtonComponent,
     KpiCardComponent,
@@ -93,6 +95,27 @@ export class AdminDashboardComponent implements OnInit {
   });
 
   eventsNeedingAttention = signal<EventDto[]>([]);
+
+  // Budget Management State
+  adminBudget = signal<AdminBudgetResponse | null>(null);
+  budgetHistory = signal<BudgetHistoryItem[]>([]);
+  showBudgetModal = signal(false);
+  budgetModalMode = signal<'create' | 'edit'>('create');
+  budgetForm = signal({
+    budgetLimit: 50000,
+    isHardLimit: false,
+    warningThreshold: 80
+  });
+  budgetValidationErrors = signal<string[]>([]);
+
+  // Budget computed properties
+  budgetUsageClass = computed(() => {
+    const budget = this.adminBudget();
+    if (!budget) return '';
+    if (budget.isOverBudget) return 'over-budget';
+    if (budget.isWarningZone) return 'warning-zone';
+    return 'within-budget';
+  });
 
   // Chart Options
   redemptionChartOptions = computed(() => ({
@@ -234,7 +257,9 @@ export class AdminDashboardComponent implements OnInit {
       pointsSummary: this.adminService.getPointsSummary(),
       allEvents: this.eventService.getAllEventsAdmin(),
       allRedemptions: this.redemptionService.getRedemptions(),
-      allProducts: this.productService.getAllProductsAdmin()
+      allProducts: this.productService.getAllProductsAdmin(),
+      adminBudget: this.adminService.getBudget(),
+      budgetHistory: this.adminService.getBudgetHistory(6)
     }).subscribe({
       next: (results) => {
         // Update KPI data
@@ -275,6 +300,16 @@ export class AdminDashboardComponent implements OnInit {
 
         // Update events needing attention
         this.updateEventsNeedingAttention(results.allEvents);
+
+        // Update admin budget
+        if (results.adminBudget.success && results.adminBudget.data !== undefined) {
+          this.adminBudget.set(results.adminBudget.data);
+        }
+
+        // Update budget history
+        if (results.budgetHistory.success && results.budgetHistory.data) {
+          this.budgetHistory.set(results.budgetHistory.data);
+        }
 
         this.isLoading.set(false);
       },
@@ -638,6 +673,97 @@ export class AdminDashboardComponent implements OnInit {
         this.toast.showValidationErrors(error);
       }
     });
+  }
+
+  // Budget Management Methods
+  openBudgetModal(mode: 'create' | 'edit' = 'create'): void {
+    this.budgetModalMode.set(mode);
+    this.budgetValidationErrors.set([]);
+
+    if (mode === 'edit' && this.adminBudget()) {
+      const budget = this.adminBudget()!;
+      this.budgetForm.set({
+        budgetLimit: budget.budgetLimit,
+        isHardLimit: budget.isHardLimit,
+        warningThreshold: budget.warningThreshold
+      });
+    } else {
+      this.budgetForm.set({
+        budgetLimit: 50000,
+        isHardLimit: false,
+        warningThreshold: 80
+      });
+    }
+
+    this.showBudgetModal.set(true);
+  }
+
+  closeBudgetModal(): void {
+    this.showBudgetModal.set(false);
+  }
+
+  validateBudgetForm(): boolean {
+    const errors: string[] = [];
+    const form = this.budgetForm();
+
+    if (!form.budgetLimit || form.budgetLimit <= 0) {
+      errors.push('Budget limit must be greater than 0');
+    }
+
+    if (form.budgetLimit > 10000000) {
+      errors.push('Budget limit cannot exceed 10,000,000 points');
+    }
+
+    if (form.warningThreshold < 0 || form.warningThreshold > 100) {
+      errors.push('Warning threshold must be between 0 and 100');
+    }
+
+    this.budgetValidationErrors.set(errors);
+    return errors.length === 0;
+  }
+
+  saveBudget(): void {
+    if (!this.validateBudgetForm()) {
+      return;
+    }
+
+    const form = this.budgetForm();
+    const request: SetBudgetRequest = {
+      budgetLimit: form.budgetLimit,
+      isHardLimit: form.isHardLimit,
+      warningThreshold: form.warningThreshold
+    };
+
+    this.adminService.setBudget(request).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          this.adminBudget.set(response.data);
+          this.toast.success('Budget updated successfully!');
+          this.closeBudgetModal();
+          // Refresh budget history
+          this.adminService.getBudgetHistory(6).subscribe({
+            next: (historyResponse) => {
+              if (historyResponse.success && historyResponse.data) {
+                this.budgetHistory.set(historyResponse.data);
+              }
+            }
+          });
+        } else {
+          this.toast.error(response.message || 'Failed to save budget');
+        }
+      },
+      error: (error) => {
+        console.error('Error saving budget:', error);
+        this.toast.showValidationErrors(error);
+      }
+    });
+  }
+
+  updateBudgetFormField(field: string, value: any): void {
+    this.budgetForm.update(form => ({
+      ...form,
+      [field]: value
+    }));
   }
 
   getActivityTypeClass(type: string): 'success' | 'warning' | 'info' | 'danger' | 'secondary' {
