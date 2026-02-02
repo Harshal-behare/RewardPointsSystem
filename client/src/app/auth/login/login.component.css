@@ -6,6 +6,12 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-md);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: auto;
 }
 
 .login-card {
@@ -66,7 +72,7 @@
 
 .form-group input:focus {
   border-color: var(--brand-primary);
-  box-shadow: 0 0 0 2px rgba(0, 125, 121, 0.1);
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.15);
 }
 
 .error {
@@ -101,7 +107,7 @@
   width: 100%;
   margin-top: var(--space-md);
   padding: 12px;
-  background: var(--brand-primary);
+  background: #174F2A;
   color: var(--text-on-color);
   border: none;
   border-radius: var(--radius-sm);
@@ -120,19 +126,19 @@
 }
 
 .login-btn:not(:disabled):not(.disabled):hover {
-  background: var(--brand-dark);
+  background: #174F2A;
 }
 
 .forgot-link {
   display: block;
   margin-top: var(--space-md);
   font-size: var(--font-size-sm);
-  color: var(--brand-primary);
+  color: #4caf50;
   text-decoration: none;
 }
 
 .forgot-link:hover {
-  color: var(--brand-dark);
+  color: #388e3c;
 }
 
 .footer-links {
@@ -144,7 +150,7 @@
 }
 
 .footer-links a {
-  color: var(--text-secondary);
+  color:  #174F2A;
   text-decoration: none;
 }
 
@@ -191,7 +197,7 @@
 
 .toggle-password:hover,
 .toggle-password:focus {
-  color: var(--brand-primary);
+  color:  #174F2A;
   outline: none;
 }
 
@@ -215,7 +221,7 @@
 
 .form-group input.ng-valid.ng-touched,
 .form-group input.ng-valid.ng-dirty {
-  border-color: var(--brand-primary);
+  border-color: #174F2A;
 }
 
 /* Validation message animation */
