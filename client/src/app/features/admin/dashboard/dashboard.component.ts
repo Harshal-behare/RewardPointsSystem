@@ -428,6 +428,14 @@ export class AdminDashboardComponent implements OnInit {
     this.router.navigate([route]);
   }
 
+  navigateToProduct(productName: string): void {
+    this.router.navigate(['/admin/products'], { queryParams: { search: productName } });
+  }
+
+  navigateToEvent(eventName: string): void {
+    this.router.navigate(['/admin/events'], { queryParams: { search: eventName } });
+  }
+
   // Quick Action Methods
   openEventModal(): void {
     this.newEvent = {

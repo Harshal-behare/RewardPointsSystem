@@ -26,7 +26,7 @@
       @if (inventoryAlerts().length > 0) {
         <div class="inventory-alerts-list">
           @for (alert of inventoryAlerts(); track alert.productId) {
-            <div class="inventory-alert-item">
+            <div class="inventory-alert-item clickable" (click)="navigateToProduct(alert.productName)">
               <div class="alert-icon" [class.critical]="alert.currentStock === 0">
                 <app-icon name="warning" [size]="18"></app-icon>
               </div>
@@ -39,6 +39,9 @@
                     <app-badge variant="warning" size="sm">Low Stock ({{ alert.currentStock }} units)</app-badge>
                   }
                 </div>
+              </div>
+              <div class="alert-action">
+                <app-icon name="chevron-right" [size]="16"></app-icon>
               </div>
             </div>
           }

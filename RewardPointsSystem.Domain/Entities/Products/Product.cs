@@ -25,9 +25,6 @@ namespace RewardPointsSystem.Domain.Entities.Products
         [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
         public string? Description { get; private set; }
 
-        [StringLength(100, ErrorMessage = "Category cannot exceed 100 characters")]
-        public string? Category { get; private set; } // Deprecated, use CategoryId
-
         public Guid? CategoryId { get; private set; }
 
         [Url(ErrorMessage = "Invalid URL format")]

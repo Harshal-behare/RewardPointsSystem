@@ -529,6 +529,10 @@ export class EmployeeDashboardComponent implements OnInit {
     this.router.navigate(['/employee/events']);
   }
 
+  navigateToEvent(eventName: string): void {
+    this.router.navigate(['/employee/events'], { queryParams: { search: eventName } });
+  }
+
   navigateToProducts(): void {
     this.router.navigate(['/employee/products']);
   }

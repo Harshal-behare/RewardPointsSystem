@@ -417,9 +417,14 @@
     border: 1px solid #F4F6F7;
     transition: all 0.2s;
 
+    &.clickable {
+      cursor: pointer;
+    }
+
     &:hover {
       background-color: #E8F8F0;
       box-shadow: 0 2px 8px rgba(39, 174, 96, 0.1);
+      transform: translateX(4px);
     }
 
     .event-image {

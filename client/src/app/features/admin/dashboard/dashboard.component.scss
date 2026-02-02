@@ -230,6 +230,17 @@ $bg: #F4F6F7;
     padding: 12px;
     border: 1px solid $border;
     border-radius: 8px;
+    transition: all 0.2s ease;
+
+    &.clickable {
+      cursor: pointer;
+      
+      &:hover {
+        background-color: #f8f9fa;
+        border-color: $primary;
+        transform: translateX(4px);
+      }
+    }
 
     .alert-icon {
       width: 36px;
@@ -262,6 +273,15 @@ $bg: #F4F6F7;
     .alert-status {
       display: flex;
       gap: 8px;
+    }
+
+    .alert-action {
+      color: #95a5a6;
+      transition: color 0.2s ease;
+    }
+
+    &:hover .alert-action {
+      color: $primary;
     }
   }
 }
