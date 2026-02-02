@@ -271,7 +271,6 @@ namespace RewardPointsSystem.Api.Controllers
                 {
                     Name = dto.Name ?? existingProduct.Name,
                     Description = dto.Description ?? existingProduct.Description,
-                    Category = existingProduct.Category, // Keep existing category string (deprecated field)
                     ImageUrl = dto.ImageUrl ?? existingProduct.ImageUrl
                 };
 

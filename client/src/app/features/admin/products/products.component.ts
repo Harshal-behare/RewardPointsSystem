@@ -1,6 +1,6 @@
 import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
@@ -138,6 +138,7 @@ export class AdminProductsComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private productService: ProductService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
@@ -154,6 +155,22 @@ export class AdminProductsComponent implements OnInit {
   ngOnInit(): void {
     this.loadCategories();
     this.loadProducts();
+    
+    // Check for search query from URL params (from dashboard inventory alerts)
+    this.route.queryParams.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
+      if (params['search']) {
+        this.searchQuery.set(params['search']);
+        this.applyFilters();
+        // Remove the query param from URL without reloading
+        this.router.navigate([], { 
+          relativeTo: this.route, 
+          queryParams: {}, 
+          replaceUrl: true 
+        });
+      }
+    });
   }
 
   loadCategories(): void {

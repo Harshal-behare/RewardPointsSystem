@@ -1,7 +1,7 @@
 import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, NavigationEnd } from '@angular/router';
+import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CardComponent } from '../../../shared/components/card/card.component';
@@ -118,6 +118,7 @@ export class AdminEventsComponent implements OnInit {
 
   constructor(
     private router: Router,
+    private route: ActivatedRoute,
     private eventService: EventService,
     private pointsService: PointsService,
     private toast: ToastService,
@@ -134,6 +135,22 @@ export class AdminEventsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadEvents();
+    
+    // Check for search query from URL params (from dashboard)
+    this.route.queryParams.pipe(
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe(params => {
+      if (params['search']) {
+        this.searchQuery.set(params['search']);
+        this.applyFilters();
+        // Remove the query param from URL without reloading
+        this.router.navigate([], { 
+          relativeTo: this.route, 
+          queryParams: {}, 
+          replaceUrl: true 
+        });
+      }
+    });
   }
 
   loadEvents(): void {

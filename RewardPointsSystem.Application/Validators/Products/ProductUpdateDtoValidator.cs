@@ -23,12 +23,6 @@ namespace RewardPointsSystem.Application.Validators.Products
                     .MaximumLength(2000).WithMessage("Description cannot exceed 2000 characters");
             });
 
-            When(x => !string.IsNullOrWhiteSpace(x.Category), () =>
-            {
-                RuleFor(x => x.Category)
-                    .Length(2, 100).WithMessage("Category must be between 2 and 100 characters");
-            });
-
             When(x => !string.IsNullOrWhiteSpace(x.ImageUrl), () =>
             {
                 RuleFor(x => x.ImageUrl)
