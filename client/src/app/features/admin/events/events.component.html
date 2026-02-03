@@ -5,6 +5,10 @@
       <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
       <span>Create New Event</span>
     </button>
+    <button class="quick-action-btn award-btn" (click)="openDirectAwardModal()">
+      <span class="action-icon"><app-icon name="trophy" [size]="18"></app-icon></span>
+      <span>Award Points</span>
+    </button>
     <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
       <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
       <span>Refresh</span>
@@ -635,6 +639,224 @@
         <app-button (clicked)="confirmWinnerSelection()">
           Confirm & Award Points
         </app-button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Direct Award Points Modal -->
+@if (showDirectAwardModal()) {
+  <div class="modal-overlay" (click)="closeDirectAwardModal()">
+    <div class="modal-content direct-award-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <app-icon name="trophy" [size]="24"></app-icon>
+          </div>
+          <div>
+            <h3>Award Points Directly</h3>
+            <p class="header-subtitle">Recognize employees with bonus points</p>
+          </div>
+        </div>
+        <button class="close-btn" (click)="closeDirectAwardModal()">
+          <app-icon name="close" [size]="20"></app-icon>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <div class="step" [class.active]="!selectedUserForAward()" [class.completed]="selectedUserForAward()">
+            <div class="step-number">1</div>
+            <span>Select Employee</span>
+          </div>
+          <div class="step-connector" [class.active]="selectedUserForAward()"></div>
+          <div class="step" [class.active]="selectedUserForAward()">
+            <div class="step-number">2</div>
+            <span>Award Details</span>
+          </div>
+        </div>
+
+        <!-- Step 1: User Selection -->
+        @if (!selectedUserForAward()) {
+          <div class="user-selection-section">
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <app-icon name="search" [size]="18" class="search-icon"></app-icon>
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  [(ngModel)]="userSearchQuery"
+                  (input)="onUserSearchChange()"
+                  class="user-search-input"
+                />
+                @if (userSearchQuery()) {
+                  <button class="clear-search" (click)="userSearchQuery.set(''); onUserSearchChange()">
+                    <app-icon name="close" [size]="16"></app-icon>
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (isLoadingUsers()) {
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading employees...</p>
+              </div>
+            } @else if (filteredUsers().length === 0) {
+              <div class="empty-state">
+                <app-icon name="search" [size]="48"></app-icon>
+                <p>No employees found matching your search</p>
+              </div>
+            } @else {
+              <div class="users-list">
+                @for (user of filteredUsers(); track user.id) {
+                  <div class="user-card" (click)="selectUserForAward(user)">
+                    <div class="user-avatar">
+                      {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                    </div>
+                    <div class="user-info">
+                      <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                      <div class="user-email">{{ user.email }}</div>
+                    </div>
+                    <div class="user-balance">
+                      @if (user.pointsBalance !== undefined) {
+                        <span class="balance-value">{{ user.pointsBalance | number }}</span>
+                        <span class="balance-label">pts</span>
+                      }
+                    </div>
+                    <div class="select-indicator">
+                      <app-icon name="chevron-right" [size]="20"></app-icon>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="users-count">
+                Showing {{ filteredUsers().length }} of {{ allUsers().length }} employees
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- Step 2: Award Details -->
+          <div class="award-details-section">
+            <!-- Selected User Card -->
+            <div class="selected-user-card">
+              <div class="user-avatar large">
+                {{ selectedUserForAward()?.firstName?.charAt(0) }}{{ selectedUserForAward()?.lastName?.charAt(0) }}
+              </div>
+              <div class="user-details">
+                <div class="user-name">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</div>
+                <div class="user-email">{{ selectedUserForAward()?.email }}</div>
+                @if (selectedUserForAward()?.pointsBalance !== undefined) {
+                  <div class="current-balance">
+                    Current Balance: <strong>{{ selectedUserForAward()?.pointsBalance | number }} pts</strong>
+                  </div>
+                }
+              </div>
+              <button class="change-user-btn" (click)="deselectUser()">
+                <app-icon name="edit" [size]="16"></app-icon>
+                Change
+              </button>
+            </div>
+
+            <!-- Award Form -->
+            <div class="award-form">
+              <div class="form-group">
+                <label for="directPoints">
+                  <app-icon name="star" [size]="16"></app-icon>
+                  Points to Award *
+                </label>
+                <div class="points-input-wrapper">
+                  <input
+                    type="number"
+                    id="directPoints"
+                    [(ngModel)]="directAwardPoints"
+                    name="directPoints"
+                    min="1"
+                    max="100000"
+                    placeholder="Enter points amount"
+                    class="points-input"
+                  />
+                  <span class="points-suffix">pts</span>
+                </div>
+                <div class="input-hint">Maximum 100,000 points per award</div>
+              </div>
+
+              <div class="form-group">
+                <label for="directDescription">
+                  <app-icon name="edit" [size]="16"></app-icon>
+                  Reason for Award *
+                </label>
+                <textarea
+                  id="directDescription"
+                  [(ngModel)]="directAwardDescription"
+                  name="directDescription"
+                  rows="3"
+                  maxlength="500"
+                  placeholder="e.g., Outstanding performance on Q4 project, Going above and beyond..."
+                  class="description-input"
+                ></textarea>
+                <div class="input-hint">
+                  {{ directAwardDescription().length }}/500 characters
+                </div>
+              </div>
+
+              <!-- Preview Card -->
+              @if (directAwardPoints() > 0 && directAwardDescription()) {
+                <div class="award-preview">
+                  <div class="preview-header">
+                    <app-icon name="eye" [size]="16"></app-icon>
+                    Award Preview
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-row">
+                      <span class="preview-label">Recipient:</span>
+                      <span class="preview-value">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">Points:</span>
+                      <span class="preview-value highlight">+{{ directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">New Balance:</span>
+                      <span class="preview-value">{{ (selectedUserForAward()?.pointsBalance || 0) + directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row description">
+                      <span class="preview-label">Reason:</span>
+                      <span class="preview-value">{{ directAwardDescription() }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Error Message -->
+        @if (directAwardValidationError()) {
+          <div class="error-message-box">
+            <app-icon name="alert" [size]="16"></app-icon>
+            {{ directAwardValidationError() }}
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @if (selectedUserForAward()) {
+          <app-button variant="secondary" (clicked)="deselectUser()">
+            <app-icon name="arrow-left" [size]="16"></app-icon> Back
+          </app-button>
+        }
+        <app-button variant="secondary" (clicked)="closeDirectAwardModal()">
+          Cancel
+        </app-button>
+        @if (selectedUserForAward()) {
+          <app-button 
+            (clicked)="confirmDirectAward()"
+            [disabled]="!directAwardPoints() || !directAwardDescription()">
+            <app-icon name="trophy" [size]="16"></app-icon> Award Points
+          </app-button>
+        }
       </div>
     </div>
   </div>

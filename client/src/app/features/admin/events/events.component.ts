@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
@@ -10,6 +10,7 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EventService, CreateEventDto, UpdateEventDto } from '../../../core/services/event.service';
 import { PointsService } from '../../../core/services/points.service';
+import { UserService, UserDto } from '../../../core/services/user.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -51,6 +52,7 @@ interface EventParticipant {
   standalone: true,
   imports: [
     DatePipe,
+    DecimalPipe,
     FormsModule,
     CardComponent,
     ButtonComponent,
@@ -112,6 +114,17 @@ export class AdminEventsComponent implements OnInit {
   pointsToAward = signal(0);
   winnerRank = signal(1);
   winnerValidationError = signal('');
+
+  // Direct Award Points Modal
+  showDirectAwardModal = signal(false);
+  allUsers = signal<UserDto[]>([]);
+  filteredUsers = signal<UserDto[]>([]);
+  userSearchQuery = signal('');
+  selectedUserForAward = signal<UserDto | null>(null);
+  directAwardPoints = signal(0);
+  directAwardDescription = signal('');
+  directAwardValidationError = signal('');
+  isLoadingUsers = signal(false);
   
   // Event Modal Validation
   eventModalValidationErrors: string[] = [];
@@ -121,6 +134,7 @@ export class AdminEventsComponent implements OnInit {
     private route: ActivatedRoute,
     private eventService: EventService,
     private pointsService: PointsService,
+    private userService: UserService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
   ) {
@@ -915,5 +929,143 @@ export class AdminEventsComponent implements OnInit {
   refreshData(): void {
     this.loadEvents();
     this.toast.info('Data refreshed!');
+  }
+
+  // ==========================================
+  // Direct Award Points Modal Methods
+  // ==========================================
+
+  openDirectAwardModal(): void {
+    this.showDirectAwardModal.set(true);
+    this.resetDirectAwardForm();
+    this.loadAllUsers();
+  }
+
+  closeDirectAwardModal(): void {
+    this.showDirectAwardModal.set(false);
+    this.resetDirectAwardForm();
+  }
+
+  resetDirectAwardForm(): void {
+    this.selectedUserForAward.set(null);
+    this.directAwardPoints.set(0);
+    this.directAwardDescription.set('');
+    this.directAwardValidationError.set('');
+    this.userSearchQuery.set('');
+  }
+
+  loadAllUsers(): void {
+    this.isLoadingUsers.set(true);
+    // Load a large page size to get all users for selection
+    this.userService.getUsers(1, 500).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Filter only active users
+          const activeUsers = response.data.items.filter(u => u.isActive);
+          this.allUsers.set(activeUsers);
+          this.filteredUsers.set(activeUsers);
+        }
+        this.isLoadingUsers.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+        this.toast.error('Failed to load users');
+        this.isLoadingUsers.set(false);
+      }
+    });
+  }
+
+  onUserSearchChange(): void {
+    const query = this.userSearchQuery().toLowerCase().trim();
+    if (!query) {
+      this.filteredUsers.set([...this.allUsers()]);
+    } else {
+      this.filteredUsers.set(this.allUsers().filter(u =>
+        u.firstName.toLowerCase().includes(query) ||
+        u.lastName.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(query)
+      ));
+    }
+  }
+
+  selectUserForAward(user: UserDto): void {
+    this.selectedUserForAward.set(user);
+    this.directAwardValidationError.set('');
+  }
+
+  deselectUser(): void {
+    this.selectedUserForAward.set(null);
+  }
+
+  validateDirectAward(): boolean {
+    this.directAwardValidationError.set('');
+    
+    if (!this.selectedUserForAward()) {
+      this.directAwardValidationError.set('Please select a user to award points');
+      return false;
+    }
+
+    const points = this.directAwardPoints();
+    if (!points || points <= 0) {
+      this.directAwardValidationError.set('Points must be greater than 0');
+      return false;
+    }
+
+    if (points > 100000) {
+      this.directAwardValidationError.set('Points cannot exceed 100,000 per award');
+      return false;
+    }
+
+    const description = this.directAwardDescription().trim();
+    if (!description) {
+      this.directAwardValidationError.set('Please provide a description for this award');
+      return false;
+    }
+
+    if (description.length < 5) {
+      this.directAwardValidationError.set('Description must be at least 5 characters');
+      return false;
+    }
+
+    if (description.length > 500) {
+      this.directAwardValidationError.set('Description cannot exceed 500 characters');
+      return false;
+    }
+
+    return true;
+  }
+
+  confirmDirectAward(): void {
+    if (!this.validateDirectAward()) {
+      return;
+    }
+
+    const user = this.selectedUserForAward();
+    const points = this.directAwardPoints();
+    const description = this.directAwardDescription().trim();
+
+    this.pointsService.awardPoints({
+      userId: user!.id,
+      points: points,
+      description: description
+      // Note: No eventId - this is a direct award
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toast.success(`Successfully awarded ${points} points to ${user!.firstName} ${user!.lastName}!`);
+          this.closeDirectAwardModal();
+        } else {
+          this.directAwardValidationError.set(response.message || 'Failed to award points');
+        }
+      },
+      error: (error) => {
+        console.error('Error awarding points:', error);
+        const messages = error?.error?.errors 
+          ? Object.values(error.error.errors).flat().join(' ')
+          : error?.error?.message || error?.message || 'Failed to award points';
+        this.directAwardValidationError.set(messages as string);
+      }
+    });
   }
 }
