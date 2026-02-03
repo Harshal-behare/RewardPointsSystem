@@ -130,6 +130,27 @@
         border-color: #27AE60;
         color: #FFFFFF;
       }
+      
+      // Pending Awards special styling
+      &.pending-awards {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        border-color: #F39C12;
+        color: #F39C12;
+        
+        &:hover {
+          border-color: #E67E22;
+          color: #E67E22;
+          background-color: #FEF9E7;
+        }
+        
+        &.active {
+          background-color: #F39C12;
+          border-color: #F39C12;
+          color: #FFFFFF;
+        }
+      }
     }
   }
   

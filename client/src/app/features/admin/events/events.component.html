@@ -60,6 +60,13 @@
           (click)="onFilterChange('Completed')">
           Completed
         </button>
+        <button
+          class="filter-tab pending-awards"
+          [class.active]="selectedFilter() === 'PendingAwards'"
+          (click)="onFilterChange('PendingAwards')">
+          <app-icon name="trophy" [size]="14"></app-icon>
+          Pending Awards
+        </button>
       </div>
 
       <div class="search-row">
@@ -561,13 +568,15 @@
                     <button 
                       class="select-winner-btn"
                       (click)="openWinnerSelectionModal(participant)"
-                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed'"
-                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed'"
-                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : (selectedEventForParticipants()?.status !== 'Completed' ? 'Event must be completed first' : 'Award points to this participant') }}">
+                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : (selectedEventForParticipants()?.status !== 'Completed' ? 'Event must be completed first' : (allRanksAwarded() ? 'All prize positions awarded' : 'Award points to this participant')) }}">
                       @if (participant.pointsAwarded || participant.status === 'Awarded') {
                           <app-icon name="check" [size]="14"></app-icon> Awarded
                         } @else if (selectedEventForParticipants()?.status !== 'Completed') {
                           <app-icon name="clock" [size]="14"></app-icon> Event Not Complete
+                        } @else if (allRanksAwarded()) {
+                          <app-icon name="check-circle" [size]="14"></app-icon> All Awarded
                         } @else {
                           <app-icon name="trophy" [size]="14"></app-icon> Award Points
                         }
@@ -621,11 +630,17 @@
             required
             class="rank-select"
           >
-            <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
-            <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
-            <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+            @if (availableRanks().includes(1)) {
+              <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(2)) {
+              <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(3)) {
+              <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+            }
           </select>
-          <span class="input-hint">Select rank to auto-assign points</span>
+          <span class="input-hint">Select rank to auto-assign points ({{ availableRanks().length }} position(s) remaining)</span>
         </div>
 
         <div class="points-display">

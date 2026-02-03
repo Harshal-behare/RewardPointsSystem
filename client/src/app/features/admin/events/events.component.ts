@@ -71,7 +71,7 @@ export class AdminEventsComponent implements OnInit {
   // Filter and Search - 4 statuses: Draft, Upcoming, Active, Completed
   filteredEvents = signal<DisplayEvent[]>([]);
   searchQuery = signal('');
-  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'>('all');
   
   // Sorting
   sortField = signal<'name' | 'eventDate' | 'status' | 'pointsPool' | 'participantCount'>('eventDate');
@@ -115,6 +115,15 @@ export class AdminEventsComponent implements OnInit {
   pointsToAward = signal(0);
   winnerRank = signal(1);
   winnerValidationError = signal('');
+  availableRanks = signal<number[]>([1, 2, 3]); // Track which ranks are still available
+  
+  // Computed: Check if all 3 ranks have been awarded
+  allRanksAwarded = computed(() => {
+    const awardedRanks = this.participants()
+      .filter(p => p.eventRank && (p.pointsAwarded || p.status === 'Awarded'))
+      .map(p => p.eventRank!);
+    return [1, 2, 3].every(rank => awardedRanks.includes(rank));
+  });
 
   // Direct Award Points Modal
   showDirectAwardModal = signal(false);
@@ -268,7 +277,15 @@ export class AdminEventsComponent implements OnInit {
     let filtered = [...this.events()];
 
     // Filter by status
-    if (this.selectedFilter() !== 'all') {
+    if (this.selectedFilter() === 'PendingAwards') {
+      // Show completed events that still have prize points to award
+      filtered = filtered.filter(event => {
+        if (event.status !== 'Completed') return false;
+        // Check if any prize points are defined and remaining points > 0
+        const totalPrizePoints = (event.firstPlacePoints || 0) + (event.secondPlacePoints || 0) + (event.thirdPlacePoints || 0);
+        return totalPrizePoints > 0 && (event.remainingPoints ?? event.pointsPool) > 0;
+      });
+    } else if (this.selectedFilter() !== 'all') {
       filtered = filtered.filter(event => event.status === this.selectedFilter());
     }
 
@@ -310,7 +327,7 @@ export class AdminEventsComponent implements OnInit {
     this.filteredEvents.set(filtered);
   }
 
-  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -793,10 +810,42 @@ export class AdminEventsComponent implements OnInit {
       this.toast.warning('Points have already been awarded to this participant');
       return;
     }
+    
+    // Calculate which ranks are still available (not yet awarded)
+    const awardedRanks = this.participants()
+      .filter(p => p.eventRank && (p.pointsAwarded || p.status === 'Awarded'))
+      .map(p => p.eventRank!);
+    
+    const available = [1, 2, 3].filter(rank => !awardedRanks.includes(rank));
+    
+    // Check if all ranks are already awarded
+    if (available.length === 0) {
+      this.toast.warning('All prize positions (1st, 2nd, 3rd) have already been awarded for this event');
+      return;
+    }
+    
+    this.availableRanks.set(available);
     this.selectedParticipant.set(participant);
-    this.winnerRank.set(1);
-    // Auto-set points based on 1st place by default
-    this.pointsToAward.set(event?.firstPlacePoints || 0);
+    
+    // Set to first available rank
+    const firstAvailableRank = available[0];
+    this.winnerRank.set(firstAvailableRank);
+    
+    // Auto-set points based on first available rank
+    if (event) {
+      switch (firstAvailableRank) {
+        case 1:
+          this.pointsToAward.set(event.firstPlacePoints || 0);
+          break;
+        case 2:
+          this.pointsToAward.set(event.secondPlacePoints || 0);
+          break;
+        case 3:
+          this.pointsToAward.set(event.thirdPlacePoints || 0);
+          break;
+      }
+    }
+    
     this.winnerValidationError.set('');
     this.showWinnerModal.set(true);
   }
