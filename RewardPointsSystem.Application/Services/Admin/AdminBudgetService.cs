@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Entities.Events;
 
 namespace RewardPointsSystem.Application.Services.Admin
 {
@@ -31,7 +32,15 @@ namespace RewardPointsSystem.Application.Services.Admin
             if (budget == null)
                 return null;
 
-            return MapToResponseDto(budget);
+            var response = MapToResponseDto(budget);
+            
+            // Get pending event points for this month
+            var pendingEvents = await GetPendingEventPointsAsync();
+            response.PendingEvents = pendingEvents;
+            response.PendingEventPoints = pendingEvents.Sum(e => e.PendingPoints);
+            response.PendingEventCount = pendingEvents.Count;
+
+            return response;
         }
 
         public async Task<AdminBudgetResponseDto> SetBudgetAsync(Guid adminUserId, SetBudgetDto dto)
@@ -193,6 +202,60 @@ namespace RewardPointsSystem.Application.Services.Admin
             var currentMonthYear = AdminMonthlyBudget.GetCurrentMonthYear();
             return await _unitOfWork.AdminMonthlyBudgets.SingleOrDefaultAsync(
                 b => b.AdminUserId == adminUserId && b.MonthYear == currentMonthYear);
+        }
+
+        /// <summary>
+        /// Get pending event points for current month
+        /// Events that end this month and have prizes not yet fully awarded
+        /// </summary>
+        public async Task<List<PendingEventPointsDto>> GetPendingEventPointsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var startOfMonth = new DateTime(now.Year, now.Month, 1);
+            var endOfMonth = startOfMonth.AddMonths(1).AddDays(-1);
+
+            // Get events that:
+            // 1. End date is in the CURRENT month (not draft, not future months)
+            // 2. Status is NOT Draft (only Upcoming, Active, Completed)
+            // 3. Have prize points defined
+            // 4. Are not fully awarded yet
+            var events = await _unitOfWork.Events.FindWithIncludesAsync(
+                e => e.Status != EventStatus.Draft // Exclude Draft events
+                     && e.EventEndDate.HasValue 
+                     && e.EventEndDate.Value >= startOfMonth 
+                     && e.EventEndDate.Value <= endOfMonth // Only events ending THIS month
+                     && (e.FirstPlacePoints.HasValue || e.SecondPlacePoints.HasValue || e.ThirdPlacePoints.HasValue),
+                e => e.Participants);
+
+            var result = new List<PendingEventPointsDto>();
+
+            foreach (var ev in events)
+            {
+                var totalPrizePoints = (ev.FirstPlacePoints ?? 0) + (ev.SecondPlacePoints ?? 0) + (ev.ThirdPlacePoints ?? 0);
+                
+                // Calculate points already awarded to participants
+                var pointsAlreadyAwarded = ev.Participants
+                    .Where(p => p.PointsAwarded.HasValue && p.PointsAwarded > 0)
+                    .Sum(p => p.PointsAwarded ?? 0);
+
+                var pendingPoints = totalPrizePoints - pointsAlreadyAwarded;
+                
+                // Only include if there are pending points
+                if (pendingPoints > 0)
+                {
+                    result.Add(new PendingEventPointsDto
+                    {
+                        EventId = ev.Id,
+                        EventName = ev.Name,
+                        EventEndDate = ev.EventEndDate,
+                        Status = ev.Status.ToString(),
+                        TotalPrizePoints = totalPrizePoints,
+                        PointsAlreadyAwarded = pointsAlreadyAwarded
+                    });
+                }
+            }
+
+            return result;
         }
 
         private static AdminBudgetResponseDto MapToResponseDto(AdminMonthlyBudget budget)

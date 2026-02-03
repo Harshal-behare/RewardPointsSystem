@@ -432,6 +432,35 @@
   }
 }
 
+// Event Status Banner (for participants modal)
+.event-status-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  font-size: 14px;
+  
+  &.warning {
+    background: #FFF3CD;
+    border-bottom: 1px solid #F0D78C;
+    color: #856404;
+    
+    app-icon {
+      color: #D4A017;
+    }
+  }
+  
+  &.success {
+    background: #D4EDDA;
+    border-bottom: 1px solid #C3E6CB;
+    color: #155724;
+    
+    app-icon {
+      color: #28A745;
+    }
+  }
+}
+
 .modal-body {
   padding: 24px;
 }
@@ -1556,12 +1585,90 @@ app-button.disabled-btn,
     &::placeholder {
       color: #BDC3C7;
     }
+    
+    &.invalid {
+      border-color: #E74C3C;
+      background: #FFF5F5;
+      
+      &:focus {
+        box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+      }
+    }
+  }
+  
+  .validating-indicator {
+    position: absolute;
+    right: 60px;
+    top: 50%;
+    transform: translateY(-50%);
+    
+    .mini-spinner {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #E0E0E0;
+      border-top-color: #3498DB;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
   }
 
   .input-hint {
     margin-top: 6px;
     font-size: 12px;
     color: #7A7A7A;
+    
+    &.error {
+      color: #E74C3C;
+    }
+    
+    .budget-hint {
+      color: #3498DB;
+      font-weight: 500;
+    }
+    
+    .min-chars-hint {
+      color: #E74C3C;
+      font-weight: 500;
+    }
+  }
+  
+  .budget-warning {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #FFF8E1;
+    border: 1px solid #FFE082;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #F57C00;
+    line-height: 1.4;
+    
+    app-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+  }
+  
+  .budget-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 10px 12px;
+    background: #FFEBEE;
+    border: 1px solid #FFCDD2;
+    border-radius: 8px;
+    font-size: 12px;
+    color: #C62828;
+    line-height: 1.4;
+    
+    app-icon {
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
   }
 }
 

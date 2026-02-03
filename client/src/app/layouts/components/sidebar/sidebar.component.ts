@@ -8,22 +8,15 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
   imports: [RouterModule, IconComponent],
   template: `
     <aside class="sidebar" [class.collapsed]="isCollapsed()">
-      <!-- Sidebar Header with Logo and Toggle -->
+      <!-- Sidebar Header with Logo -->
       <div class="sidebar-header">
-        <img
-          src="assets/Agdata_logo.png"
-          alt="AGDATA Logo"
-          class="sidebar-logo"
-          [class.hidden]="isCollapsed()"
-        />
-        <button
-          class="toggle-btn"
-          (click)="toggleSidebar()"
-          [attr.aria-label]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
-          title="{{ isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar' }}"
-        >
-          <app-icon [name]="isCollapsed() ? 'chevron-right' : 'chevron-left'" [size]="20"></app-icon>
-        </button>
+        @if (!isCollapsed()) {
+          <img
+            src="assets/Agdata_logo.png"
+            alt="AGDATA Logo"
+            class="sidebar-logo"
+          />
+        }
       </div>
 
       <!-- Navigation -->
@@ -40,6 +33,18 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
           </a>
         }
       </nav>
+
+      <!-- Sidebar Footer with Toggle Button -->
+      <div class="sidebar-footer">
+        <button
+          class="toggle-btn"
+          (click)="toggleSidebar()"
+          [attr.aria-label]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+          [title]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+        >
+          <app-icon [name]="isCollapsed() ? 'chevron-right' : 'chevron-left'" [size]="18"></app-icon>
+        </button>
+      </div>
     </aside>
   `,
   styles: [`
@@ -68,51 +73,16 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       justify-content: center;
       border-bottom: 1px solid #F4F6F7;
       padding: 12px;
-      position: relative;
+    }
+
+    .sidebar.collapsed .sidebar-header {
+      height: 70px;
     }
 
     .sidebar-logo {
       max-height: 60px;
       max-width: 100%;
       object-fit: contain;
-      transition: opacity 0.2s ease;
-    }
-
-    .sidebar-logo.hidden {
-      opacity: 0;
-      width: 0;
-      height: 0;
-      visibility: hidden;
-    }
-
-    .toggle-btn {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: transparent;
-      border: 1px solid #E8EBED;
-      border-radius: 6px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      color: #7A7A7A;
-      transition: all 0.2s ease;
-    }
-
-    .toggle-btn:hover {
-      background-color: #F4F6F7;
-      color: #27AE60;
-      border-color: #27AE60;
-    }
-
-    .sidebar.collapsed .toggle-btn {
-      right: auto;
-      left: 50%;
-      transform: translate(-50%, -50%);
     }
 
     .sidebar-nav {
@@ -171,6 +141,31 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
       opacity: 0;
       width: 0;
       visibility: hidden;
+    }
+
+    .sidebar-footer {
+      padding: 16px;
+      border-top: 1px solid #F4F6F7;
+    }
+
+    .toggle-btn {
+      width: 100%;
+      padding: 10px;
+      background-color: #F4F6F7;
+      border: 1px solid #E8EBED;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: #7A7A7A;
+      transition: all 0.2s ease;
+    }
+
+    .toggle-btn:hover {
+      background-color: #E8EBED;
+      color: #27AE60;
+      border-color: #27AE60;
     }
   `]
 })

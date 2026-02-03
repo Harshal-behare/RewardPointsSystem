@@ -18,6 +18,28 @@ namespace RewardPointsSystem.Application.DTOs.Admin
         public bool IsWarningZone { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime UpdatedAt { get; set; }
+        
+        // Pending event points - points reserved for events ending this month (winners not yet awarded)
+        public int PendingEventPoints { get; set; }
+        public int PendingEventCount { get; set; }
+        public List<PendingEventPointsDto> PendingEvents { get; set; } = new();
+        
+        // Effective remaining = RemainingBudget - PendingEventPoints
+        public int EffectiveRemainingBudget => Math.Max(0, RemainingBudget - PendingEventPoints);
+    }
+
+    /// <summary>
+    /// DTO for pending event points info
+    /// </summary>
+    public class PendingEventPointsDto
+    {
+        public Guid EventId { get; set; }
+        public string EventName { get; set; } = string.Empty;
+        public DateTime? EventEndDate { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public int TotalPrizePoints { get; set; }
+        public int PointsAlreadyAwarded { get; set; }
+        public int PendingPoints => TotalPrizePoints - PointsAlreadyAwarded;
     }
 
     /// <summary>

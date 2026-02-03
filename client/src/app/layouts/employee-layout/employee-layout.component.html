@@ -2,13 +2,14 @@
   <!-- Sidebar -->
   <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
     <div class="sidebar-header">
-  <img
-    src="assets/Agdata_logo.png"
-    alt="AGDATA Logo"
-    class="sidebar-logo"
-    [class.collapsed]="isSidebarCollapsed"
-  />
-</div>
+      @if (!isSidebarCollapsed) {
+        <img
+          src="assets/Agdata_logo.png"
+          alt="AGDATA Logo"
+          class="sidebar-logo"
+        />
+      }
+    </div>
 
     <nav class="sidebar-nav">
       @for (item of menuItems; track item.route) {

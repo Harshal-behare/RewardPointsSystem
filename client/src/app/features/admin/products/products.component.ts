@@ -119,6 +119,10 @@ export class AdminProductsComponent implements OnInit {
   selectedStatus = signal<string>('all'); // Status filter: 'all', 'Active', 'Inactive'
   categories = signal<string[]>(['all']);
   
+  // Sorting
+  sortBy = signal<'none' | 'stock' | 'points'>('none');
+  sortOrder = signal<'asc' | 'desc'>('asc');
+  
   // Categories from database
   dbCategories = signal<CategoryDto[]>([]);
 
@@ -261,6 +265,22 @@ export class AdminProductsComponent implements OnInit {
       );
     }
 
+    // Apply sorting
+    const sortBy = this.sortBy();
+    const sortOrder = this.sortOrder();
+    
+    if (sortBy !== 'none') {
+      filtered.sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'stock') {
+          comparison = a.stock - b.stock;
+        } else if (sortBy === 'points') {
+          comparison = a.pointsPrice - b.pointsPrice;
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+    }
+
     this.filteredProducts.set(filtered);
   }
 
@@ -275,6 +295,23 @@ export class AdminProductsComponent implements OnInit {
   }
 
   onSearchChange(): void {
+    this.applyFilters();
+  }
+
+  onSortChange(sortBy: 'none' | 'stock' | 'points'): void {
+    if (this.sortBy() === sortBy) {
+      // Toggle order if same sort field clicked
+      this.sortOrder.set(this.sortOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortBy.set(sortBy);
+      this.sortOrder.set('asc');
+    }
+    this.applyFilters();
+  }
+
+  clearSort(): void {
+    this.sortBy.set('none');
+    this.sortOrder.set('asc');
     this.applyFilters();
   }
 

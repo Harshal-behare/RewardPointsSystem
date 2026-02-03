@@ -9,10 +9,16 @@
       <span class="action-icon"><app-icon name="folder" [size]="18"></app-icon></span>
       <span>Manage Categories</span>
     </button>
-    <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
-      <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
-      <span>Refresh</span>
-    </button> -->
+    <div class="search-box-header">
+      <input
+        type="text"
+        placeholder="Search products..."
+        [ngModel]="searchQuery()"
+        (ngModelChange)="searchQuery.set($event); onSearchChange()"
+        class="search-input"
+      />
+      <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
+    </div>
   </div>
 
   <app-card>
@@ -34,21 +40,17 @@
 
     <!-- Filters & Search -->
     <div class="filters-section">
-      <div class="filter-tabs">
-        <button
-          class="filter-tab"
-          [class.active]="selectedCategory() === 'all'"
-          (click)="onCategoryChange('all')">
-          All Products
-        </button>
-        @for (category of categories().slice(1); track category) {
-          <button
-            class="filter-tab"
-            [class.active]="selectedCategory() === category"
-            (click)="onCategoryChange(category)">
-            {{ category }}
-          </button>
-        }
+      <!-- Category Filter Dropdown -->
+      <div class="category-filter">
+        <select 
+          class="category-select"
+          [ngModel]="selectedCategory()"
+          (ngModelChange)="onCategoryChange($event)">
+          <option value="all">All Categories</option>
+          @for (category of categories().slice(1); track category) {
+            <option [value]="category">{{ category }}</option>
+          }
+        </select>
       </div>
 
       <!-- Status Filter -->
@@ -63,15 +65,34 @@
         </select>
       </div>
 
-      <div class="search-box">
-        <input
-          type="text"
-          placeholder="Search products..."
-          [ngModel]="searchQuery()"
-          (ngModelChange)="searchQuery.set($event); onSearchChange()"
-          class="search-input"
-        />
-        <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
+      <!-- Sort Options -->
+      <div class="sort-filter">
+        <span class="sort-label">Sort by:</span>
+        <button 
+          class="sort-btn" 
+          [class.active]="sortBy() === 'stock'"
+          (click)="onSortChange('stock')">
+          <app-icon name="box" [size]="14"></app-icon>
+          Stock
+          @if (sortBy() === 'stock') {
+            <app-icon [name]="sortOrder() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12"></app-icon>
+          }
+        </button>
+        <button 
+          class="sort-btn" 
+          [class.active]="sortBy() === 'points'"
+          (click)="onSortChange('points')">
+          <app-icon name="coins" [size]="14"></app-icon>
+          Points
+          @if (sortBy() === 'points') {
+            <app-icon [name]="sortOrder() === 'asc' ? 'arrow-up' : 'arrow-down'" [size]="12"></app-icon>
+          }
+        </button>
+        @if (sortBy() !== 'none') {
+          <button class="sort-clear-btn" (click)="clearSort()">
+            Clear
+          </button>
+        }
       </div>
     </div>
 

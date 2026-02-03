@@ -379,6 +379,31 @@ namespace RewardPointsSystem.Api.Controllers
         }
 
         /// <summary>
+        /// Validate if admin can award specified points within budget
+        /// </summary>
+        /// <param name="points">Points to validate</param>
+        /// <response code="200">Returns validation result</response>
+        [HttpGet("budget/validate")]
+        [ProducesResponseType(typeof(ApiResponse<BudgetValidationResult>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ValidateBudget([FromQuery] int points)
+        {
+            try
+            {
+                var adminUserId = GetCurrentUserId();
+                if (adminUserId == null)
+                    return Unauthorized();
+
+                var result = await _budgetService.ValidatePointsAwardAsync(adminUserId.Value, points);
+                return Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating budget for {Points} points", points);
+                return Error("Failed to validate budget");
+            }
+        }
+
+        /// <summary>
         /// Get budget usage history for last 12 months
         /// </summary>
         /// <param name="months">Number of months to retrieve (default 12)</param>

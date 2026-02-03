@@ -491,6 +491,15 @@
           </p>
         </div>
       </div>
+      
+      <!-- Event Not Completed Warning -->
+      @if (selectedEventForParticipants()?.status !== 'Completed') {
+        <div class="event-status-banner warning">
+          <app-icon name="clock" [size]="16"></app-icon>
+          <span><strong>Event Not Completed:</strong> Points can only be awarded after the event has ended. Current status: {{ selectedEventForParticipants()?.status }}</span>
+        </div>
+      }
+      
     <div class="modal-body">
       <!-- Search Bar -->
       <div class="search-container">
@@ -552,11 +561,13 @@
                     <button 
                       class="select-winner-btn"
                       (click)="openWinnerSelectionModal(participant)"
-                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded'"
-                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded'"
-                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : 'Award points to this participant' }}">
+                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed'"
+                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed'"
+                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : (selectedEventForParticipants()?.status !== 'Completed' ? 'Event must be completed first' : 'Award points to this participant') }}">
                       @if (participant.pointsAwarded || participant.status === 'Awarded') {
                           <app-icon name="check" [size]="14"></app-icon> Awarded
+                        } @else if (selectedEventForParticipants()?.status !== 'Completed') {
+                          <app-icon name="clock" [size]="14"></app-icon> Event Not Complete
                         } @else {
                           <app-icon name="trophy" [size]="14"></app-icon> Award Points
                         }
@@ -655,12 +666,9 @@
           </div>
           <div>
             <h3>Award Points Directly</h3>
-            <p class="header-subtitle">Recognize employees with bonus points</p>
+            <p class="header-subtitle">Recognize employees with bonus points (Max: {{ MAX_AWARD_POINTS | number }} pts)</p>
           </div>
         </div>
-        <button class="close-btn" (click)="closeDirectAwardModal()">
-          <app-icon name="close" [size]="20"></app-icon>
-        </button>
       </div>
 
       <div class="modal-body">
@@ -771,15 +779,45 @@
                     type="number"
                     id="directPoints"
                     [(ngModel)]="directAwardPoints"
+                    (ngModelChange)="onPointsInputChange()"
                     name="directPoints"
                     min="1"
-                    max="100000"
-                    placeholder="Enter points amount"
+                    [max]="MAX_AWARD_POINTS"
+                    placeholder="Enter points (1 - {{ MAX_AWARD_POINTS | number }})"
                     class="points-input"
+                    [class.invalid]="directAwardPoints() < 0 || directAwardPoints() > MAX_AWARD_POINTS"
                   />
                   <span class="points-suffix">pts</span>
+                  @if (isValidatingBudget()) {
+                    <span class="validating-indicator">
+                      <span class="mini-spinner"></span>
+                    </span>
+                  }
                 </div>
-                <div class="input-hint">Maximum 100,000 points per award</div>
+                <div class="input-hint">
+                  Maximum {{ MAX_AWARD_POINTS | number }} points per award
+                  @if (budgetValidation() && budgetValidation()!.remainingBudget !== 2147483647) {
+                    <span class="budget-hint">
+                      • Your remaining budget: {{ budgetValidation()!.remainingBudget | number }} pts
+                    </span>
+                  }
+                </div>
+                
+                <!-- Budget Warning/Info -->
+                @if (budgetValidation()) {
+                  @if (budgetValidation()!.isWarning && budgetValidation()!.message) {
+                    <div class="budget-warning">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message }}
+                    </div>
+                  }
+                  @if (!budgetValidation()!.isAllowed) {
+                    <div class="budget-error">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message || 'Budget limit exceeded' }}
+                    </div>
+                  }
+                }
               </div>
 
               <div class="form-group">
@@ -792,12 +830,17 @@
                   [(ngModel)]="directAwardDescription"
                   name="directDescription"
                   rows="3"
-                  maxlength="500"
-                  placeholder="e.g., Outstanding performance on Q4 project, Going above and beyond..."
+                  [minlength]="MIN_DESCRIPTION_LENGTH"
+                  [maxlength]="MAX_DESCRIPTION_LENGTH"
+                  placeholder="e.g., Outstanding performance on Q4 project, Going above and beyond... (min {{ MIN_DESCRIPTION_LENGTH }} characters)"
                   class="description-input"
+                  [class.invalid]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH"
                 ></textarea>
-                <div class="input-hint">
-                  {{ directAwardDescription().length }}/500 characters
+                <div class="input-hint" [class.error]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH">
+                  {{ directAwardDescription().length }}/{{ MAX_DESCRIPTION_LENGTH }} characters
+                  @if (directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH) {
+                    <span class="min-chars-hint">(minimum {{ MIN_DESCRIPTION_LENGTH }} required)</span>
+                  }
                 </div>
               </div>
 
@@ -853,7 +896,7 @@
         @if (selectedUserForAward()) {
           <app-button 
             (clicked)="confirmDirectAward()"
-            [disabled]="!directAwardPoints() || !directAwardDescription()">
+            [disabled]="isAwardButtonDisabled()">
             <app-icon name="trophy" [size]="16"></app-icon> Award Points
           </app-button>
         }

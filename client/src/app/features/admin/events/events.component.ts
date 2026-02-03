@@ -11,6 +11,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EventService, CreateEventDto, UpdateEventDto } from '../../../core/services/event.service';
 import { PointsService } from '../../../core/services/points.service';
 import { UserService, UserDto } from '../../../core/services/user.service';
+import { AdminService, BudgetValidationResult } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -125,6 +126,13 @@ export class AdminEventsComponent implements OnInit {
   directAwardDescription = signal('');
   directAwardValidationError = signal('');
   isLoadingUsers = signal(false);
+  isValidatingBudget = signal(false);
+  budgetValidation = signal<BudgetValidationResult | null>(null);
+  
+  // Constants for validation
+  readonly MAX_AWARD_POINTS = 10000;
+  readonly MIN_DESCRIPTION_LENGTH = 10;
+  readonly MAX_DESCRIPTION_LENGTH = 500;
   
   // Event Modal Validation
   eventModalValidationErrors: string[] = [];
@@ -135,6 +143,7 @@ export class AdminEventsComponent implements OnInit {
     private eventService: EventService,
     private pointsService: PointsService,
     private userService: UserService,
+    private adminService: AdminService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
   ) {
@@ -772,6 +781,13 @@ export class AdminEventsComponent implements OnInit {
 
   // Winner Selection Modal Methods
   openWinnerSelectionModal(participant: EventParticipant): void {
+    // Check if event is completed before allowing award
+    const event = this.selectedEventForParticipants();
+    if (event && event.status !== 'Completed') {
+      this.toast.warning('Points can only be awarded after the event is completed');
+      return;
+    }
+    
     // Don't allow opening modal for already awarded participants
     if (participant.pointsAwarded || participant.status === 'Awarded') {
       this.toast.warning('Points have already been awarded to this participant');
@@ -780,7 +796,6 @@ export class AdminEventsComponent implements OnInit {
     this.selectedParticipant.set(participant);
     this.winnerRank.set(1);
     // Auto-set points based on 1st place by default
-    const event = this.selectedEventForParticipants();
     this.pointsToAward.set(event?.firstPlacePoints || 0);
     this.winnerValidationError.set('');
     this.showWinnerModal.set(true);
@@ -992,48 +1007,137 @@ export class AdminEventsComponent implements OnInit {
   selectUserForAward(user: UserDto): void {
     this.selectedUserForAward.set(user);
     this.directAwardValidationError.set('');
+    this.budgetValidation.set(null);
   }
 
   deselectUser(): void {
     this.selectedUserForAward.set(null);
+    this.budgetValidation.set(null);
+  }
+
+  /**
+   * Validate points input and check budget limits
+   */
+  onPointsInputChange(): void {
+    this.directAwardValidationError.set('');
+    this.budgetValidation.set(null);
+    
+    const points = this.directAwardPoints();
+    
+    // Basic validation first
+    if (points < 0) {
+      this.directAwardValidationError.set('Points cannot be negative');
+      return;
+    }
+    
+    if (points === 0) {
+      this.directAwardValidationError.set('Points must be greater than 0');
+      return;
+    }
+    
+    if (points > this.MAX_AWARD_POINTS) {
+      this.directAwardValidationError.set(`Points cannot exceed ${this.MAX_AWARD_POINTS.toLocaleString()} per award`);
+      return;
+    }
+    
+    // If valid, check budget
+    if (points > 0 && points <= this.MAX_AWARD_POINTS) {
+      this.validateBudget(points);
+    }
+  }
+
+  /**
+   * Validate budget for the given points
+   */
+  validateBudget(points: number): void {
+    this.isValidatingBudget.set(true);
+    
+    this.adminService.validateBudget(points).subscribe({
+      next: (response) => {
+        this.isValidatingBudget.set(false);
+        if (response.success && response.data) {
+          this.budgetValidation.set(response.data);
+          
+          // Show warning or error based on validation result
+          if (!response.data.isAllowed) {
+            this.directAwardValidationError.set(response.data.message || 'Budget limit exceeded. Cannot award points.');
+          } else if (response.data.isWarning && response.data.message) {
+            // Warning is shown but award is still allowed
+            this.directAwardValidationError.set('');
+          }
+        }
+      },
+      error: (error) => {
+        this.isValidatingBudget.set(false);
+        console.error('Error validating budget:', error);
+      }
+    });
   }
 
   validateDirectAward(): boolean {
     this.directAwardValidationError.set('');
     
     if (!this.selectedUserForAward()) {
-      this.directAwardValidationError.set('Please select a user to award points');
+      this.directAwardValidationError.set('Please select an employee to award points');
       return false;
     }
 
     const points = this.directAwardPoints();
-    if (!points || points <= 0) {
+    
+    // Check for negative or zero
+    if (points === null || points === undefined || points <= 0) {
       this.directAwardValidationError.set('Points must be greater than 0');
       return false;
     }
 
-    if (points > 100000) {
-      this.directAwardValidationError.set('Points cannot exceed 100,000 per award');
+    // Check for maximum limit
+    if (points > this.MAX_AWARD_POINTS) {
+      this.directAwardValidationError.set(`Points cannot exceed ${this.MAX_AWARD_POINTS.toLocaleString()} per award`);
+      return false;
+    }
+
+    // Check budget validation
+    const budget = this.budgetValidation();
+    if (budget && !budget.isAllowed) {
+      this.directAwardValidationError.set(budget.message || 'Budget limit exceeded. Cannot award points.');
       return false;
     }
 
     const description = this.directAwardDescription().trim();
     if (!description) {
-      this.directAwardValidationError.set('Please provide a description for this award');
+      this.directAwardValidationError.set('Please provide a reason for this award');
       return false;
     }
 
-    if (description.length < 5) {
-      this.directAwardValidationError.set('Description must be at least 5 characters');
+    if (description.length < this.MIN_DESCRIPTION_LENGTH) {
+      this.directAwardValidationError.set(`Reason must be at least ${this.MIN_DESCRIPTION_LENGTH} characters`);
       return false;
     }
 
-    if (description.length > 500) {
-      this.directAwardValidationError.set('Description cannot exceed 500 characters');
+    if (description.length > this.MAX_DESCRIPTION_LENGTH) {
+      this.directAwardValidationError.set(`Reason cannot exceed ${this.MAX_DESCRIPTION_LENGTH} characters`);
       return false;
     }
 
     return true;
+  }
+
+  /**
+   * Check if the award button should be disabled
+   */
+  isAwardButtonDisabled(): boolean {
+    const points = this.directAwardPoints();
+    const description = this.directAwardDescription().trim();
+    const budget = this.budgetValidation();
+    
+    // Disabled if no points, invalid points, no description, or budget not allowed
+    return !points || 
+           points <= 0 || 
+           points > this.MAX_AWARD_POINTS ||
+           !description || 
+           description.length < this.MIN_DESCRIPTION_LENGTH ||
+           this.isValidatingBudget() ||
+           (budget !== null && !budget.isAllowed);
   }
 
   confirmDirectAward(): void {
@@ -1044,16 +1148,36 @@ export class AdminEventsComponent implements OnInit {
     const user = this.selectedUserForAward();
     const points = this.directAwardPoints();
     const description = this.directAwardDescription().trim();
+    const budget = this.budgetValidation();
 
+    // Show confirmation if there's a budget warning
+    if (budget?.isWarning && budget?.message) {
+      this.confirmDialog.confirm({
+        title: 'Budget Warning',
+        message: `${budget.message}\n\nDo you want to proceed with awarding ${points.toLocaleString()} points?`,
+        confirmText: 'Proceed',
+        cancelText: 'Cancel',
+        type: 'warning'
+      }).then((confirmed) => {
+        if (confirmed) {
+          this.executeAwardPoints(user!, points, description);
+        }
+      });
+    } else {
+      this.executeAwardPoints(user!, points, description);
+    }
+  }
+
+  private executeAwardPoints(user: UserDto, points: number, description: string): void {
     this.pointsService.awardPoints({
-      userId: user!.id,
+      userId: user.id,
       points: points,
       description: description
       // Note: No eventId - this is a direct award
     }).subscribe({
       next: (response) => {
         if (response.success) {
-          this.toast.success(`Successfully awarded ${points} points to ${user!.firstName} ${user!.lastName}!`);
+          this.toast.success(`Successfully awarded ${points.toLocaleString()} points to ${user.firstName} ${user.lastName}!`);
           this.closeDirectAwardModal();
         } else {
           this.directAwardValidationError.set(response.message || 'Failed to award points');
@@ -1061,10 +1185,17 @@ export class AdminEventsComponent implements OnInit {
       },
       error: (error) => {
         console.error('Error awarding points:', error);
-        const messages = error?.error?.errors 
-          ? Object.values(error.error.errors).flat().join(' ')
-          : error?.error?.message || error?.message || 'Failed to award points';
-        this.directAwardValidationError.set(messages as string);
+        const errorMessage = error?.error?.message || error?.message || 'Failed to award points';
+        
+        // Check for budget-related errors
+        if (errorMessage.toLowerCase().includes('budget') || errorMessage.toLowerCase().includes('limit')) {
+          this.directAwardValidationError.set(`Budget limit reached: ${errorMessage}`);
+        } else {
+          const messages = error?.error?.errors 
+            ? Object.values(error.error.errors).flat().join(' ')
+            : errorMessage;
+          this.directAwardValidationError.set(messages as string);
+        }
       }
     });
   }

@@ -10,7 +10,7 @@ namespace RewardPointsSystem.Application.Interfaces
     public interface IAdminBudgetService
     {
         /// <summary>
-        /// Get current month's budget for an admin
+        /// Get current month's budget for an admin (includes pending event points)
         /// </summary>
         Task<AdminBudgetResponseDto?> GetCurrentBudgetAsync(Guid adminUserId);
 
@@ -38,5 +38,10 @@ namespace RewardPointsSystem.Application.Interfaces
         /// Get or create budget for current month
         /// </summary>
         Task<AdminMonthlyBudget?> GetOrCreateCurrentMonthBudgetAsync(Guid adminUserId);
+
+        /// <summary>
+        /// Get pending event points for current month (events ending this month with prizes not yet awarded)
+        /// </summary>
+        Task<List<PendingEventPointsDto>> GetPendingEventPointsAsync();
     }
 }
