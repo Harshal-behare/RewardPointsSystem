@@ -123,6 +123,16 @@ export class AdminUsersComponent implements OnInit {
     return result;
   });
   
+  // Computed paginated users
+  paginatedUsers = computed(() => {
+    const filtered = this.filteredUsers();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredUsers().length / this.pageSize()));
+  
   // Admin protection
   adminCount = signal(0);
   currentUserId = signal<string>('');
@@ -280,20 +290,72 @@ export class AdminUsersComponent implements OnInit {
     this.roleFilter.set('all');
     this.sortField.set('name');
     this.sortDirection.set('asc');
+    this.currentPage.set(1);
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   /**
    * Check if admin actions (deactivate/delete) should be disabled for a user
    * This protects the last admin from being removed from the system
+   * Also prevents self-deactivation
    */
   isAdminActionDisabled(user: DisplayUser): boolean {
-    // Only protect admins
+    // Can't deactivate yourself
+    if (user.id === this.currentUserId()) {
+      return true;
+    }
+    
+    // Only protect admins from last-admin rule
     if (user.role !== 'Admin') {
       return false;
     }
     
     // If there's only one admin, disable actions for that admin
     return this.adminCount() <= 1;
+  }
+  
+  /**
+   * Check if the user is the currently logged-in user
+   */
+  isSelf(user: DisplayUser): boolean {
+    return user.id === this.currentUserId();
   }
 
   /**
@@ -331,9 +393,16 @@ export class AdminUsersComponent implements OnInit {
    * Get tooltip message for disabled admin actions
    */
   getAdminActionTooltip(user: DisplayUser): string {
-    if (this.isAdminActionDisabled(user)) {
-      return 'Cannot deactivate or delete the last admin in the system';
+    // Can't deactivate yourself
+    if (user.id === this.currentUserId()) {
+      return 'You cannot deactivate your own account';
     }
+    
+    // Last admin protection
+    if (user.role === 'Admin' && this.adminCount() <= 1) {
+      return 'Cannot deactivate the last admin in the system';
+    }
+    
     return user.status === 'Active' ? 'Deactivate' : 'Activate';
   }
 
@@ -647,8 +716,14 @@ export class AdminUsersComponent implements OnInit {
   async toggleUserStatus(user: DisplayUser): Promise<void> {
     // Only check validations when deactivating
     if (user.status === 'Active') {
+      // Check if user is trying to deactivate themselves
+      if (user.id === this.currentUserId()) {
+        this.toast.error('You cannot deactivate your own account. Please ask another admin to do this.');
+        return;
+      }
+      
       // Check if this is the last admin
-      if (this.isAdminActionDisabled(user)) {
+      if (user.role === 'Admin' && this.adminCount() <= 1) {
         this.toast.error('Cannot deactivate the last admin in the system. At least one admin must remain active.');
         return;
       }
