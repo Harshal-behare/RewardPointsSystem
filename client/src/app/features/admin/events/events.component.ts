@@ -73,6 +73,20 @@ export class AdminEventsComponent implements OnInit {
   searchQuery = signal('');
   selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'>('all');
   
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  // Computed paginated events
+  paginatedEvents = computed(() => {
+    const filtered = this.filteredEvents();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredEvents().length / this.pageSize()));
+  
   // Sorting
   sortField = signal<'name' | 'eventDate' | 'status' | 'pointsPool' | 'participantCount'>('eventDate');
   sortDirection = signal<'asc' | 'desc'>('asc');
@@ -325,6 +339,8 @@ export class AdminEventsComponent implements OnInit {
     });
 
     this.filteredEvents.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
   }
 
   onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'): void {
@@ -356,7 +372,51 @@ export class AdminEventsComponent implements OnInit {
     this.selectedFilter.set('all');
     this.sortField.set('eventDate');
     this.sortDirection.set('asc');
+    this.currentPage.set(1);
     this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'secondary' {

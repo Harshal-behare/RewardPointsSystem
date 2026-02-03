@@ -851,4 +851,79 @@ $font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
   }
 
   .modal-content .info-grid { grid-template-columns: 1fr; }
+  
+  .pagination-container {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+}
+
+// Pagination Styles
+.pagination-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 0;
+  margin-top: 24px;
+  border-top: 1px solid $border;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pagination-info {
+  font-size: 14px;
+  color: $text-muted;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  .pagination-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 14px;
+    border: 1px solid $border;
+    border-radius: $radius-sm;
+    background: white;
+    font-size: 14px;
+    color: $text;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover:not(:disabled) {
+      background: $primary-light;
+      border-color: $primary;
+      color: $primary-dark;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    &.page-number {
+      min-width: 36px;
+      justify-content: center;
+
+      &.active {
+        background: $primary;
+        border-color: $primary;
+        color: white;
+      }
+    }
+  }
+
+  .pagination-ellipsis {
+    padding: 8px 4px;
+    color: $text-muted;
+  }
+}
+
+.pagination-summary {
+  font-size: 14px;
+  color: $text-muted;
 }

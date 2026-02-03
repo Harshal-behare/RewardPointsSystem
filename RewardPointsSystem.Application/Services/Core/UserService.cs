@@ -106,13 +106,29 @@ namespace RewardPointsSystem.Application.Services.Core
                 p => p.UserId == id);
             
             var activeEventCount = 0;
+            var pendingAwardCount = 0;
             foreach (var participation in userParticipations)
             {
                 var eventEntity = await _unitOfWork.Events.GetByIdAsync(participation.EventId);
-                if (eventEntity != null && 
-                    (eventEntity.Status == EventStatus.Upcoming || eventEntity.Status == EventStatus.Active))
+                if (eventEntity != null)
                 {
-                    activeEventCount++;
+                    // Check for Upcoming or Active events
+                    if (eventEntity.Status == EventStatus.Upcoming || eventEntity.Status == EventStatus.Active)
+                    {
+                        activeEventCount++;
+                    }
+                    // Check for Completed events where user hasn't been awarded points yet
+                    else if (eventEntity.Status == EventStatus.Completed && !participation.PointsAwarded.HasValue)
+                    {
+                        // Check if event still has points to distribute (pending awards)
+                        var totalPrizePoints = (eventEntity.FirstPlacePoints ?? 0) + 
+                                               (eventEntity.SecondPlacePoints ?? 0) + 
+                                               (eventEntity.ThirdPlacePoints ?? 0);
+                        if (totalPrizePoints > 0 && eventEntity.GetAvailablePointsPool() > 0)
+                        {
+                            pendingAwardCount++;
+                        }
+                    }
                 }
             }
 
@@ -120,6 +136,11 @@ namespace RewardPointsSystem.Application.Services.Core
                 throw new InvalidOperationException(
                     $"Cannot deactivate user who is registered for {activeEventCount} upcoming or active event(s). " +
                     "Please remove the user from these events or wait until they are completed before deactivating.");
+
+            if (pendingAwardCount > 0)
+                throw new InvalidOperationException(
+                    $"Cannot deactivate user who is registered for {pendingAwardCount} completed event(s) with pending point awards. " +
+                    "Please award points or remove the user from these events before deactivating.");
 
             // Check if this is the last admin
             await ValidateLastAdminProtectionAsync(id, "deactivate");

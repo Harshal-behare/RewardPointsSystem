@@ -162,7 +162,8 @@ export class EventService {
   }
 
   // Get active event registrations count for a user (Admin only - for deactivation check)
-  getUserActiveEventRegistrationsCount(userId: string): Observable<ApiResponse<{ count: number }>> {
-    return this.api.get<{ count: number }>(`Events/user/${userId}/active-registrations-count`);
+  // Returns count of active/upcoming events AND pending awards from completed events
+  getUserActiveEventRegistrationsCount(userId: string): Observable<ApiResponse<{ count: number; pendingAwardsCount: number }>> {
+    return this.api.get<{ count: number; pendingAwardsCount: number }>(`Events/user/${userId}/active-registrations-count`);
   }
 }

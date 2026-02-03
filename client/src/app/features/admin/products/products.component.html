@@ -99,7 +99,7 @@
     <!-- Grid View -->
     @if (viewMode() === 'grid') {
       <div class="products-grid">
-        @for (product of filteredProducts(); track product.id) {
+        @for (product of paginatedProducts(); track product.id) {
           <div class="product-card">
             <div class="product-image">
               <img [src]="product.imageUrl" [alt]="product.name" (error)="handleImageError($event)" />
@@ -155,7 +155,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (product of filteredProducts(); track product.id) {
+            @for (product of paginatedProducts(); track product.id) {
               <tr>
                 <td>
                   <div class="table-product">
@@ -193,6 +193,57 @@
             }
           </tbody>
         </table>
+      </div>
+    }
+    
+    <!-- Pagination -->
+    @if (filteredProducts().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          <span>Showing {{ paginatedProducts().length }} of {{ filteredProducts().length }} products</span>
+          <span class="divider">|</span>
+          <span>Show</span>
+          <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" class="page-size-select">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span>per page</span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()">
+            <app-icon name="arrow-left" [size]="14"></app-icon> Prev
+          </button>
+          
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+          }
+          
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()">
+            Next <app-icon name="arrow-right" [size]="14"></app-icon>
+          </button>
+        </div>
+        
+        <div class="pagination-summary">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
       </div>
     }
   </app-card>

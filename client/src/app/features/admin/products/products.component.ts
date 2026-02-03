@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
@@ -119,6 +119,20 @@ export class AdminProductsComponent implements OnInit {
   selectedCategory = signal<string>('all');
   selectedStatus = signal<string>('all'); // Status filter: 'all', 'Active', 'Inactive'
   categories = signal<string[]>(['all']);
+  
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  // Computed paginated products
+  paginatedProducts = computed(() => {
+    const filtered = this.filteredProducts();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredProducts().length / this.pageSize()));
   
   // Sorting
   sortBy = signal<'none' | 'stock' | 'points'>('none');
@@ -285,6 +299,8 @@ export class AdminProductsComponent implements OnInit {
     }
 
     this.filteredProducts.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
   }
 
   onCategoryChange(category: string): void {
@@ -315,7 +331,51 @@ export class AdminProductsComponent implements OnInit {
   clearSort(): void {
     this.sortBy.set('none');
     this.sortOrder.set('asc');
+    this.currentPage.set(1);
     this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   getStockStatus(stock: number): { label: string; variant: 'success' | 'warning' | 'danger' } {

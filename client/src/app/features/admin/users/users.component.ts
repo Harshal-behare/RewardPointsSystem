@@ -737,19 +737,36 @@ export class AdminUsersComponent implements OnInit {
 
   /**
    * Check if user is registered for active or upcoming events before allowing deactivation
+   * Also checks for completed events with pending point awards
    * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
    */
   private async checkActiveEventRegistrationsForDeactivation(user: DisplayUser): Promise<boolean> {
     return new Promise((resolve) => {
       this.eventService.getUserActiveEventRegistrationsCount(user.id).subscribe({
         next: (response) => {
-          if (response.success && response.data && response.data.count > 0) {
-            const count = response.data.count;
-            this.toast.error(
-              `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${count} upcoming or active event${count > 1 ? 's' : ''}. ` +
-              `Please remove the user from these events or wait until they are completed before deactivating.`
-            );
-            resolve(false);
+          if (response.success && response.data) {
+            const activeCount = response.data.count;
+            const pendingAwardsCount = response.data.pendingAwardsCount || 0;
+            
+            if (activeCount > 0) {
+              this.toast.error(
+                `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${activeCount} upcoming or active event${activeCount > 1 ? 's' : ''}. ` +
+                `Please remove the user from these events or wait until they are completed before deactivating.`
+              );
+              resolve(false);
+              return;
+            }
+            
+            if (pendingAwardsCount > 0) {
+              this.toast.error(
+                `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${pendingAwardsCount} completed event${pendingAwardsCount > 1 ? 's' : ''} with pending point awards. ` +
+                `Please award points or remove the user from these events before deactivating.`
+              );
+              resolve(false);
+              return;
+            }
+            
+            resolve(true);
           } else {
             resolve(true);
           }
