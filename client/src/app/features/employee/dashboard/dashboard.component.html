@@ -149,10 +149,10 @@
 
   <!-- Two Column Layout -->
   <div class="dashboard-grid">
-    <!-- Left Column -->
-    <div class="dashboard-column">
+    <!-- Row 1: Upcoming Events + Recent Transactions -->
+    <div class="dashboard-row">
       <!-- Upcoming Events -->
-      <div class="section-card">
+      <div class="section-card half-width">
         <div class="section-header">
           <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> Upcoming Events</h2>
           <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
@@ -193,47 +193,8 @@
         </div>
       </div>
 
-      <!-- Featured Products -->
-      <div class="section-card">
-        <div class="section-header">
-          <h2 class="section-title"><app-icon name="gift" [size]="20"></app-icon> Featured Products</h2>
-          <button class="view-all-btn" (click)="navigateToProducts()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
-        </div>
-
-        <div class="products-grid">
-          @for (product of featuredProducts(); track product.id) {
-            <div class="product-card">
-              <img [src]="product.image" [alt]="product.name" class="product-image" />
-              <div class="product-info">
-                <span class="product-category">{{ product.category }}</span>
-                <h3 class="product-name">{{ product.name }}</h3>
-                <div class="product-footer">
-                  <span class="product-points">{{ product.points }} pts</span>
-                  <span
-                    class="product-stock"
-                    [class.low-stock]="product.stock < 10"
-                  >
-                    {{ product.stock }} left
-                  </span>
-                </div>
-                <button
-                  class="redeem-btn"
-                  [disabled]="pointsBalance().available < product.points"
-                  (click)="redeemProduct(product)"
-                >
-                  {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
-                </button>
-              </div>
-            </div>
-          }
-        </div>
-      </div>
-    </div>
-
-    <!-- Right Column -->
-    <div class="dashboard-column">
       <!-- Recent Transactions -->
-      <div class="section-card transactions-card">
+      <div class="section-card transactions-card half-width">
         <div class="section-header">
           <h2 class="section-title"><app-icon name="wallet" [size]="20"></app-icon> Recent Transactions</h2>
           <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
@@ -288,9 +249,48 @@
           }
         </div>
       </div>
+    </div>
+
+    <!-- Row 2: Featured Products + Quick Actions -->
+    <div class="dashboard-row">
+      <!-- Featured Products -->
+      <div class="section-card half-width">
+        <div class="section-header">
+          <h2 class="section-title"><app-icon name="gift" [size]="20"></app-icon> Featured Products</h2>
+          <button class="view-all-btn" (click)="navigateToProducts()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+        </div>
+
+        <div class="products-grid">
+          @for (product of featuredProducts(); track product.id) {
+            <div class="product-card">
+              <img [src]="product.image" [alt]="product.name" class="product-image" />
+              <div class="product-info">
+                <span class="product-category">{{ product.category }}</span>
+                <h3 class="product-name">{{ product.name }}</h3>
+                <div class="product-footer">
+                  <span class="product-points">{{ product.points }} pts</span>
+                  <span
+                    class="product-stock"
+                    [class.low-stock]="product.stock < 10"
+                  >
+                    {{ product.stock }} left
+                  </span>
+                </div>
+                <button
+                  class="redeem-btn"
+                  [disabled]="pointsBalance().available < product.points"
+                  (click)="redeemProduct(product)"
+                >
+                  {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
 
       <!-- Quick Actions -->
-      <div class="section-card quick-actions-card">
+      <div class="section-card quick-actions-card half-width">
         <h2 class="section-title"><app-icon name="flash" [size]="20"></app-icon> Quick Actions</h2>
         <div class="quick-actions">
           <button class="action-btn" (click)="navigateToEvents()">

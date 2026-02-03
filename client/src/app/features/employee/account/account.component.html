@@ -96,7 +96,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (transaction of pointsHistory(); track transaction.id) {
+            @for (transaction of paginatedPointsHistory(); track transaction.id) {
             <tr>
               <td class="col-date">{{ transaction.date }}</td>
               <td class="col-description">{{ transaction.description }}</td>
@@ -126,6 +126,34 @@
             }
           </tbody>
         </table>
+        
+        <!-- Pagination for Earnings -->
+        @if (earningsTotalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="earningsCurrentPage() === 1" (click)="previousEarningsPage()">
+              <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getEarningsPageNumbers(); track $index) {
+                @if (page === -1) {
+                  <span class="ellipsis">...</span>
+                } @else {
+                  <button 
+                    class="page-num" 
+                    [class.active]="page === earningsCurrentPage()"
+                    (click)="goToEarningsPage(page)">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            
+            <button class="page-btn" [disabled]="earningsCurrentPage() === earningsTotalPages()" (click)="nextEarningsPage()">
+              Next <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        }
       </div>
       }
     </div>
@@ -158,7 +186,7 @@
             </tr>
           </thead>
           <tbody>
-            @for (redemption of redemptionHistory(); track redemption.id) {
+            @for (redemption of paginatedRedemptionHistory(); track redemption.id) {
             <tr>
               <td>{{ redemption.date }}</td>
               <td>
@@ -205,6 +233,34 @@
             }
           </tbody>
         </table>
+        
+        <!-- Pagination for Redemptions -->
+        @if (redemptionsTotalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="redemptionsCurrentPage() === 1" (click)="previousRedemptionsPage()">
+              <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getRedemptionsPageNumbers(); track $index) {
+                @if (page === -1) {
+                  <span class="ellipsis">...</span>
+                } @else {
+                  <button 
+                    class="page-num" 
+                    [class.active]="page === redemptionsCurrentPage()"
+                    (click)="goToRedemptionsPage(page)">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            
+            <button class="page-btn" [disabled]="redemptionsCurrentPage() === redemptionsTotalPages()" (click)="nextRedemptionsPage()">
+              Next <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        }
       </div>
       }
     </div>
