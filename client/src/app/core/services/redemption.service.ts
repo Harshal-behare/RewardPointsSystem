@@ -97,4 +97,9 @@ export class RedemptionService {
   getUserPendingRedemptionsCount(userId: string): Observable<ApiResponse<{ count: number }>> {
     return this.api.get<{ count: number }>(`Redemptions/user/${userId}/pending-count`);
   }
+
+  // Get pending redemptions count for a specific product (for deactivation check)
+  getProductPendingRedemptionsCount(productId: string): Observable<ApiResponse<{ count: number }>> {
+    return this.api.get<{ count: number }>(`Redemptions/product/${productId}/pending-count`);
+  }
 }

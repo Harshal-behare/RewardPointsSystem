@@ -3,6 +3,7 @@
 -- AGDATA Software Company - Internal Events
 -- Run this script to prepare database for demo
 -- Enhanced: 8 Users, 8 Events, 20 Products
+-- CORRECTED: Proper chronological order, enum values, balances
 -- ============================================
 
 USE [RewardPointsDB]
@@ -252,6 +253,15 @@ VALUES
 
 -- ========================================
 -- STEP 10: CREATE EVENTS (8 Total)
+-- TIMELINE (relative to today Feb 3, 2026):
+-- Event 1: Code Sprint - Dec 5-7, 2025 (Day -60 to -58, completed)
+-- Event 2: Tech Quiz - Dec 20, 2025 (Day -45, completed)
+-- Event 3: Hackathon - Jan 14-16, 2026 (Day -20 to -18, completed)
+-- Event 4: Wellness - Jan 31 to Feb 28 (Day -3 to +25, active)
+-- Event 5: Bug Bounty - Jan 24 to Feb 23 (Day -10 to +20, active)
+-- Event 6: Innovation Summit - Mar 5 (Day +30, upcoming)
+-- Event 7: Team Building - Mar 20 (Day +45, upcoming)
+-- Event 8: Annual Awards - May 3 (Month +3, draft)
 -- ========================================
 PRINT 'Creating events...'
 
@@ -264,7 +274,7 @@ DECLARE @Event6Id UNIQUEIDENTIFIER = NEWID()  -- Upcoming - Innovation Summit
 DECLARE @Event7Id UNIQUEIDENTIFIER = NEWID()  -- Upcoming - Team Building
 DECLARE @Event8Id UNIQUEIDENTIFIER = NEWID()  -- Draft - Annual Awards
 
--- EVENT 1: Completed - Code Sprint Q4 2025 (Harshal won 1st place!)
+-- EVENT 1: Completed - Code Sprint Q4 2025 (Dec 5-7, 2025) - Harshal won 1st place!
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl)
@@ -276,7 +286,7 @@ VALUES
     'AGDATA Office - Innovation Lab', 50, DATEADD(DAY, -85, GETUTCDATE()), DATEADD(DAY, -62, GETUTCDATE()),
     'https://images.unsplash.com/photo-1504384308090-c894fdcc538d?w=800')
 
--- EVENT 2: Completed - Tech Quiz Championship
+-- EVENT 2: Completed - Tech Quiz Championship (Dec 20, 2025)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl)
@@ -288,7 +298,7 @@ VALUES
     'AGDATA Office - Training Room', 30, DATEADD(DAY, -55, GETUTCDATE()), DATEADD(DAY, -46, GETUTCDATE()),
     'https://images.unsplash.com/photo-1606326608606-aa0b62935f2b?w=800')
 
--- EVENT 3: Completed - Weekend Hackathon
+-- EVENT 3: Completed - Weekend Hackathon (Jan 14-16, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl)
@@ -300,7 +310,7 @@ VALUES
     'AGDATA Office - All Floors', 40, DATEADD(DAY, -35, GETUTCDATE()), DATEADD(DAY, -22, GETUTCDATE()),
     'https://images.unsplash.com/photo-1519389950473-47ba0277781c?w=800')
 
--- EVENT 4: Active - Wellness Challenge
+-- EVENT 4: Active - Wellness Challenge (Jan 31 - Feb 28, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl, VirtualLink)
@@ -312,7 +322,7 @@ VALUES
     'Virtual Event', 100, DATEADD(DAY, -12, GETUTCDATE()), DATEADD(DAY, -4, GETUTCDATE()),
     'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=800', 'https://teams.microsoft.com/agdata-wellness')
 
--- EVENT 5: Active - Bug Bounty Hunt
+-- EVENT 5: Active - Bug Bounty Hunt (Jan 24 - Feb 23, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl)
@@ -324,7 +334,7 @@ VALUES
     'Remote - All Teams', 60, DATEADD(DAY, -18, GETUTCDATE()), DATEADD(DAY, -11, GETUTCDATE()),
     'https://images.unsplash.com/photo-1555949963-aa79dcee981c?w=800')
 
--- EVENT 6: Upcoming - Innovation Summit
+-- EVENT 6: Upcoming - Innovation Summit (Mar 5, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl, VirtualLink)
@@ -332,11 +342,11 @@ VALUES
 (@Event6Id, 'AGDATA Innovation Summit 2026',
     'Annual company-wide innovation event! Present your ideas to improve products and services. Best ideas will be implemented. All departments welcome!',
     DATEADD(DAY, 30, GETUTCDATE()), DATEADD(DAY, 30, GETUTCDATE()),
-    'Upcoming', 2500, 1200, 700, 400, @AdminId, DATEADD(DAY, -5, GETUTCDATE()), NULL,
+    'Upcoming', 2300, 1200, 700, 400, @AdminId, DATEADD(DAY, -5, GETUTCDATE()), NULL,
     'AGDATA Headquarters - Main Auditorium', 80, DATEADD(DAY, -3, GETUTCDATE()), DATEADD(DAY, 25, GETUTCDATE()),
     'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800', 'https://teams.microsoft.com/innovation-summit')
 
--- EVENT 7: Upcoming - Team Building Day
+-- EVENT 7: Upcoming - Team Building Day (Mar 20, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate, BannerImageUrl)
@@ -348,7 +358,7 @@ VALUES
     'Adventure Park Resort', 100, DATEADD(DAY, 5, GETUTCDATE()), DATEADD(DAY, 40, GETUTCDATE()),
     'https://images.unsplash.com/photo-1528605248644-14dd04022da1?w=800')
 
--- EVENT 8: Draft - Annual Awards Ceremony
+-- EVENT 8: Draft - Annual Awards Ceremony (May 3, 2026)
 INSERT INTO Events (Id, Name, Description, EventDate, EventEndDate, Status, TotalPointsPool,
     FirstPlacePoints, SecondPlacePoints, ThirdPlacePoints, CreatedBy, CreatedAt, CompletedAt,
     Location, MaxParticipants, RegistrationStartDate, RegistrationEndDate)
@@ -361,10 +371,11 @@ VALUES
 
 -- ========================================
 -- STEP 11: ADD EVENT PARTICIPANTS
+-- Points awarded on event completion date
 -- ========================================
 PRINT 'Adding event participants...'
 
--- EVENT 1: Code Sprint Q4 2025 - Harshal won 1st!
+-- EVENT 1: Code Sprint Q4 2025 (Completed Dec 7) - Harshal won 1st!
 INSERT INTO EventParticipants (Id, EventId, UserId, PointsAwarded, EventRank, RegisteredAt, AwardedAt, AwardedBy, AttendanceStatus)
 VALUES
 (NEWID(), @Event1Id, @AdminId, 1000, 1, DATEADD(DAY, -80, GETUTCDATE()), DATEADD(DAY, -58, GETUTCDATE()), @Admin2Id, 'Attended'),  -- Harshal WON!
@@ -373,7 +384,7 @@ VALUES
 (NEWID(), @Event1Id, @Employee3Id, NULL, NULL, DATEADD(DAY, -74, GETUTCDATE()), NULL, NULL, 'Attended'),
 (NEWID(), @Event1Id, @Employee4Id, NULL, NULL, DATEADD(DAY, -72, GETUTCDATE()), NULL, NULL, 'Attended')
 
--- EVENT 2: Tech Quiz - Sankalp won!
+-- EVENT 2: Tech Quiz (Completed Dec 20) - Sankalp won, Harshal 2nd!
 INSERT INTO EventParticipants (Id, EventId, UserId, PointsAwarded, EventRank, RegisteredAt, AwardedAt, AwardedBy, AttendanceStatus)
 VALUES
 (NEWID(), @Event2Id, @Employee1Id, 600, 1, DATEADD(DAY, -52, GETUTCDATE()), DATEADD(DAY, -45, GETUTCDATE()), @AdminId, 'Attended'),  -- Sankalp WON!
@@ -382,13 +393,13 @@ VALUES
 (NEWID(), @Event2Id, @Employee2Id, NULL, NULL, DATEADD(DAY, -48, GETUTCDATE()), NULL, NULL, 'Attended'),
 (NEWID(), @Event2Id, @Employee5Id, NULL, NULL, DATEADD(DAY, -47, GETUTCDATE()), NULL, NULL, 'Attended')
 
--- EVENT 3: Weekend Hackathon - Amit won!
+-- EVENT 3: Weekend Hackathon (Completed Jan 16) - Amit won, Sankalp 2nd, Rahul 3rd
 INSERT INTO EventParticipants (Id, EventId, UserId, PointsAwarded, EventRank, RegisteredAt, AwardedAt, AwardedBy, AttendanceStatus)
 VALUES
 (NEWID(), @Event3Id, @Employee2Id, 900, 1, DATEADD(DAY, -32, GETUTCDATE()), DATEADD(DAY, -18, GETUTCDATE()), @AdminId, 'Attended'),
 (NEWID(), @Event3Id, @Employee1Id, 550, 2, DATEADD(DAY, -30, GETUTCDATE()), DATEADD(DAY, -18, GETUTCDATE()), @AdminId, 'Attended'),
 (NEWID(), @Event3Id, @Employee4Id, 350, 3, DATEADD(DAY, -28, GETUTCDATE()), DATEADD(DAY, -18, GETUTCDATE()), @AdminId, 'Attended'),
-(NEWID(), @Event3Id, @AdminId, NULL, NULL, DATEADD(DAY, -27, GETUTCDATE()), NULL, NULL, 'Attended'),  -- Harshal participated
+(NEWID(), @Event3Id, @AdminId, NULL, NULL, DATEADD(DAY, -27, GETUTCDATE()), NULL, NULL, 'Attended'),  -- Harshal participated (no prize)
 (NEWID(), @Event3Id, @Employee6Id, NULL, NULL, DATEADD(DAY, -26, GETUTCDATE()), NULL, NULL, 'Attended')
 
 -- EVENT 4: Wellness Challenge (Active) - All registered
@@ -418,252 +429,183 @@ VALUES
 
 -- ========================================
 -- STEP 12: CREATE POINTS ACCOUNTS (All 8 Users)
+-- Calculated based on EVENT earnings only (no AdminAward feature)
 -- ========================================
 PRINT 'Creating points accounts...'
 
+-- HARSHAL's Points Summary (MAIN DEMO USER - ADMIN):
+-- Event 1 (Dec 7): +1000 (1st place Code Sprint)
+-- Event 2 (Dec 20): +400 (2nd place Tech Quiz)  
+-- Redemption (Jan 3): -400 (Amazon Rs.1000)
+-- Redemption (Jan 20): -200 (Amazon Rs.500)
+-- Redemption (Feb 2 - Pending): -200 (Flipkart)
+-- Total Earned: 1000+400 = 1400
+-- Total Redeemed: 400+200 = 600 (delivered) + 200 (pending)
+-- Current Balance: 1400 - 600 = 800, with 200 pending = 600 available
+
 INSERT INTO UserPointsAccounts (Id, UserId, CurrentBalance, TotalEarned, TotalRedeemed, PendingPoints, CreatedAt, LastUpdatedAt)
 VALUES
--- Harshal (Admin) - Active participant with good balance
-(NEWID(), @AdminId, 2150, 3500, 1150, 200, DATEADD(MONTH, -8, GETUTCDATE()), GETUTCDATE()),
--- Priya (Admin 2) - Some activity
-(NEWID(), @Admin2Id, 800, 1000, 200, 0, DATEADD(MONTH, -7, GETUTCDATE()), GETUTCDATE()),
--- Sankalp (Top Employee)
-(NEWID(), @Employee1Id, 1850, 3100, 1050, 200, DATEADD(MONTH, -6, GETUTCDATE()), GETUTCDATE()),
--- Amit
-(NEWID(), @Employee2Id, 1650, 2400, 750, 0, DATEADD(MONTH, -6, GETUTCDATE()), GETUTCDATE()),
--- Neha
-(NEWID(), @Employee3Id, 750, 1200, 450, 0, DATEADD(MONTH, -5, GETUTCDATE()), GETUTCDATE()),
--- Rahul
-(NEWID(), @Employee4Id, 600, 900, 300, 0, DATEADD(MONTH, -4, GETUTCDATE()), GETUTCDATE()),
--- Ananya
-(NEWID(), @Employee5Id, 350, 500, 150, 0, DATEADD(MONTH, -3, GETUTCDATE()), GETUTCDATE()),
--- Vikram (Newest)
-(NEWID(), @Employee6Id, 200, 300, 100, 0, DATEADD(MONTH, -2, GETUTCDATE()), GETUTCDATE())
+-- Harshal (Admin): Events 1400, Redeemed 600, Pending 200, Balance 800
+(NEWID(), @AdminId, 800, 1400, 600, 200, DATEADD(MONTH, -8, GETUTCDATE()), GETUTCDATE()),
+-- Priya (Admin 2): No event earnings, no activity
+(NEWID(), @Admin2Id, 0, 0, 0, 0, DATEADD(MONTH, -7, GETUTCDATE()), GETUTCDATE()),
+-- Sankalp (MAIN DEMO USER - EMPLOYEE): Events 1750, Redeemed 800, Pending 200, Balance 950
+(NEWID(), @Employee1Id, 950, 1750, 800, 200, DATEADD(MONTH, -6, GETUTCDATE()), GETUTCDATE()),
+-- Amit: Events 1300, Redeemed 400, Balance 900
+(NEWID(), @Employee2Id, 900, 1300, 400, 0, DATEADD(MONTH, -6, GETUTCDATE()), GETUTCDATE()),
+-- Neha: Event 200, Redeemed 100, Balance 100
+(NEWID(), @Employee3Id, 100, 200, 100, 0, DATEADD(MONTH, -5, GETUTCDATE()), GETUTCDATE()),
+-- Rahul: Event 350, Redeemed 150, Balance 200
+(NEWID(), @Employee4Id, 200, 350, 150, 0, DATEADD(MONTH, -4, GETUTCDATE()), GETUTCDATE()),
+-- Ananya: No event earnings, no activity
+(NEWID(), @Employee5Id, 0, 0, 0, 0, DATEADD(MONTH, -3, GETUTCDATE()), GETUTCDATE()),
+-- Vikram: No event earnings, no activity
+(NEWID(), @Employee6Id, 0, 0, 0, 0, DATEADD(MONTH, -2, GETUTCDATE()), GETUTCDATE())
 
 -- ========================================
 -- STEP 13: CREATE POINTS TRANSACTIONS
+-- IMPORTANT: Using correct enum values!
+-- TransactionType: 'Earned' or 'Redeemed'
+-- TransactionSource: 'Event' or 'Redemption' (AdminAward feature not available)
+-- Sorted in chronological order with correct BalanceAfter
 -- ========================================
 PRINT 'Creating points transactions...'
 
 -- =====================
--- HARSHAL (Admin) - Active Participant History
+-- HARSHAL (Admin) - MAIN DEMO USER - Rich History
+-- Timeline: Dec 7, 2025 to Feb 2, 2026
+-- Total Earned: 1400 (Events only)
 -- =====================
 INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
 VALUES
--- Event wins
-(NEWID(), @AdminId, 1000, 'Credit', 'Event', @Event1Id, '1st Place - AGDATA Code Sprint Q4 2025', DATEADD(DAY, -58, GETUTCDATE()), 1000),
-(NEWID(), @AdminId, 400, 'Credit', 'Event', @Event2Id, '2nd Place - Tech Quiz Championship', DATEADD(DAY, -45, GETUTCDATE()), 1400),
--- Admin awards from Priya
-(NEWID(), @AdminId, 500, 'Credit', 'Admin', @Admin2Id, 'Leadership Excellence Award - Q4 2025', DATEADD(DAY, -40, GETUTCDATE()), 1900),
-(NEWID(), @AdminId, 300, 'Credit', 'Admin', @Admin2Id, 'Employee of the Month - December 2025', DATEADD(DAY, -35, GETUTCDATE()), 2200),
-(NEWID(), @AdminId, 400, 'Credit', 'Admin', @Admin2Id, 'System Architecture Excellence Award', DATEADD(DAY, -25, GETUTCDATE()), 2600),
-(NEWID(), @AdminId, 300, 'Credit', 'Admin', @Admin2Id, 'Mentorship Recognition - Helped 3 new joiners', DATEADD(DAY, -15, GETUTCDATE()), 2900),
-(NEWID(), @AdminId, 400, 'Credit', 'Admin', @Admin2Id, 'Quarterly Performance Bonus - Q1 2026', DATEADD(DAY, -5, GETUTCDATE()), 3300),
-(NEWID(), @AdminId, 200, 'Credit', 'Admin', @Admin2Id, 'Process Improvement - CI/CD Pipeline Enhancement', DATEADD(DAY, -2, GETUTCDATE()), 3500),
--- Redemptions
-(NEWID(), @AdminId, -400, 'Debit', 'Redemption', NEWID(), 'Redeemed: Amazon Gift Card Rs.1000', DATEADD(DAY, -30, GETUTCDATE()), 2200),
-(NEWID(), @AdminId, -450, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Hoodie', DATEADD(DAY, -20, GETUTCDATE()), 2550),
-(NEWID(), @AdminId, -100, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -10, GETUTCDATE()), 2850),
-(NEWID(), @AdminId, -200, 'Debit', 'Redemption', NEWID(), 'Pending: Flipkart Gift Card Rs.500', DATEADD(DAY, -1, GETUTCDATE()), 2350)
+-- Dec 7 (Day -58): Event 1 - 1st Place Code Sprint = 1000 pts
+(NEWID(), @AdminId, 1000, 'Earned', 'Event', @Event1Id, '1st Place - AGDATA Code Sprint Q4 2025 - Built automated testing framework that reduced bug detection time by 40%', DATEADD(DAY, -58, GETUTCDATE()), 1000),
+-- Dec 20 (Day -45): Event 2 - 2nd Place Tech Quiz = 400 pts
+(NEWID(), @AdminId, 400, 'Earned', 'Event', @Event2Id, '2nd Place - Tech Quiz Championship - Scored 92/100 in technical knowledge assessment', DATEADD(DAY, -45, GETUTCDATE()), 1400),
+-- Jan 3 (Day -31): Redemption = -400 pts
+(NEWID(), @AdminId, 400, 'Redeemed', 'Redemption', @Prod2Id, 'Redeemed: Amazon Gift Card Rs.1000', DATEADD(DAY, -31, GETUTCDATE()), 1000),
+-- Jan 20 (Day -14): Redemption = -200 pts
+(NEWID(), @AdminId, 200, 'Redeemed', 'Redemption', @Prod1Id, 'Redeemed: Amazon Gift Card Rs.500', DATEADD(DAY, -14, GETUTCDATE()), 800),
+-- Feb 2 (Day -1): Pending Redemption = -200 pts (Reserved)
+(NEWID(), @AdminId, 200, 'Redeemed', 'Redemption', @Prod4Id, 'Pending: Flipkart Gift Card Rs.500', DATEADD(DAY, -1, GETUTCDATE()), 600)
 
 -- =====================
--- SANKALP (Employee 1) - Top Performer
+-- SANKALP (Employee 1) - MAIN DEMO USER - Top Performer
+-- Total Earned: 1750 (Events only)
 -- =====================
 INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
 VALUES
-(NEWID(), @Employee1Id, 600, 'Credit', 'Event', @Event1Id, '2nd Place - AGDATA Code Sprint Q4 2025', DATEADD(DAY, -58, GETUTCDATE()), 600),
-(NEWID(), @Employee1Id, 600, 'Credit', 'Event', @Event2Id, '1st Place - Tech Quiz Championship', DATEADD(DAY, -45, GETUTCDATE()), 1200),
-(NEWID(), @Employee1Id, 550, 'Credit', 'Event', @Event3Id, '2nd Place - Weekend Hackathon', DATEADD(DAY, -18, GETUTCDATE()), 1750),
-(NEWID(), @Employee1Id, 500, 'Credit', 'Admin', @AdminId, 'Exceptional Project Delivery - Nexus Module', DATEADD(DAY, -35, GETUTCDATE()), 1300),
-(NEWID(), @Employee1Id, 400, 'Credit', 'Admin', @AdminId, 'Employee of the Month - January 2026', DATEADD(DAY, -20, GETUTCDATE()), 2150),
-(NEWID(), @Employee1Id, 300, 'Credit', 'Admin', @AdminId, 'Client Appreciation Award', DATEADD(DAY, -10, GETUTCDATE()), 2800),
-(NEWID(), @Employee1Id, 300, 'Credit', 'Admin', @AdminId, 'Code Review Excellence', DATEADD(DAY, -3, GETUTCDATE()), 3100),
-(NEWID(), @Employee1Id, -200, 'Debit', 'Redemption', NEWID(), 'Redeemed: Amazon Gift Card Rs.500', DATEADD(DAY, -28, GETUTCDATE()), 1100),
-(NEWID(), @Employee1Id, -600, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Backpack', DATEADD(DAY, -15, GETUTCDATE()), 1850),
-(NEWID(), @Employee1Id, -250, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA T-Shirt', DATEADD(DAY, -8, GETUTCDATE()), 2600),
-(NEWID(), @Employee1Id, -200, 'Debit', 'Redemption', NEWID(), 'Pending: Amazon Gift Card Rs.500', DATEADD(DAY, -1, GETUTCDATE()), 2650)
+-- Dec 7 (Day -58): Event 1 - 2nd Place = 600 pts
+(NEWID(), @Employee1Id, 600, 'Earned', 'Event', @Event1Id, '2nd Place - AGDATA Code Sprint Q4 2025 - Innovative API design with microservices architecture', DATEADD(DAY, -58, GETUTCDATE()), 600),
+-- Dec 20 (Day -45): Event 2 - 1st Place = 600 pts
+(NEWID(), @Employee1Id, 600, 'Earned', 'Event', @Event2Id, '1st Place - Tech Quiz Championship - Perfect Score! Answered all 100 questions correctly', DATEADD(DAY, -45, GETUTCDATE()), 1200),
+-- Jan 5 (Day -29): Redemption = -200 pts
+(NEWID(), @Employee1Id, 200, 'Redeemed', 'Redemption', @Prod1Id, 'Redeemed: Amazon Gift Card Rs.500', DATEADD(DAY, -29, GETUTCDATE()), 1000),
+-- Jan 16 (Day -18): Event 3 - 2nd Place = 550 pts
+(NEWID(), @Employee1Id, 550, 'Earned', 'Event', @Event3Id, '2nd Place - Weekend Hackathon 2026 - Built AI-powered feature for customer support', DATEADD(DAY, -18, GETUTCDATE()), 1550),
+-- Jan 19 (Day -15): Redemption = -600 pts
+(NEWID(), @Employee1Id, 600, 'Redeemed', 'Redemption', @Prod14Id, 'Redeemed: AGDATA Backpack', DATEADD(DAY, -15, GETUTCDATE()), 950),
+-- Feb 2 (Day -1): Pending Redemption = -200 pts
+(NEWID(), @Employee1Id, 200, 'Redeemed', 'Redemption', @Prod1Id, 'Pending: Amazon Gift Card Rs.500', DATEADD(DAY, -1, GETUTCDATE()), 750)
 
 -- =====================
--- AMIT (Employee 2) - Strong Performer
+-- AMIT (Employee 2) - Strong Performer (minimal data)
+-- Total Earned: 1300 (Events only)
 -- =====================
 INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
 VALUES
-(NEWID(), @Employee2Id, 400, 'Credit', 'Event', @Event1Id, '3rd Place - AGDATA Code Sprint Q4 2025', DATEADD(DAY, -58, GETUTCDATE()), 400),
-(NEWID(), @Employee2Id, 900, 'Credit', 'Event', @Event3Id, '1st Place - Weekend Hackathon', DATEADD(DAY, -18, GETUTCDATE()), 1300),
-(NEWID(), @Employee2Id, 400, 'Credit', 'Admin', @AdminId, 'Team Leadership Recognition', DATEADD(DAY, -40, GETUTCDATE()), 800),
-(NEWID(), @Employee2Id, 350, 'Credit', 'Admin', @AdminId, 'Knowledge Sharing - Tech Talk Series', DATEADD(DAY, -25, GETUTCDATE()), 1650),
-(NEWID(), @Employee2Id, 350, 'Credit', 'Admin', @AdminId, 'Bug Bounty - Critical Security Fix', DATEADD(DAY, -12, GETUTCDATE()), 2200),
-(NEWID(), @Employee2Id, -400, 'Debit', 'Redemption', NEWID(), 'Redeemed: Amazon Gift Card Rs.1000', DATEADD(DAY, -30, GETUTCDATE()), 1350),
-(NEWID(), @Employee2Id, -150, 'Debit', 'Redemption', NEWID(), 'Redeemed: Swiggy Voucher', DATEADD(DAY, -20, GETUTCDATE()), 1500),
-(NEWID(), @Employee2Id, -200, 'Debit', 'Redemption', NEWID(), 'Redeemed: Notebook & Pen Set', DATEADD(DAY, -5, GETUTCDATE()), 2050)
+-- Dec 7 (Day -58): Event 1 - 3rd Place = 400 pts
+(NEWID(), @Employee2Id, 400, 'Earned', 'Event', @Event1Id, '3rd Place - AGDATA Code Sprint Q4 2025 - Solid implementation', DATEADD(DAY, -58, GETUTCDATE()), 400),
+-- Jan 16 (Day -18): Event 3 - 1st Place = 900 pts
+(NEWID(), @Employee2Id, 900, 'Earned', 'Event', @Event3Id, '1st Place - Weekend Hackathon 2026 - Winning project!', DATEADD(DAY, -18, GETUTCDATE()), 1300),
+-- Jan 25 (Day -9): Redemption = -400 pts
+(NEWID(), @Employee2Id, 400, 'Redeemed', 'Redemption', @Prod2Id, 'Redeemed: Amazon Gift Card Rs.1000', DATEADD(DAY, -9, GETUTCDATE()), 900)
 
 -- =====================
--- NEHA (Employee 3)
+-- NEHA (Employee 3) - Minimal data
+-- Total Earned: 200 (Event only)
 -- =====================
 INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
 VALUES
-(NEWID(), @Employee3Id, 200, 'Credit', 'Event', @Event2Id, '3rd Place - Tech Quiz Championship', DATEADD(DAY, -45, GETUTCDATE()), 200),
-(NEWID(), @Employee3Id, 350, 'Credit', 'Admin', @AdminId, 'Outstanding Documentation Award', DATEADD(DAY, -38, GETUTCDATE()), 550),
-(NEWID(), @Employee3Id, 300, 'Credit', 'Admin', @AdminId, 'Peer Recognition - Helpful Colleague', DATEADD(DAY, -28, GETUTCDATE()), 850),
-(NEWID(), @Employee3Id, 350, 'Credit', 'Admin', @AdminId, 'Process Improvement Implementation', DATEADD(DAY, -15, GETUTCDATE()), 1200),
-(NEWID(), @Employee3Id, -250, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA T-Shirt', DATEADD(DAY, -25, GETUTCDATE()), 600),
-(NEWID(), @Employee3Id, -100, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -10, GETUTCDATE()), 850),
-(NEWID(), @Employee3Id, -100, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -5, GETUTCDATE()), 750)
+-- Dec 20 (Day -45): Event 2 - 3rd Place = 200 pts
+(NEWID(), @Employee3Id, 200, 'Earned', 'Event', @Event2Id, '3rd Place - Tech Quiz Championship - Great effort!', DATEADD(DAY, -45, GETUTCDATE()), 200),
+-- Jan 24 (Day -10): Redemption = -100 pts
+(NEWID(), @Employee3Id, 100, 'Redeemed', 'Redemption', @Prod13Id, 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -10, GETUTCDATE()), 100)
 
 -- =====================
--- RAHUL (Employee 4)
+-- RAHUL (Employee 4) - Minimal data
+-- Total Earned: 350 (Event only)
 -- =====================
 INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
 VALUES
-(NEWID(), @Employee4Id, 350, 'Credit', 'Event', @Event3Id, '3rd Place - Weekend Hackathon', DATEADD(DAY, -18, GETUTCDATE()), 350),
-(NEWID(), @Employee4Id, 200, 'Credit', 'Admin', @AdminId, 'Welcome Bonus - New Employee', DATEADD(MONTH, -4, GETUTCDATE()), 200),
-(NEWID(), @Employee4Id, 200, 'Credit', 'Admin', @AdminId, 'Training Completion - AGDATA Certification', DATEADD(DAY, -50, GETUTCDATE()), 400),
-(NEWID(), @Employee4Id, 150, 'Credit', 'Admin', @AdminId, 'First Successful Deployment', DATEADD(DAY, -30, GETUTCDATE()), 900),
-(NEWID(), @Employee4Id, -150, 'Debit', 'Redemption', NEWID(), 'Redeemed: Swiggy Voucher', DATEADD(DAY, -25, GETUTCDATE()), 450),
-(NEWID(), @Employee4Id, -150, 'Debit', 'Redemption', NEWID(), 'Redeemed: BookMyShow Voucher', DATEADD(DAY, -10, GETUTCDATE()), 600)
+-- Jan 16 (Day -18): Event 3 - 3rd Place = 350 pts
+(NEWID(), @Employee4Id, 350, 'Earned', 'Event', @Event3Id, '3rd Place - Weekend Hackathon 2026 - Impressive for a new joiner!', DATEADD(DAY, -18, GETUTCDATE()), 350),
+-- Jan 24 (Day -10): Redemption = -150 pts
+(NEWID(), @Employee4Id, 150, 'Redeemed', 'Redemption', @Prod5Id, 'Redeemed: BookMyShow Voucher Rs.300', DATEADD(DAY, -10, GETUTCDATE()), 200)
 
 -- =====================
--- ANANYA (Employee 5)
+-- PRIYA, ANANYA, VIKRAM - No event wins, no transactions
+-- These users have 0 points (no AdminAward feature)
 -- =====================
-INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
-VALUES
-(NEWID(), @Employee5Id, 150, 'Credit', 'Admin', @AdminId, 'Welcome Bonus - New Employee', DATEADD(MONTH, -3, GETUTCDATE()), 150),
-(NEWID(), @Employee5Id, 150, 'Credit', 'Admin', @AdminId, 'Quick Learner Appreciation', DATEADD(DAY, -45, GETUTCDATE()), 300),
-(NEWID(), @Employee5Id, 100, 'Credit', 'Admin', @AdminId, 'First Week Completion Bonus', DATEADD(DAY, -60, GETUTCDATE()), 250),
-(NEWID(), @Employee5Id, 100, 'Credit', 'Admin', @AdminId, 'Positive Client Feedback', DATEADD(DAY, -15, GETUTCDATE()), 500),
-(NEWID(), @Employee5Id, -100, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -30, GETUTCDATE()), 200),
-(NEWID(), @Employee5Id, -50, 'Debit', 'Redemption', NEWID(), 'Partial Redemption', DATEADD(DAY, -10, GETUTCDATE()), 350)
-
--- =====================
--- VIKRAM (Employee 6) - Newest
--- =====================
-INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
-VALUES
-(NEWID(), @Employee6Id, 150, 'Credit', 'Admin', @AdminId, 'Welcome Bonus - New Employee', DATEADD(MONTH, -2, GETUTCDATE()), 150),
-(NEWID(), @Employee6Id, 100, 'Credit', 'Admin', @AdminId, 'Onboarding Completion', DATEADD(DAY, -40, GETUTCDATE()), 250),
-(NEWID(), @Employee6Id, 50, 'Credit', 'Admin', @AdminId, 'First Contribution Recognition', DATEADD(DAY, -20, GETUTCDATE()), 300),
-(NEWID(), @Employee6Id, -100, 'Debit', 'Redemption', NEWID(), 'Redeemed: AGDATA Coffee Mug', DATEADD(DAY, -15, GETUTCDATE()), 200)
-
--- =====================
--- PRIYA (Admin 2) - Some activity
--- =====================
-INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
-VALUES
-(NEWID(), @Admin2Id, 500, 'Credit', 'Admin', @AdminId, 'HR Excellence Award - Q4 2025', DATEADD(DAY, -50, GETUTCDATE()), 500),
-(NEWID(), @Admin2Id, 300, 'Credit', 'Admin', @AdminId, 'Event Organization Recognition', DATEADD(DAY, -30, GETUTCDATE()), 800),
-(NEWID(), @Admin2Id, 200, 'Credit', 'Admin', @AdminId, 'Training Program Development', DATEADD(DAY, -10, GETUTCDATE()), 1000),
-(NEWID(), @Admin2Id, -200, 'Debit', 'Redemption', NEWID(), 'Redeemed: Amazon Gift Card Rs.500', DATEADD(DAY, -20, GETUTCDATE()), 600)
 
 -- ========================================
 -- STEP 14: CREATE REDEMPTIONS
+-- Link to products with proper status workflow
+-- Only for users with event earnings
 -- ========================================
 PRINT 'Creating redemptions...'
 
--- HARSHAL's Redemptions (showing full workflow)
+-- HARSHAL's Redemptions (MAIN DEMO USER)
+-- Jan 3: Amazon Rs.1000 (400 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
 VALUES (NEWID(), @AdminId, @Prod2Id, 400, 'Delivered', DATEADD(DAY, -31, GETUTCDATE()), DATEADD(DAY, -30, GETUTCDATE()), @Admin2Id, DATEADD(DAY, -28, GETUTCDATE()), @Admin2Id, 1)
 
+-- Jan 20: Amazon Rs.500 (200 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @AdminId, @Prod12Id, 450, 'Delivered', DATEADD(DAY, -21, GETUTCDATE()), DATEADD(DAY, -20, GETUTCDATE()), @Admin2Id, DATEADD(DAY, -18, GETUTCDATE()), @Admin2Id, 1)
+VALUES (NEWID(), @AdminId, @Prod1Id, 200, 'Delivered', DATEADD(DAY, -14, GETUTCDATE()), DATEADD(DAY, -13, GETUTCDATE()), @Admin2Id, DATEADD(DAY, -12, GETUTCDATE()), @Admin2Id, 1)
 
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @AdminId, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -11, GETUTCDATE()), DATEADD(DAY, -10, GETUTCDATE()), @Admin2Id, DATEADD(DAY, -9, GETUTCDATE()), @Admin2Id, 1)
-
--- Harshal's Pending Redemption
+-- Feb 2: Flipkart Rs.500 (200 pts) - Pending
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, Quantity)
 VALUES (NEWID(), @AdminId, @Prod4Id, 200, 'Pending', DATEADD(DAY, -1, GETUTCDATE()), 1)
 
--- SANKALP's Redemptions
+-- SANKALP's Redemptions (MAIN DEMO USER)
+-- Jan 5: Amazon Rs.500 (200 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
 VALUES (NEWID(), @Employee1Id, @Prod1Id, 200, 'Delivered', DATEADD(DAY, -29, GETUTCDATE()), DATEADD(DAY, -28, GETUTCDATE()), @AdminId, DATEADD(DAY, -26, GETUTCDATE()), @AdminId, 1)
 
+-- Jan 19: AGDATA Backpack (600 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee1Id, @Prod14Id, 600, 'Delivered', DATEADD(DAY, -16, GETUTCDATE()), DATEADD(DAY, -15, GETUTCDATE()), @AdminId, DATEADD(DAY, -13, GETUTCDATE()), @AdminId, 1)
+VALUES (NEWID(), @Employee1Id, @Prod14Id, 600, 'Delivered', DATEADD(DAY, -15, GETUTCDATE()), DATEADD(DAY, -14, GETUTCDATE()), @AdminId, DATEADD(DAY, -12, GETUTCDATE()), @AdminId, 1)
 
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, Quantity)
-VALUES (NEWID(), @Employee1Id, @Prod11Id, 250, 'Approved', DATEADD(DAY, -9, GETUTCDATE()), DATEADD(DAY, -8, GETUTCDATE()), @AdminId, 1)
-
--- Sankalp's Pending Redemption
+-- Feb 2: Amazon Rs.500 (200 pts) - Pending
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, Quantity)
 VALUES (NEWID(), @Employee1Id, @Prod1Id, 200, 'Pending', DATEADD(DAY, -1, GETUTCDATE()), 1)
 
--- AMIT's Redemptions
+-- AMIT's Redemption (Minimal)
+-- Jan 25: Amazon Rs.1000 (400 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee2Id, @Prod2Id, 400, 'Delivered', DATEADD(DAY, -31, GETUTCDATE()), DATEADD(DAY, -30, GETUTCDATE()), @AdminId, DATEADD(DAY, -28, GETUTCDATE()), @AdminId, 1)
+VALUES (NEWID(), @Employee2Id, @Prod2Id, 400, 'Delivered', DATEADD(DAY, -9, GETUTCDATE()), DATEADD(DAY, -8, GETUTCDATE()), @AdminId, DATEADD(DAY, -7, GETUTCDATE()), @AdminId, 1)
 
+-- NEHA's Redemption (Minimal)
+-- Jan 24: Coffee Mug (100 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee2Id, @Prod3Id, 150, 'Delivered', DATEADD(DAY, -21, GETUTCDATE()), DATEADD(DAY, -20, GETUTCDATE()), @AdminId, DATEADD(DAY, -19, GETUTCDATE()), @AdminId, 1)
+VALUES (NEWID(), @Employee3Id, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -10, GETUTCDATE()), DATEADD(DAY, -9, GETUTCDATE()), @AdminId, DATEADD(DAY, -8, GETUTCDATE()), @AdminId, 1)
 
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, Quantity)
-VALUES (NEWID(), @Employee2Id, @Prod15Id, 200, 'Approved', DATEADD(DAY, -6, GETUTCDATE()), DATEADD(DAY, -5, GETUTCDATE()), @AdminId, 1)
-
--- NEHA's Redemptions
+-- RAHUL's Redemption (Minimal)
+-- Jan 24: BookMyShow (150 pts) - Delivered
 INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee3Id, @Prod11Id, 250, 'Delivered', DATEADD(DAY, -26, GETUTCDATE()), DATEADD(DAY, -25, GETUTCDATE()), @AdminId, DATEADD(DAY, -23, GETUTCDATE()), @AdminId, 1)
+VALUES (NEWID(), @Employee4Id, @Prod5Id, 150, 'Delivered', DATEADD(DAY, -10, GETUTCDATE()), DATEADD(DAY, -9, GETUTCDATE()), @AdminId, DATEADD(DAY, -8, GETUTCDATE()), @AdminId, 1)
 
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee3Id, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -11, GETUTCDATE()), DATEADD(DAY, -10, GETUTCDATE()), @AdminId, DATEADD(DAY, -9, GETUTCDATE()), @AdminId, 1)
-
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee3Id, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -6, GETUTCDATE()), DATEADD(DAY, -5, GETUTCDATE()), @AdminId, DATEADD(DAY, -4, GETUTCDATE()), @AdminId, 1)
-
--- RAHUL's Redemptions
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee4Id, @Prod3Id, 150, 'Delivered', DATEADD(DAY, -26, GETUTCDATE()), DATEADD(DAY, -25, GETUTCDATE()), @AdminId, DATEADD(DAY, -23, GETUTCDATE()), @AdminId, 1)
-
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee4Id, @Prod5Id, 150, 'Delivered', DATEADD(DAY, -11, GETUTCDATE()), DATEADD(DAY, -10, GETUTCDATE()), @AdminId, DATEADD(DAY, -9, GETUTCDATE()), @AdminId, 1)
-
--- Rejected Redemption (Rahul - WFH during busy period)
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, RejectionReason, Quantity)
-VALUES (NEWID(), @Employee4Id, @Prod16Id, 1500, 'Rejected', DATEADD(DAY, -8, GETUTCDATE()), DATEADD(DAY, -7, GETUTCDATE()), @AdminId,
-    'Work from home day not available during sprint deadline. Please resubmit after March 15th project milestone.', 1)
-
--- ANANYA's Redemptions
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee5Id, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -31, GETUTCDATE()), DATEADD(DAY, -30, GETUTCDATE()), @AdminId, DATEADD(DAY, -28, GETUTCDATE()), @AdminId, 1)
-
--- VIKRAM's Redemption
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Employee6Id, @Prod13Id, 100, 'Delivered', DATEADD(DAY, -16, GETUTCDATE()), DATEADD(DAY, -15, GETUTCDATE()), @AdminId, DATEADD(DAY, -14, GETUTCDATE()), @AdminId, 1)
-
--- PRIYA's Redemption
-INSERT INTO Redemptions (Id, UserId, ProductId, PointsSpent, Status, RequestedAt, ApprovedAt, ApprovedBy, ProcessedAt, ProcessedBy, Quantity)
-VALUES (NEWID(), @Admin2Id, @Prod1Id, 200, 'Delivered', DATEADD(DAY, -21, GETUTCDATE()), DATEADD(DAY, -20, GETUTCDATE()), @AdminId, DATEADD(DAY, -18, GETUTCDATE()), @AdminId, 1)
+-- NO redemptions for Priya, Ananya, Vikram (they have 0 points)
 
 -- ========================================
--- STEP 15: CREATE ADMIN BUDGETS
+-- STEP 15: ADMIN BUDGETS (NOT USED - AdminAward feature not available)
+-- Keeping empty for future use
 -- ========================================
-PRINT 'Creating admin budgets...'
-
--- HARSHAL's Budget History
--- Current month
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @AdminId, CONVERT(INT, FORMAT(GETUTCDATE(), 'yyyyMM')), 15000, 4500, 0, 80, GETUTCDATE(), GETUTCDATE())
-
--- Previous month
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @AdminId, CONVERT(INT, FORMAT(DATEADD(MONTH, -1, GETUTCDATE()), 'yyyyMM')), 12000, 9800, 0, 80, DATEADD(MONTH, -1, GETUTCDATE()), DATEADD(MONTH, -1, GETUTCDATE()))
-
--- Two months ago
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @AdminId, CONVERT(INT, FORMAT(DATEADD(MONTH, -2, GETUTCDATE()), 'yyyyMM')), 10000, 8500, 0, 80, DATEADD(MONTH, -2, GETUTCDATE()), DATEADD(MONTH, -2, GETUTCDATE()))
-
--- Three months ago
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @AdminId, CONVERT(INT, FORMAT(DATEADD(MONTH, -3, GETUTCDATE()), 'yyyyMM')), 10000, 7200, 0, 80, DATEADD(MONTH, -3, GETUTCDATE()), DATEADD(MONTH, -3, GETUTCDATE()))
-
--- PRIYA's Budget
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @Admin2Id, CONVERT(INT, FORMAT(GETUTCDATE(), 'yyyyMM')), 8000, 2100, 0, 80, GETUTCDATE(), GETUTCDATE())
+PRINT 'Skipping admin budgets (AdminAward feature not available)...'
 
 -- ========================================
--- VERIFICATION
+-- VERIFICATION QUERIES
 -- ========================================
 PRINT ''
 PRINT '============================================='
@@ -677,8 +619,31 @@ PRINT '  Employee: Sankalp.Chakre@agdata.com / Sankalp@123'
 PRINT ''
 PRINT 'Other employees use password: Demo@123!'
 PRINT ''
-PRINT 'DATA SUMMARY:'
+PRINT '============================================='
+PRINT 'MAIN DEMO USERS:'
+PRINT '============================================='
+PRINT ''
+PRINT 'HARSHAL BEHARE (Admin) - Points from Events only:'
+PRINT '  - Code Sprint Q4 2025: 1st Place = 1000 pts (Dec 7)'
+PRINT '  - Tech Quiz Championship: 2nd Place = 400 pts (Dec 20)'
+PRINT '  - Total Earned: 1400 pts'
+PRINT '  - Redeemed: Amazon Rs.1000 (-400), Amazon Rs.500 (-200)'
+PRINT '  - Pending: Flipkart Rs.500 (-200)'
+PRINT '  - CURRENT BALANCE: 800 pts (600 available)'
+PRINT ''
+PRINT 'SANKALP CHAKRE (Employee) - Points from Events only:'
+PRINT '  - Code Sprint Q4 2025: 2nd Place = 600 pts (Dec 7)'
+PRINT '  - Tech Quiz Championship: 1st Place = 600 pts (Dec 20)'
+PRINT '  - Weekend Hackathon 2026: 2nd Place = 550 pts (Jan 16)'
+PRINT '  - Total Earned: 1750 pts'
+PRINT '  - Redeemed: Amazon Rs.500 (-200), AGDATA Backpack (-600)'
+PRINT '  - Pending: Amazon Rs.500 (-200)'
+PRINT '  - CURRENT BALANCE: 950 pts (750 available)'
+PRINT '============================================='
+PRINT ''
 
+-- Data Summary
+PRINT 'DATA SUMMARY:'
 SELECT 'Users' AS Entity, COUNT(*) AS Count FROM Users
 UNION ALL SELECT 'Roles', COUNT(*) FROM Roles
 UNION ALL SELECT 'Products', COUNT(*) FROM Products
@@ -688,13 +653,40 @@ UNION ALL SELECT 'Event Participants', COUNT(*) FROM EventParticipants
 UNION ALL SELECT 'Redemptions', COUNT(*) FROM Redemptions
 UNION ALL SELECT 'Points Accounts', COUNT(*) FROM UserPointsAccounts
 UNION ALL SELECT 'Transactions', COUNT(*) FROM UserPointsTransactions
-UNION ALL SELECT 'Admin Budgets', COUNT(*) FROM AdminMonthlyBudgets
 
 PRINT ''
-PRINT 'TOP EMPLOYEES BY POINTS:'
-SELECT TOP 5 u.FirstName + ' ' + u.LastName AS Name, upa.CurrentBalance, upa.TotalEarned
+PRINT 'TOP EMPLOYEES BY TOTAL POINTS EARNED (Events only):'
+SELECT TOP 5 u.FirstName + ' ' + u.LastName AS Name, upa.CurrentBalance, upa.TotalEarned, upa.TotalRedeemed
 FROM Users u
 JOIN UserPointsAccounts upa ON u.Id = upa.UserId
+WHERE upa.TotalEarned > 0
 ORDER BY upa.TotalEarned DESC
+
+PRINT ''
+PRINT 'DEMO USER TRANSACTIONS:'
+PRINT '--- HARSHAL (Admin) ---'
+SELECT 
+    t.Description,
+    CASE WHEN t.TransactionType = 'Earned' THEN '+' + CAST(t.UserPoints AS VARCHAR) ELSE '-' + CAST(t.UserPoints AS VARCHAR) END AS Points,
+    t.TransactionSource AS Source,
+    CONVERT(VARCHAR, t.Timestamp, 106) AS Date,
+    t.BalanceAfter
+FROM UserPointsTransactions t
+JOIN Users u ON t.UserId = u.Id
+WHERE u.Email = 'Harshal.Behare@agdata.com'
+ORDER BY t.Timestamp
+
+PRINT ''
+PRINT '--- SANKALP (Employee) ---'
+SELECT 
+    t.Description,
+    CASE WHEN t.TransactionType = 'Earned' THEN '+' + CAST(t.UserPoints AS VARCHAR) ELSE '-' + CAST(t.UserPoints AS VARCHAR) END AS Points,
+    t.TransactionSource AS Source,
+    CONVERT(VARCHAR, t.Timestamp, 106) AS Date,
+    t.BalanceAfter
+FROM UserPointsTransactions t
+JOIN Users u ON t.UserId = u.Id
+WHERE u.Email = 'Sankalp.Chakre@agdata.com'
+ORDER BY t.Timestamp
 
 GO

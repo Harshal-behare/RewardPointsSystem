@@ -362,6 +362,11 @@ namespace RewardPointsSystem.Api.Controllers
                 var budget = await _budgetService.SetBudgetAsync(adminUserId.Value, dto);
                 return Success(budget, "Budget updated successfully");
             }
+            catch (InvalidOperationException ex)
+            {
+                // Budget limit validation error (e.g., limit less than already awarded after 10th)
+                return Error(ex.Message, 400);
+            }
             catch (ArgumentException ex)
             {
                 return Error(ex.Message, 422);
@@ -370,6 +375,31 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 _logger.LogError(ex, "Error setting admin budget");
                 return Error("Failed to set budget");
+            }
+        }
+
+        /// <summary>
+        /// Validate if admin can award specified points within budget
+        /// </summary>
+        /// <param name="points">Points to validate</param>
+        /// <response code="200">Returns validation result</response>
+        [HttpGet("budget/validate")]
+        [ProducesResponseType(typeof(ApiResponse<BudgetValidationResult>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> ValidateBudget([FromQuery] int points)
+        {
+            try
+            {
+                var adminUserId = GetCurrentUserId();
+                if (adminUserId == null)
+                    return Unauthorized();
+
+                var result = await _budgetService.ValidatePointsAwardAsync(adminUserId.Value, points);
+                return Success(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating budget for {Points} points", points);
+                return Error("Failed to validate budget");
             }
         }
 

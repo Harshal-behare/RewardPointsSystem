@@ -588,5 +588,58 @@ namespace RewardPointsSystem.Api.Controllers
                 return Error("Failed to unregister participant");
             }
         }
+
+        /// <summary>
+        /// Get active event registrations count for a specific user (Admin only - for deactivation check)
+        /// Returns count of events where user is registered and status is Upcoming or Active,
+        /// plus count of completed events where user has pending point awards
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <response code="200">Returns count of active event registrations and pending awards</response>
+        [HttpGet("user/{userId}/active-registrations-count")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserActiveEventRegistrationsCount(Guid userId)
+        {
+            try
+            {
+                // Get all event participations for the user
+                var userParticipations = await _participationService.GetUserEventsAsync(userId);
+                
+                // Count registrations where the event is Upcoming or Active (not Draft or Completed)
+                var activeRegistrations = 0;
+                var pendingAwards = 0;
+                foreach (var participation in userParticipations)
+                {
+                    var eventEntity = await _eventService.GetEventByIdAsync(participation.EventId);
+                    if (eventEntity != null)
+                    {
+                        if (eventEntity.Status == EventStatus.Upcoming || eventEntity.Status == EventStatus.Active)
+                        {
+                            activeRegistrations++;
+                        }
+                        // Check for Completed events where user hasn't been awarded points yet
+                        else if (eventEntity.Status == EventStatus.Completed && !participation.PointsAwarded.HasValue)
+                        {
+                            // Check if event still has points to distribute (pending awards)
+                            var totalPrizePoints = (eventEntity.FirstPlacePoints ?? 0) + 
+                                                   (eventEntity.SecondPlacePoints ?? 0) + 
+                                                   (eventEntity.ThirdPlacePoints ?? 0);
+                            if (totalPrizePoints > 0 && eventEntity.GetAvailablePointsPool() > 0)
+                            {
+                                pendingAwards++;
+                            }
+                        }
+                    }
+                }
+
+                return Success(new { count = activeRegistrations, pendingAwardsCount = pendingAwards });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving active event registrations count for user {UserId}", userId);
+                return Error("Failed to retrieve active event registrations count");
+            }
+        }
     }
 }

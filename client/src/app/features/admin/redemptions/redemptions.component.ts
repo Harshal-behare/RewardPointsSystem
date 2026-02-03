@@ -131,6 +131,20 @@ export class AdminRedemptionsComponent implements OnInit {
     return result;
   });
 
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  // Computed paginated requests
+  paginatedRequests = computed(() => {
+    const filtered = this.filteredRequests();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredRequests().length / this.pageSize()));
+
   constructor(
     private router: Router,
     private redemptionService: RedemptionService,
@@ -284,12 +298,12 @@ export class AdminRedemptionsComponent implements OnInit {
 
   setFilter(filter: 'All' | 'Pending' | 'Approved' | 'Rejected' | 'Cancelled' | 'Delivered'): void {
     this.currentFilter.set(filter);
-    // filteredRequests computed signal handles filtering automatically
+    this.currentPage.set(1); // Reset to first page when filter changes
   }
 
   // Search method
   onSearchChange(): void {
-    // Search is automatically applied via computed signal
+    this.currentPage.set(1); // Reset to first page when search changes
   }
   
   // Sort methods
@@ -309,6 +323,45 @@ export class AdminRedemptionsComponent implements OnInit {
   
   clearSearch(): void {
     this.searchQuery.set('');
+    this.currentPage.set(1);
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   getUserInitials(userName: string): string {

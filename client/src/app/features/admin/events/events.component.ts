@@ -1,5 +1,5 @@
 import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
-import { DatePipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
@@ -10,6 +10,8 @@ import { BadgeComponent } from '../../../shared/components/badge/badge.component
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { EventService, CreateEventDto, UpdateEventDto } from '../../../core/services/event.service';
 import { PointsService } from '../../../core/services/points.service';
+import { UserService, UserDto } from '../../../core/services/user.service';
+import { AdminService, BudgetValidationResult } from '../../../core/services/admin.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -51,6 +53,7 @@ interface EventParticipant {
   standalone: true,
   imports: [
     DatePipe,
+    DecimalPipe,
     FormsModule,
     CardComponent,
     ButtonComponent,
@@ -68,7 +71,21 @@ export class AdminEventsComponent implements OnInit {
   // Filter and Search - 4 statuses: Draft, Upcoming, Active, Completed
   filteredEvents = signal<DisplayEvent[]>([]);
   searchQuery = signal('');
-  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'>('all');
+  
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  // Computed paginated events
+  paginatedEvents = computed(() => {
+    const filtered = this.filteredEvents();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredEvents().length / this.pageSize()));
   
   // Sorting
   sortField = signal<'name' | 'eventDate' | 'status' | 'pointsPool' | 'participantCount'>('eventDate');
@@ -112,6 +129,33 @@ export class AdminEventsComponent implements OnInit {
   pointsToAward = signal(0);
   winnerRank = signal(1);
   winnerValidationError = signal('');
+  availableRanks = signal<number[]>([1, 2, 3]); // Track which ranks are still available
+  
+  // Computed: Check if all 3 ranks have been awarded
+  allRanksAwarded = computed(() => {
+    const awardedRanks = this.participants()
+      .filter(p => p.eventRank && (p.pointsAwarded || p.status === 'Awarded'))
+      .map(p => p.eventRank!);
+    return [1, 2, 3].every(rank => awardedRanks.includes(rank));
+  });
+
+  // Direct Award Points Modal
+  showDirectAwardModal = signal(false);
+  allUsers = signal<UserDto[]>([]);
+  filteredUsers = signal<UserDto[]>([]);
+  userSearchQuery = signal('');
+  selectedUserForAward = signal<UserDto | null>(null);
+  directAwardPoints = signal(0);
+  directAwardDescription = signal('');
+  directAwardValidationError = signal('');
+  isLoadingUsers = signal(false);
+  isValidatingBudget = signal(false);
+  budgetValidation = signal<BudgetValidationResult | null>(null);
+  
+  // Constants for validation
+  readonly MAX_AWARD_POINTS = 10000;
+  readonly MIN_DESCRIPTION_LENGTH = 10;
+  readonly MAX_DESCRIPTION_LENGTH = 500;
   
   // Event Modal Validation
   eventModalValidationErrors: string[] = [];
@@ -121,6 +165,8 @@ export class AdminEventsComponent implements OnInit {
     private route: ActivatedRoute,
     private eventService: EventService,
     private pointsService: PointsService,
+    private userService: UserService,
+    private adminService: AdminService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
   ) {
@@ -245,7 +291,15 @@ export class AdminEventsComponent implements OnInit {
     let filtered = [...this.events()];
 
     // Filter by status
-    if (this.selectedFilter() !== 'all') {
+    if (this.selectedFilter() === 'PendingAwards') {
+      // Show completed events that still have prize points to award
+      filtered = filtered.filter(event => {
+        if (event.status !== 'Completed') return false;
+        // Check if any prize points are defined and remaining points > 0
+        const totalPrizePoints = (event.firstPlacePoints || 0) + (event.secondPlacePoints || 0) + (event.thirdPlacePoints || 0);
+        return totalPrizePoints > 0 && (event.remainingPoints ?? event.pointsPool) > 0;
+      });
+    } else if (this.selectedFilter() !== 'all') {
       filtered = filtered.filter(event => event.status === this.selectedFilter());
     }
 
@@ -285,9 +339,11 @@ export class AdminEventsComponent implements OnInit {
     });
 
     this.filteredEvents.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
   }
 
-  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Draft' | 'Upcoming' | 'Active' | 'Completed' | 'PendingAwards'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -316,7 +372,51 @@ export class AdminEventsComponent implements OnInit {
     this.selectedFilter.set('all');
     this.sortField.set('eventDate');
     this.sortDirection.set('asc');
+    this.currentPage.set(1);
     this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   getStatusVariant(status: string): 'success' | 'warning' | 'info' | 'secondary' {
@@ -441,14 +541,17 @@ export class AdminEventsComponent implements OnInit {
 
   /**
    * Get allowed next statuses for the current status
+   * Admin can only manually change Draft -> Upcoming
+   * Other transitions (Upcoming -> Active -> Completed) are automatic
    */
   getAvailableStatusTransitions(currentStatus: string): string[] {
-    const currentIndex = this.statusOrder.indexOf(currentStatus);
-    if (currentIndex === -1) return this.statusOrder;
-    if (currentIndex >= this.statusOrder.length - 1) return [currentStatus]; // Completed - no transitions
-
-    // Return current status and next status only
-    return this.statusOrder.slice(currentIndex, currentIndex + 2);
+    // Admin can only change Draft to Upcoming
+    // Once Upcoming, status changes are automatic based on dates
+    if (currentStatus === 'Draft') {
+      return ['Draft', 'Upcoming'];
+    }
+    // For Upcoming, Active, Completed - admin cannot change, it's automatic
+    return [currentStatus];
   }
 
   // Client-side validation matching backend rules
@@ -484,9 +587,11 @@ export class AdminEventsComponent implements OnInit {
       }
     }
 
-    // Event end date validation
+    // Event end date validation - MANDATORY
     const eventEndDate = this.selectedEvent.eventEndDate;
-    if (eventDate && eventEndDate) {
+    if (!eventEndDate) {
+      this.eventModalValidationErrors.push('Event end date is required');
+    } else if (eventDate) {
       const startDate = new Date(eventDate);
       const endDate = new Date(eventEndDate);
       if (endDate < startDate) {
@@ -494,9 +599,17 @@ export class AdminEventsComponent implements OnInit {
       }
     }
 
-    // Registration dates validation
+    // Registration dates validation - MANDATORY
     const regStartDate = this.selectedEvent.registrationStartDate;
     const regEndDate = this.selectedEvent.registrationEndDate;
+    
+    if (!regStartDate) {
+      this.eventModalValidationErrors.push('Registration start date is required');
+    }
+    if (!regEndDate) {
+      this.eventModalValidationErrors.push('Registration end date is required');
+    }
+    
     if (regStartDate && regEndDate) {
       const regStart = new Date(regStartDate);
       const regEnd = new Date(regEndDate);
@@ -758,16 +871,54 @@ export class AdminEventsComponent implements OnInit {
 
   // Winner Selection Modal Methods
   openWinnerSelectionModal(participant: EventParticipant): void {
+    // Check if event is completed before allowing award
+    const event = this.selectedEventForParticipants();
+    if (event && event.status !== 'Completed') {
+      this.toast.warning('Points can only be awarded after the event is completed');
+      return;
+    }
+    
     // Don't allow opening modal for already awarded participants
     if (participant.pointsAwarded || participant.status === 'Awarded') {
       this.toast.warning('Points have already been awarded to this participant');
       return;
     }
+    
+    // Calculate which ranks are still available (not yet awarded)
+    const awardedRanks = this.participants()
+      .filter(p => p.eventRank && (p.pointsAwarded || p.status === 'Awarded'))
+      .map(p => p.eventRank!);
+    
+    const available = [1, 2, 3].filter(rank => !awardedRanks.includes(rank));
+    
+    // Check if all ranks are already awarded
+    if (available.length === 0) {
+      this.toast.warning('All prize positions (1st, 2nd, 3rd) have already been awarded for this event');
+      return;
+    }
+    
+    this.availableRanks.set(available);
     this.selectedParticipant.set(participant);
-    this.winnerRank.set(1);
-    // Auto-set points based on 1st place by default
-    const event = this.selectedEventForParticipants();
-    this.pointsToAward.set(event?.firstPlacePoints || 0);
+    
+    // Set to first available rank
+    const firstAvailableRank = available[0];
+    this.winnerRank.set(firstAvailableRank);
+    
+    // Auto-set points based on first available rank
+    if (event) {
+      switch (firstAvailableRank) {
+        case 1:
+          this.pointsToAward.set(event.firstPlacePoints || 0);
+          break;
+        case 2:
+          this.pointsToAward.set(event.secondPlacePoints || 0);
+          break;
+        case 3:
+          this.pointsToAward.set(event.thirdPlacePoints || 0);
+          break;
+      }
+    }
+    
     this.winnerValidationError.set('');
     this.showWinnerModal.set(true);
   }
@@ -915,5 +1066,259 @@ export class AdminEventsComponent implements OnInit {
   refreshData(): void {
     this.loadEvents();
     this.toast.info('Data refreshed!');
+  }
+
+  // ==========================================
+  // Direct Award Points Modal Methods
+  // ==========================================
+
+  openDirectAwardModal(): void {
+    this.showDirectAwardModal.set(true);
+    this.resetDirectAwardForm();
+    this.loadAllUsers();
+  }
+
+  closeDirectAwardModal(): void {
+    this.showDirectAwardModal.set(false);
+    this.resetDirectAwardForm();
+  }
+
+  resetDirectAwardForm(): void {
+    this.selectedUserForAward.set(null);
+    this.directAwardPoints.set(0);
+    this.directAwardDescription.set('');
+    this.directAwardValidationError.set('');
+    this.userSearchQuery.set('');
+  }
+
+  loadAllUsers(): void {
+    this.isLoadingUsers.set(true);
+    // Load a large page size to get all users for selection
+    this.userService.getUsers(1, 500).subscribe({
+      next: (response) => {
+        if (response.success && response.data) {
+          // Filter only active users
+          const activeUsers = response.data.items.filter(u => u.isActive);
+          this.allUsers.set(activeUsers);
+          this.filteredUsers.set(activeUsers);
+        }
+        this.isLoadingUsers.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading users:', error);
+        this.toast.error('Failed to load users');
+        this.isLoadingUsers.set(false);
+      }
+    });
+  }
+
+  onUserSearchChange(): void {
+    const query = this.userSearchQuery().toLowerCase().trim();
+    if (!query) {
+      this.filteredUsers.set([...this.allUsers()]);
+    } else {
+      this.filteredUsers.set(this.allUsers().filter(u =>
+        u.firstName.toLowerCase().includes(query) ||
+        u.lastName.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        `${u.firstName} ${u.lastName}`.toLowerCase().includes(query)
+      ));
+    }
+  }
+
+  selectUserForAward(user: UserDto): void {
+    this.selectedUserForAward.set(user);
+    this.directAwardValidationError.set('');
+    this.budgetValidation.set(null);
+  }
+
+  deselectUser(): void {
+    this.selectedUserForAward.set(null);
+    this.budgetValidation.set(null);
+  }
+
+  /**
+   * Validate points input and check budget limits
+   */
+  onPointsInputChange(): void {
+    this.directAwardValidationError.set('');
+    this.budgetValidation.set(null);
+    
+    const points = this.directAwardPoints();
+    
+    // Basic validation first
+    if (points < 0) {
+      this.directAwardValidationError.set('Points cannot be negative');
+      return;
+    }
+    
+    if (points === 0) {
+      this.directAwardValidationError.set('Points must be greater than 0');
+      return;
+    }
+    
+    if (points > this.MAX_AWARD_POINTS) {
+      this.directAwardValidationError.set(`Points cannot exceed ${this.MAX_AWARD_POINTS.toLocaleString()} per award`);
+      return;
+    }
+    
+    // If valid, check budget
+    if (points > 0 && points <= this.MAX_AWARD_POINTS) {
+      this.validateBudget(points);
+    }
+  }
+
+  /**
+   * Validate budget for the given points
+   */
+  validateBudget(points: number): void {
+    this.isValidatingBudget.set(true);
+    
+    this.adminService.validateBudget(points).subscribe({
+      next: (response) => {
+        this.isValidatingBudget.set(false);
+        if (response.success && response.data) {
+          this.budgetValidation.set(response.data);
+          
+          // Show warning or error based on validation result
+          if (!response.data.isAllowed) {
+            this.directAwardValidationError.set(response.data.message || 'Budget limit exceeded. Cannot award points.');
+          } else if (response.data.isWarning && response.data.message) {
+            // Warning is shown but award is still allowed
+            this.directAwardValidationError.set('');
+          }
+        }
+      },
+      error: (error) => {
+        this.isValidatingBudget.set(false);
+        console.error('Error validating budget:', error);
+      }
+    });
+  }
+
+  validateDirectAward(): boolean {
+    this.directAwardValidationError.set('');
+    
+    if (!this.selectedUserForAward()) {
+      this.directAwardValidationError.set('Please select an employee to award points');
+      return false;
+    }
+
+    const points = this.directAwardPoints();
+    
+    // Check for negative or zero
+    if (points === null || points === undefined || points <= 0) {
+      this.directAwardValidationError.set('Points must be greater than 0');
+      return false;
+    }
+
+    // Check for maximum limit
+    if (points > this.MAX_AWARD_POINTS) {
+      this.directAwardValidationError.set(`Points cannot exceed ${this.MAX_AWARD_POINTS.toLocaleString()} per award`);
+      return false;
+    }
+
+    // Check budget validation
+    const budget = this.budgetValidation();
+    if (budget && !budget.isAllowed) {
+      this.directAwardValidationError.set(budget.message || 'Budget limit exceeded. Cannot award points.');
+      return false;
+    }
+
+    const description = this.directAwardDescription().trim();
+    if (!description) {
+      this.directAwardValidationError.set('Please provide a reason for this award');
+      return false;
+    }
+
+    if (description.length < this.MIN_DESCRIPTION_LENGTH) {
+      this.directAwardValidationError.set(`Reason must be at least ${this.MIN_DESCRIPTION_LENGTH} characters`);
+      return false;
+    }
+
+    if (description.length > this.MAX_DESCRIPTION_LENGTH) {
+      this.directAwardValidationError.set(`Reason cannot exceed ${this.MAX_DESCRIPTION_LENGTH} characters`);
+      return false;
+    }
+
+    return true;
+  }
+
+  /**
+   * Check if the award button should be disabled
+   */
+  isAwardButtonDisabled(): boolean {
+    const points = this.directAwardPoints();
+    const description = this.directAwardDescription().trim();
+    const budget = this.budgetValidation();
+    
+    // Disabled if no points, invalid points, no description, or budget not allowed
+    return !points || 
+           points <= 0 || 
+           points > this.MAX_AWARD_POINTS ||
+           !description || 
+           description.length < this.MIN_DESCRIPTION_LENGTH ||
+           this.isValidatingBudget() ||
+           (budget !== null && !budget.isAllowed);
+  }
+
+  confirmDirectAward(): void {
+    if (!this.validateDirectAward()) {
+      return;
+    }
+
+    const user = this.selectedUserForAward();
+    const points = this.directAwardPoints();
+    const description = this.directAwardDescription().trim();
+    const budget = this.budgetValidation();
+
+    // Show confirmation if there's a budget warning
+    if (budget?.isWarning && budget?.message) {
+      this.confirmDialog.confirm({
+        title: 'Budget Warning',
+        message: `${budget.message}\n\nDo you want to proceed with awarding ${points.toLocaleString()} points?`,
+        confirmText: 'Proceed',
+        cancelText: 'Cancel',
+        type: 'warning'
+      }).then((confirmed) => {
+        if (confirmed) {
+          this.executeAwardPoints(user!, points, description);
+        }
+      });
+    } else {
+      this.executeAwardPoints(user!, points, description);
+    }
+  }
+
+  private executeAwardPoints(user: UserDto, points: number, description: string): void {
+    this.pointsService.awardPoints({
+      userId: user.id,
+      points: points,
+      description: description
+      // Note: No eventId - this is a direct award
+    }).subscribe({
+      next: (response) => {
+        if (response.success) {
+          this.toast.success(`Successfully awarded ${points.toLocaleString()} points to ${user.firstName} ${user.lastName}!`);
+          this.closeDirectAwardModal();
+        } else {
+          this.directAwardValidationError.set(response.message || 'Failed to award points');
+        }
+      },
+      error: (error) => {
+        console.error('Error awarding points:', error);
+        const errorMessage = error?.error?.message || error?.message || 'Failed to award points';
+        
+        // Check for budget-related errors
+        if (errorMessage.toLowerCase().includes('budget') || errorMessage.toLowerCase().includes('limit')) {
+          this.directAwardValidationError.set(`Budget limit reached: ${errorMessage}`);
+        } else {
+          const messages = error?.error?.errors 
+            ? Object.values(error.error.errors).flat().join(' ')
+            : errorMessage;
+          this.directAwardValidationError.set(messages as string);
+        }
+      }
+    });
   }
 }

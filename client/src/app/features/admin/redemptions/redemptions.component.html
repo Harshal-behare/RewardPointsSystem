@@ -124,7 +124,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (request of filteredRequests(); track request.id) {
+          @for (request of paginatedRequests(); track request.id) {
             <tr>
               <td>
                 <div class="user-info">
@@ -202,6 +202,34 @@
           }
         </tbody>
       </table>
+      
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+            <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+          </button>
+          
+          <div class="page-numbers">
+            @for (page of getPageNumbers(); track $index) {
+              @if (page === -1) {
+                <span class="ellipsis">...</span>
+              } @else {
+                <button 
+                  class="page-num" 
+                  [class.active]="page === currentPage()"
+                  (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+            }
+          </div>
+          
+          <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+            Next <app-icon name="chevron-right" [size]="16"></app-icon>
+          </button>
+        </div>
+      }
     </div>
   </app-card>
 </div>

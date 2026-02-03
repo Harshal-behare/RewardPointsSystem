@@ -160,4 +160,10 @@ export class EventService {
   getEventParticipants(eventId: string): Observable<ApiResponse<EventParticipantDto[]>> {
     return this.api.get<EventParticipantDto[]>(`Events/${eventId}/participants`);
   }
+
+  // Get active event registrations count for a user (Admin only - for deactivation check)
+  // Returns count of active/upcoming events AND pending awards from completed events
+  getUserActiveEventRegistrationsCount(userId: string): Observable<ApiResponse<{ count: number; pendingAwardsCount: number }>> {
+    return this.api.get<{ count: number; pendingAwardsCount: number }>(`Events/user/${userId}/active-registrations-count`);
+  }
 }

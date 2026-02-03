@@ -919,6 +919,115 @@ $bg: #F4F6F7;
   }
 }
 
+// Pending Event Points Section
+.pending-events-section {
+  margin-top: 16px;
+  padding: 16px;
+  background: #FFF9E6;
+  border: 1px solid #F0D78C;
+  border-radius: 8px;
+
+  .pending-events-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+
+    app-icon {
+      color: #D4A017;
+    }
+
+    .pending-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #856404;
+    }
+  }
+
+  .pending-events-summary {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px dashed #E8D48A;
+
+    .pending-stat {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+
+      &.effective {
+        padding-left: 24px;
+        border-left: 1px solid #E8D48A;
+      }
+
+      .pending-label {
+        font-size: 12px;
+        color: #856404;
+      }
+
+      .pending-value {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+
+        &.warning {
+          color: #D4A017;
+        }
+
+        &.negative {
+          color: #E74C3C;
+        }
+      }
+    }
+  }
+
+  .pending-events-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 150px;
+    overflow-y: auto;
+
+    .pending-event-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 8px 12px;
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #E8D48A;
+
+      .event-name {
+        flex: 1;
+        font-size: 13px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      .event-points {
+        font-size: 13px;
+        font-weight: 600;
+        color: #D4A017;
+      }
+    }
+  }
+
+  .pending-events-note {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    font-size: 11px;
+    color: #856404;
+    font-style: italic;
+
+    app-icon {
+      color: #856404;
+    }
+  }
+}
+
 .budget-actions {
   display: flex;
   justify-content: flex-end;

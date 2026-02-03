@@ -72,6 +72,17 @@ export interface RecentActivity {
   user: string;
 }
 
+// Pending Event Points Interface
+export interface PendingEventPoints {
+  eventId: string;
+  eventName: string;
+  eventEndDate: string | null;
+  status: string;
+  totalPrizePoints: number;
+  pointsAlreadyAwarded: number;
+  pendingPoints: number;
+}
+
 // Admin Budget Response Interface
 export interface AdminBudgetResponse {
   id: string;
@@ -87,6 +98,11 @@ export interface AdminBudgetResponse {
   isWarningZone: boolean;
   createdAt: string;
   updatedAt: string;
+  // Pending event points - reserved for events ending this month
+  pendingEventPoints: number;
+  pendingEventCount: number;
+  pendingEvents: PendingEventPoints[];
+  effectiveRemainingBudget: number;
 }
 
 // Set Budget Request Interface
@@ -177,6 +193,13 @@ export class AdminService {
    */
   setBudget(request: SetBudgetRequest): Observable<ApiResponse<AdminBudgetResponse>> {
     return this.api.put<AdminBudgetResponse>('Admin/budget', request);
+  }
+
+  /**
+   * Validate if admin can award specified points within budget
+   */
+  validateBudget(points: number): Observable<ApiResponse<BudgetValidationResult>> {
+    return this.api.get<BudgetValidationResult>('Admin/budget/validate', { points });
   }
 
   /**

@@ -84,6 +84,44 @@
             </div>
           </div>
 
+          <!-- Pending Event Points Section -->
+          @if (adminBudget()!.pendingEventCount > 0) {
+            <div class="pending-events-section">
+              <div class="pending-events-header">
+                <app-icon name="calendar" [size]="16"></app-icon>
+                <span class="pending-title">Pending Event Prizes</span>
+                <app-badge variant="info" size="sm">{{ adminBudget()!.pendingEventCount }} events</app-badge>
+              </div>
+              <div class="pending-events-summary">
+                <div class="pending-stat">
+                  <span class="pending-label">Reserved for Events:</span>
+                  <span class="pending-value warning">{{ formatNumber(adminBudget()!.pendingEventPoints) }} pts</span>
+                </div>
+                <div class="pending-stat effective">
+                  <span class="pending-label">Effective Remaining:</span>
+                  <span class="pending-value" [class.negative]="adminBudget()!.effectiveRemainingBudget <= 0">
+                    {{ formatNumber(adminBudget()!.effectiveRemainingBudget) }} pts
+                  </span>
+                </div>
+              </div>
+              <div class="pending-events-list">
+                @for (event of adminBudget()!.pendingEvents; track event.eventId) {
+                  <div class="pending-event-item">
+                    <span class="event-name">{{ event.eventName }}</span>
+                    <span class="event-points">{{ event.pendingPoints }} pts</span>
+                    <app-badge [variant]="event.status === 'Completed' ? 'success' : 'warning'" size="sm">
+                      {{ event.status }}
+                    </app-badge>
+                  </div>
+                }
+              </div>
+              <p class="pending-events-note">
+                <app-icon name="info" [size]="12"></app-icon>
+                These points are reserved for events ending this month. Award winners after event completion.
+              </p>
+            </div>
+          }
+
           <div class="budget-actions">
             <app-button variant="secondary" size="sm" (clicked)="openBudgetModal('edit')">
               <app-icon name="settings" [size]="14"></app-icon>

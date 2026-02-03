@@ -5,6 +5,10 @@
       <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
       <span>Create New Event</span>
     </button>
+    <button class="quick-action-btn award-btn" (click)="openDirectAwardModal()">
+      <span class="action-icon"><app-icon name="trophy" [size]="18"></app-icon></span>
+      <span>Award Points</span>
+    </button>
     <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
       <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
       <span>Refresh</span>
@@ -56,6 +60,13 @@
           (click)="onFilterChange('Completed')">
           Completed
         </button>
+        <button
+          class="filter-tab pending-awards"
+          [class.active]="selectedFilter() === 'PendingAwards'"
+          (click)="onFilterChange('PendingAwards')">
+          <app-icon name="trophy" [size]="14"></app-icon>
+          Pending Awards
+        </button>
       </div>
 
       <div class="search-row">
@@ -70,7 +81,7 @@
           <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
         </div>
         <div class="results-info">
-          Showing {{ filteredEvents().length }} of {{ events().length }} events
+          Showing {{ paginatedEvents().length }} of {{ filteredEvents().length }} events
         </div>
       </div>
     </div>
@@ -100,7 +111,7 @@
           </tr>
         </thead>
         <tbody>
-          @for (event of filteredEvents(); track event.id) {
+          @for (event of paginatedEvents(); track event.id) {
             <tr>
               <td>
                 <div class="event-name">
@@ -171,6 +182,55 @@
         </tbody>
       </table>
     </div>
+    
+    <!-- Pagination -->
+    @if (filteredEvents().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          <span>Show</span>
+          <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" class="page-size-select">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span>per page</span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()">
+            <app-icon name="arrow-left" [size]="14"></app-icon> Prev
+          </button>
+          
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+          }
+          
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()">
+            Next <app-icon name="arrow-right" [size]="14"></app-icon>
+          </button>
+        </div>
+        
+        <div class="pagination-summary">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+    }
   </app-card>
 </div>
 
@@ -241,7 +301,7 @@
           </div>
 
           <div class="form-group">
-            <label for="eventEndDate">Event End Date</label>
+            <label for="eventEndDate">Event End Date *</label>
             <input
               id="eventEndDate"
               type="date"
@@ -249,9 +309,10 @@
               (ngModelChange)="validateEventModalRealtime()"
               name="eventEndDate"
               placeholder="YYYY-MM-DD"
+              required
               [min]="selectedEvent.eventDate"
             />
-            <small class="form-hint">Must be after start date</small>
+            <small class="form-hint">Must be after start date. Event becomes Completed after this date.</small>
           </div>
         </div>
 
@@ -270,7 +331,9 @@
               }
             </select>
             @if (modalMode() === 'create') {
-              <small class="form-hint">New events can only be Draft or Upcoming</small>
+              <small class="form-hint">New events start as Draft. Change to Upcoming when ready for employees to see.</small>
+            } @else {
+              <small class="form-hint">Only Draft → Upcoming can be changed manually. Other status changes are automatic.</small>
             }
           </div>
 
@@ -385,11 +448,11 @@
 
         <!-- Registration Period Section -->
         <div class="form-section">
-          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period (Optional)</h4>
+          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period *</h4>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="registrationStartDate">Registration Opens</label>
+              <label for="registrationStartDate">Registration Opens *</label>
               <input
                 id="registrationStartDate"
                 type="date"
@@ -397,11 +460,13 @@
                 (ngModelChange)="validateEventModalRealtime()"
                 name="registrationStartDate"
                 placeholder="YYYY-MM-DD"
+                required
               />
+              <small class="form-hint">When employees can see and register for event</small>
             </div>
 
             <div class="form-group">
-              <label for="registrationEndDate">Registration Closes</label>
+              <label for="registrationEndDate">Registration Closes *</label>
               <input
                 id="registrationEndDate"
                 type="date"
@@ -409,6 +474,7 @@
                 (ngModelChange)="validateEventModalRealtime()"
                 name="registrationEndDate"
                 placeholder="YYYY-MM-DD"
+                required
                 [max]="selectedEvent.eventDate"
               />
               <small class="form-hint">Must close before or on event start</small>
@@ -487,6 +553,15 @@
           </p>
         </div>
       </div>
+      
+      <!-- Event Not Completed Warning -->
+      @if (selectedEventForParticipants()?.status !== 'Completed') {
+        <div class="event-status-banner warning">
+          <app-icon name="clock" [size]="16"></app-icon>
+          <span><strong>Event Not Completed:</strong> Points can only be awarded after the event has ended. Current status: {{ selectedEventForParticipants()?.status }}</span>
+        </div>
+      }
+      
     <div class="modal-body">
       <!-- Search Bar -->
       <div class="search-container">
@@ -548,11 +623,15 @@
                     <button 
                       class="select-winner-btn"
                       (click)="openWinnerSelectionModal(participant)"
-                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded'"
-                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded'"
-                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : 'Award points to this participant' }}">
+                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : (selectedEventForParticipants()?.status !== 'Completed' ? 'Event must be completed first' : (allRanksAwarded() ? 'All prize positions awarded' : 'Award points to this participant')) }}">
                       @if (participant.pointsAwarded || participant.status === 'Awarded') {
                           <app-icon name="check" [size]="14"></app-icon> Awarded
+                        } @else if (selectedEventForParticipants()?.status !== 'Completed') {
+                          <app-icon name="clock" [size]="14"></app-icon> Event Not Complete
+                        } @else if (allRanksAwarded()) {
+                          <app-icon name="check-circle" [size]="14"></app-icon> All Awarded
                         } @else {
                           <app-icon name="trophy" [size]="14"></app-icon> Award Points
                         }
@@ -606,11 +685,17 @@
             required
             class="rank-select"
           >
-            <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
-            <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
-            <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+            @if (availableRanks().includes(1)) {
+              <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(2)) {
+              <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(3)) {
+              <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+            }
           </select>
-          <span class="input-hint">Select rank to auto-assign points</span>
+          <span class="input-hint">Select rank to auto-assign points ({{ availableRanks().length }} position(s) remaining)</span>
         </div>
 
         <div class="points-display">
@@ -635,6 +720,256 @@
         <app-button (clicked)="confirmWinnerSelection()">
           Confirm & Award Points
         </app-button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Direct Award Points Modal -->
+@if (showDirectAwardModal()) {
+  <div class="modal-overlay" (click)="closeDirectAwardModal()">
+    <div class="modal-content direct-award-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <app-icon name="trophy" [size]="24"></app-icon>
+          </div>
+          <div>
+            <h3>Award Points Directly</h3>
+            <p class="header-subtitle">Recognize employees with bonus points (Max: {{ MAX_AWARD_POINTS | number }} pts)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <div class="step" [class.active]="!selectedUserForAward()" [class.completed]="selectedUserForAward()">
+            <div class="step-number">1</div>
+            <span>Select Employee</span>
+          </div>
+          <div class="step-connector" [class.active]="selectedUserForAward()"></div>
+          <div class="step" [class.active]="selectedUserForAward()">
+            <div class="step-number">2</div>
+            <span>Award Details</span>
+          </div>
+        </div>
+
+        <!-- Step 1: User Selection -->
+        @if (!selectedUserForAward()) {
+          <div class="user-selection-section">
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <app-icon name="search" [size]="18" class="search-icon"></app-icon>
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  [(ngModel)]="userSearchQuery"
+                  (input)="onUserSearchChange()"
+                  class="user-search-input"
+                />
+                @if (userSearchQuery()) {
+                  <button class="clear-search" (click)="userSearchQuery.set(''); onUserSearchChange()">
+                    <app-icon name="close" [size]="16"></app-icon>
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (isLoadingUsers()) {
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading employees...</p>
+              </div>
+            } @else if (filteredUsers().length === 0) {
+              <div class="empty-state">
+                <app-icon name="search" [size]="48"></app-icon>
+                <p>No employees found matching your search</p>
+              </div>
+            } @else {
+              <div class="users-list">
+                @for (user of filteredUsers(); track user.id) {
+                  <div class="user-card" (click)="selectUserForAward(user)">
+                    <div class="user-avatar">
+                      {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                    </div>
+                    <div class="user-info">
+                      <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                      <div class="user-email">{{ user.email }}</div>
+                    </div>
+                    <div class="user-balance">
+                      @if (user.pointsBalance !== undefined) {
+                        <span class="balance-value">{{ user.pointsBalance | number }}</span>
+                        <span class="balance-label">pts</span>
+                      }
+                    </div>
+                    <div class="select-indicator">
+                      <app-icon name="chevron-right" [size]="20"></app-icon>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="users-count">
+                Showing {{ filteredUsers().length }} of {{ allUsers().length }} employees
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- Step 2: Award Details -->
+          <div class="award-details-section">
+            <!-- Selected User Card -->
+            <div class="selected-user-card">
+              <div class="user-avatar large">
+                {{ selectedUserForAward()?.firstName?.charAt(0) }}{{ selectedUserForAward()?.lastName?.charAt(0) }}
+              </div>
+              <div class="user-details">
+                <div class="user-name">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</div>
+                <div class="user-email">{{ selectedUserForAward()?.email }}</div>
+                @if (selectedUserForAward()?.pointsBalance !== undefined) {
+                  <div class="current-balance">
+                    Current Balance: <strong>{{ selectedUserForAward()?.pointsBalance | number }} pts</strong>
+                  </div>
+                }
+              </div>
+              <button class="change-user-btn" (click)="deselectUser()">
+                <app-icon name="edit" [size]="16"></app-icon>
+                Change
+              </button>
+            </div>
+
+            <!-- Award Form -->
+            <div class="award-form">
+              <div class="form-group">
+                <label for="directPoints">
+                  <app-icon name="star" [size]="16"></app-icon>
+                  Points to Award *
+                </label>
+                <div class="points-input-wrapper">
+                  <input
+                    type="number"
+                    id="directPoints"
+                    [(ngModel)]="directAwardPoints"
+                    (ngModelChange)="onPointsInputChange()"
+                    name="directPoints"
+                    min="1"
+                    [max]="MAX_AWARD_POINTS"
+                    placeholder="Enter points (1 - {{ MAX_AWARD_POINTS | number }})"
+                    class="points-input"
+                    [class.invalid]="directAwardPoints() < 0 || directAwardPoints() > MAX_AWARD_POINTS"
+                  />
+                  <span class="points-suffix">pts</span>
+                  @if (isValidatingBudget()) {
+                    <span class="validating-indicator">
+                      <span class="mini-spinner"></span>
+                    </span>
+                  }
+                </div>
+                <div class="input-hint">
+                  Maximum {{ MAX_AWARD_POINTS | number }} points per award
+                  @if (budgetValidation() && budgetValidation()!.remainingBudget !== 2147483647) {
+                    <span class="budget-hint">
+                      • Your remaining budget: {{ budgetValidation()!.remainingBudget | number }} pts
+                    </span>
+                  }
+                </div>
+                
+                <!-- Budget Warning/Info -->
+                @if (budgetValidation()) {
+                  @if (budgetValidation()!.isWarning && budgetValidation()!.message) {
+                    <div class="budget-warning">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message }}
+                    </div>
+                  }
+                  @if (!budgetValidation()!.isAllowed) {
+                    <div class="budget-error">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message || 'Budget limit exceeded' }}
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="directDescription">
+                  <app-icon name="edit" [size]="16"></app-icon>
+                  Reason for Award *
+                </label>
+                <textarea
+                  id="directDescription"
+                  [(ngModel)]="directAwardDescription"
+                  name="directDescription"
+                  rows="3"
+                  [minlength]="MIN_DESCRIPTION_LENGTH"
+                  [maxlength]="MAX_DESCRIPTION_LENGTH"
+                  placeholder="e.g., Outstanding performance on Q4 project, Going above and beyond... (min {{ MIN_DESCRIPTION_LENGTH }} characters)"
+                  class="description-input"
+                  [class.invalid]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH"
+                ></textarea>
+                <div class="input-hint" [class.error]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH">
+                  {{ directAwardDescription().length }}/{{ MAX_DESCRIPTION_LENGTH }} characters
+                  @if (directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH) {
+                    <span class="min-chars-hint">(minimum {{ MIN_DESCRIPTION_LENGTH }} required)</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Preview Card -->
+              @if (directAwardPoints() > 0 && directAwardDescription()) {
+                <div class="award-preview">
+                  <div class="preview-header">
+                    <app-icon name="eye" [size]="16"></app-icon>
+                    Award Preview
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-row">
+                      <span class="preview-label">Recipient:</span>
+                      <span class="preview-value">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">Points:</span>
+                      <span class="preview-value highlight">+{{ directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">New Balance:</span>
+                      <span class="preview-value">{{ (selectedUserForAward()?.pointsBalance || 0) + directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row description">
+                      <span class="preview-label">Reason:</span>
+                      <span class="preview-value">{{ directAwardDescription() }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Error Message -->
+        @if (directAwardValidationError()) {
+          <div class="error-message-box">
+            <app-icon name="alert" [size]="16"></app-icon>
+            {{ directAwardValidationError() }}
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @if (selectedUserForAward()) {
+          <app-button variant="secondary" (clicked)="deselectUser()">
+            <app-icon name="arrow-left" [size]="16"></app-icon> Back
+          </app-button>
+        }
+        <app-button variant="secondary" (clicked)="closeDirectAwardModal()">
+          Cancel
+        </app-button>
+        @if (selectedUserForAward()) {
+          <app-button 
+            (clicked)="confirmDirectAward()"
+            [disabled]="isAwardButtonDisabled()">
+            <app-icon name="trophy" [size]="16"></app-icon> Award Points
+          </app-button>
+        }
       </div>
     </div>
   </div>

@@ -59,7 +59,7 @@
       </div>
       
       <div class="results-info">
-        <span>Showing {{ filteredUsers().length }} of {{ users().length }} users</span>
+        <span>Showing {{ paginatedUsers().length }} of {{ filteredUsers().length }} users (Page {{ currentPage() }} of {{ totalPages() || 1 }})</span>
       </div>
     </div>
 
@@ -90,14 +90,19 @@
           </tr>
         </thead>
         <tbody>
-          @for (user of filteredUsers(); track user.id) {
-            <tr [class.inactive-row]="user.status === 'Inactive'">
+          @for (user of paginatedUsers(); track user.id) {
+            <tr [class.inactive-row]="user.status === 'Inactive'" [class.current-user-row]="isSelf(user)">
               <td>
                 <div class="user-name">
-                  <div class="user-avatar">
+                  <div class="user-avatar" [class.current-user-avatar]="isSelf(user)">
                     {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
                   </div>
-                  <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                  <div class="user-name-text">
+                    <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                    @if (isSelf(user)) {
+                      <span class="you-badge">(You)</span>
+                    }
+                  </div>
                 </div>
               </td>
               <td>{{ user.email }}</td>
@@ -161,6 +166,34 @@
           }
         </tbody>
       </table>
+      
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+            <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+          </button>
+          
+          <div class="page-numbers">
+            @for (page of getPageNumbers(); track $index) {
+              @if (page === -1) {
+                <span class="ellipsis">...</span>
+              } @else {
+                <button 
+                  class="page-num" 
+                  [class.active]="page === currentPage()"
+                  (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+            }
+          </div>
+          
+          <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+            Next <app-icon name="chevron-right" [size]="16"></app-icon>
+          </button>
+        </div>
+      }
     </div>
   </app-card>
 </div>

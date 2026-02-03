@@ -14,7 +14,7 @@
         <span class="count">{{ stats().active }}</span>
         <span class="label">Active</span>
       </div>
-      <div class="stat highlight" [class.active]="selectedFilter() === 'all'" (click)="onFilterChange('all')">
+      <div class="stat highlight" [class.active]="selectedFilter() === 'registered'" (click)="onFilterChange('registered')">
         <span class="count">{{ stats().registered }}</span>
         <span class="label">My Events</span>
       </div>
@@ -26,6 +26,9 @@
     <div class="tabs">
       <button class="tab" [class.active]="selectedFilter() === 'all'" (click)="onFilterChange('all')">
         All <span class="badge">{{ stats().total }}</span>
+      </button>
+      <button class="tab" [class.active]="selectedFilter() === 'registered'" (click)="onFilterChange('registered')">
+        My Events <span class="badge">{{ stats().registered }}</span>
       </button>
       <button class="tab" [class.active]="selectedFilter() === 'Upcoming'" (click)="onFilterChange('Upcoming')">
         Upcoming <span class="badge">{{ stats().upcoming }}</span>
@@ -56,7 +59,7 @@
   <!-- Events Grid -->
   @if (!isLoading()) {
     <div class="events-grid">
-      @for (event of filteredEvents(); track event.id) {
+      @for (event of paginatedEvents(); track event.id) {
         <article class="event-card" [class.registered]="event.registered" [class.completed]="event.status === 'Completed'" [class.active-event]="event.status === 'Active'">
           <!-- Card Header with Image -->
           <div class="card-header">
@@ -137,6 +140,48 @@
         </article>
       }
     </div>
+    
+    <!-- Pagination -->
+    @if (filteredEvents().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          Showing {{ paginatedEvents().length }} of {{ filteredEvents().length }} events
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()">
+            <app-icon name="arrow-left" [size]="14"></app-icon> Prev
+          </button>
+          
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+          }
+          
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()">
+            Next <app-icon name="arrow-right" [size]="14"></app-icon>
+          </button>
+        </div>
+        
+        <div class="pagination-summary">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+    }
   }
 
   <!-- Empty State -->
