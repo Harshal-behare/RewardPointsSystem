@@ -362,6 +362,11 @@ namespace RewardPointsSystem.Api.Controllers
                 var budget = await _budgetService.SetBudgetAsync(adminUserId.Value, dto);
                 return Success(budget, "Budget updated successfully");
             }
+            catch (InvalidOperationException ex)
+            {
+                // Budget limit validation error (e.g., limit less than already awarded after 10th)
+                return Error(ex.Message, 400);
+            }
             catch (ArgumentException ex)
             {
                 return Error(ex.Message, 422);

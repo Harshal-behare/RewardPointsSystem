@@ -46,6 +46,15 @@ namespace RewardPointsSystem.Application.Services.Admin
             var existingBudget = await _unitOfWork.AdminMonthlyBudgets.SingleOrDefaultAsync(
                 b => b.AdminUserId == adminUserId && b.MonthYear == currentMonthYear);
 
+            // If past the 10th day of the month and budget limit is less than already awarded points, reject
+            var now = DateTime.UtcNow;
+            if (now.Day > 10 && existingBudget != null && dto.BudgetLimit < existingBudget.PointsAwarded)
+            {
+                throw new InvalidOperationException(
+                    $"Cannot set budget limit to {dto.BudgetLimit}. You have already awarded {existingBudget.PointsAwarded} points this month. " +
+                    $"Please set a budget limit of at least {existingBudget.PointsAwarded} points.");
+            }
+
             if (existingBudget != null)
             {
                 // Update existing budget

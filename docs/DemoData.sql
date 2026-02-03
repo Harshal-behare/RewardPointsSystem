@@ -3,7 +3,6 @@
 -- AGDATA Software Company - Internal Events
 -- Run this script to prepare database for demo
 -- Enhanced: 8 Users, 8 Events, 20 Products
--- UPDATED: AdminAward feature enabled, Admin budgets active
 -- CORRECTED: Proper chronological order, enum values, balances
 -- ============================================
 
@@ -430,8 +429,7 @@ VALUES
 
 -- ========================================
 -- STEP 12: CREATE POINTS ACCOUNTS (All 8 Users)
--- Calculated based on EVENT + AdminAward earnings
--- AdminAward: Direct points awarded by admin without events
+-- Calculated based on EVENT earnings only (no AdminAward feature)
 -- ========================================
 PRINT 'Creating points accounts...'
 
@@ -459,16 +457,16 @@ VALUES
 (NEWID(), @Employee3Id, 100, 200, 100, 0, DATEADD(MONTH, -5, GETUTCDATE()), GETUTCDATE()),
 -- Rahul: Event 350, Redeemed 150, Balance 200
 (NEWID(), @Employee4Id, 200, 350, 150, 0, DATEADD(MONTH, -4, GETUTCDATE()), GETUTCDATE()),
--- Ananya: AdminAward 150, no redemptions
-(NEWID(), @Employee5Id, 150, 150, 0, 0, DATEADD(MONTH, -3, GETUTCDATE()), GETUTCDATE()),
--- Vikram: AdminAward 100, no redemptions
-(NEWID(), @Employee6Id, 100, 100, 0, 0, DATEADD(MONTH, -2, GETUTCDATE()), GETUTCDATE())
+-- Ananya: No event earnings, no activity
+(NEWID(), @Employee5Id, 0, 0, 0, 0, DATEADD(MONTH, -3, GETUTCDATE()), GETUTCDATE()),
+-- Vikram: No event earnings, no activity
+(NEWID(), @Employee6Id, 0, 0, 0, 0, DATEADD(MONTH, -2, GETUTCDATE()), GETUTCDATE())
 
 -- ========================================
 -- STEP 13: CREATE POINTS TRANSACTIONS
 -- IMPORTANT: Using correct enum values!
 -- TransactionType: 'Earned' or 'Redeemed'
--- TransactionSource: 'Event', 'Redemption', or 'AdminAward'
+-- TransactionSource: 'Event' or 'Redemption' (AdminAward feature not available)
 -- Sorted in chronological order with correct BalanceAfter
 -- ========================================
 PRINT 'Creating points transactions...'
@@ -546,25 +544,9 @@ VALUES
 (NEWID(), @Employee4Id, 150, 'Redeemed', 'Redemption', @Prod5Id, 'Redeemed: BookMyShow Voucher Rs.300', DATEADD(DAY, -10, GETUTCDATE()), 200)
 
 -- =====================
--- PRIYA, ANANYA, VIKRAM - AdminAward transactions (no event wins)
--- These users received direct admin awards
+-- PRIYA, ANANYA, VIKRAM - No event wins, no transactions
+-- These users have 0 points (no AdminAward feature)
 -- =====================
-
--- ANANYA (Employee 5) - AdminAward for helping with project
-DECLARE @AdminAward1Id UNIQUEIDENTIFIER = NEWID()  -- Used as SourceId for admin awards
-DECLARE @AdminAward2Id UNIQUEIDENTIFIER = NEWID()
-DECLARE @AdminAward3Id UNIQUEIDENTIFIER = NEWID()
-
-INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
-VALUES
--- Jan 25 (Day -9): AdminAward = 150 pts
-(NEWID(), @Employee5Id, 150, 'Earned', 'AdminAward', @AdminAward1Id, 'Great job helping with client presentation and documentation review!', DATEADD(DAY, -9, GETUTCDATE()), 150)
-
--- VIKRAM (Employee 6) - AdminAward for team support
-INSERT INTO UserPointsTransactions (Id, UserId, UserPoints, TransactionType, TransactionSource, SourceId, Description, Timestamp, BalanceAfter)
-VALUES
--- Jan 28 (Day -6): AdminAward = 100 pts  
-(NEWID(), @Employee6Id, 100, 'Earned', 'AdminAward', @AdminAward2Id, 'Excellent support in onboarding new team members and mentoring juniors', DATEADD(DAY, -6, GETUTCDATE()), 100)
 
 -- ========================================
 -- STEP 14: CREATE REDEMPTIONS
@@ -617,32 +599,10 @@ VALUES (NEWID(), @Employee4Id, @Prod5Id, 150, 'Delivered', DATEADD(DAY, -10, GET
 -- NO redemptions for Priya, Ananya, Vikram (they have 0 points)
 
 -- ========================================
--- STEP 15: ADMIN BUDGETS
--- Admin monthly budget tracking for direct point awards
--- MonthYear format: YYYYMM (e.g., 202601 = January 2026)
+-- STEP 15: ADMIN BUDGETS (NOT USED - AdminAward feature not available)
+-- Keeping empty for future use
 -- ========================================
-PRINT 'Creating admin budgets...'
-
--- Current Month (February 2026 = 202602)
-DECLARE @CurrentMonthYear INT = CAST(FORMAT(GETUTCDATE(), 'yyyyMM') AS INT)
--- Previous Month (January 2026 = 202601)  
-DECLARE @PrevMonthYear INT = CAST(FORMAT(DATEADD(MONTH, -1, GETUTCDATE()), 'yyyyMM') AS INT)
-
--- Harshal's Budget (Primary Admin)
--- January 2026: Budget 5000, Awarded 250 (to Ananya 150 + Vikram 100 in late Jan)
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @AdminId, @PrevMonthYear, 5000, 250, 0, 80, DATEADD(MONTH, -1, GETUTCDATE()), GETUTCDATE()),
--- February 2026: Budget 5000, Awarded 0 (fresh month)
-(NEWID(), @AdminId, @CurrentMonthYear, 5000, 0, 0, 80, GETUTCDATE(), GETUTCDATE())
-
--- Priya's Budget (Secondary Admin) 
--- January 2026: Budget 3000, Awarded 0 (no direct awards)
-INSERT INTO AdminMonthlyBudgets (Id, AdminUserId, MonthYear, BudgetLimit, PointsAwarded, IsHardLimit, WarningThreshold, CreatedAt, UpdatedAt)
-VALUES
-(NEWID(), @Admin2Id, @PrevMonthYear, 3000, 0, 0, 80, DATEADD(MONTH, -1, GETUTCDATE()), GETUTCDATE()),
--- February 2026: Budget 3000, Awarded 0
-(NEWID(), @Admin2Id, @CurrentMonthYear, 3000, 0, 0, 80, GETUTCDATE(), GETUTCDATE())
+PRINT 'Skipping admin budgets (AdminAward feature not available)...'
 
 -- ========================================
 -- VERIFICATION QUERIES
@@ -663,7 +623,7 @@ PRINT '============================================='
 PRINT 'MAIN DEMO USERS:'
 PRINT '============================================='
 PRINT ''
-PRINT 'HARSHAL BEHARE (Admin) - Points from Events:'
+PRINT 'HARSHAL BEHARE (Admin) - Points from Events only:'
 PRINT '  - Code Sprint Q4 2025: 1st Place = 1000 pts (Dec 7)'
 PRINT '  - Tech Quiz Championship: 2nd Place = 400 pts (Dec 20)'
 PRINT '  - Total Earned: 1400 pts'
@@ -671,7 +631,7 @@ PRINT '  - Redeemed: Amazon Rs.1000 (-400), Amazon Rs.500 (-200)'
 PRINT '  - Pending: Flipkart Rs.500 (-200)'
 PRINT '  - CURRENT BALANCE: 800 pts (600 available)'
 PRINT ''
-PRINT 'SANKALP CHAKRE (Employee) - Points from Events:'
+PRINT 'SANKALP CHAKRE (Employee) - Points from Events only:'
 PRINT '  - Code Sprint Q4 2025: 2nd Place = 600 pts (Dec 7)'
 PRINT '  - Tech Quiz Championship: 1st Place = 600 pts (Dec 20)'
 PRINT '  - Weekend Hackathon 2026: 2nd Place = 550 pts (Jan 16)'
@@ -679,20 +639,6 @@ PRINT '  - Total Earned: 1750 pts'
 PRINT '  - Redeemed: Amazon Rs.500 (-200), AGDATA Backpack (-600)'
 PRINT '  - Pending: Amazon Rs.500 (-200)'
 PRINT '  - CURRENT BALANCE: 950 pts (750 available)'
-PRINT ''
-PRINT '============================================='
-PRINT 'ADMIN AWARD RECIPIENTS (Direct Awards):'
-PRINT '============================================='
-PRINT ''
-PRINT 'ANANYA SINGH (Employee) - AdminAward:'
-PRINT '  - Direct Award: 150 pts (Jan 25)'
-PRINT '  - Reason: Client presentation help'
-PRINT '  - CURRENT BALANCE: 150 pts'
-PRINT ''
-PRINT 'VIKRAM REDDY (Employee) - AdminAward:'
-PRINT '  - Direct Award: 100 pts (Jan 28)'
-PRINT '  - Reason: Onboarding & mentoring support'
-PRINT '  - CURRENT BALANCE: 100 pts'
 PRINT '============================================='
 PRINT ''
 
@@ -707,23 +653,14 @@ UNION ALL SELECT 'Event Participants', COUNT(*) FROM EventParticipants
 UNION ALL SELECT 'Redemptions', COUNT(*) FROM Redemptions
 UNION ALL SELECT 'Points Accounts', COUNT(*) FROM UserPointsAccounts
 UNION ALL SELECT 'Transactions', COUNT(*) FROM UserPointsTransactions
-UNION ALL SELECT 'Admin Budgets', COUNT(*) FROM AdminMonthlyBudgets
 
 PRINT ''
-PRINT 'TOP EMPLOYEES BY TOTAL POINTS EARNED (Events + AdminAward):'
+PRINT 'TOP EMPLOYEES BY TOTAL POINTS EARNED (Events only):'
 SELECT TOP 5 u.FirstName + ' ' + u.LastName AS Name, upa.CurrentBalance, upa.TotalEarned, upa.TotalRedeemed
 FROM Users u
 JOIN UserPointsAccounts upa ON u.Id = upa.UserId
 WHERE upa.TotalEarned > 0
 ORDER BY upa.TotalEarned DESC
-
-PRINT ''
-PRINT 'ADMIN BUDGET SUMMARY:'
-SELECT u.FirstName + ' ' + u.LastName AS Admin, amb.MonthYear, amb.BudgetLimit, amb.PointsAwarded, 
-       (amb.BudgetLimit - amb.PointsAwarded) AS RemainingBudget
-FROM AdminMonthlyBudgets amb
-JOIN Users u ON amb.AdminUserId = u.Id
-ORDER BY amb.MonthYear DESC, u.FirstName
 
 PRINT ''
 PRINT 'DEMO USER TRANSACTIONS:'
@@ -750,19 +687,6 @@ SELECT
 FROM UserPointsTransactions t
 JOIN Users u ON t.UserId = u.Id
 WHERE u.Email = 'Sankalp.Chakre@agdata.com'
-ORDER BY t.Timestamp
-
-PRINT ''
-PRINT '--- ADMIN AWARD TRANSACTIONS ---'
-SELECT 
-    u.FirstName + ' ' + u.LastName AS Recipient,
-    t.Description,
-    '+' + CAST(t.UserPoints AS VARCHAR) AS Points,
-    CONVERT(VARCHAR, t.Timestamp, 106) AS Date,
-    t.BalanceAfter
-FROM UserPointsTransactions t
-JOIN Users u ON t.UserId = u.Id
-WHERE t.TransactionSource = 'AdminAward'
 ORDER BY t.Timestamp
 
 GO
