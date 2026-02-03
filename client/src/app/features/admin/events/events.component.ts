@@ -481,14 +481,17 @@ export class AdminEventsComponent implements OnInit {
 
   /**
    * Get allowed next statuses for the current status
+   * Admin can only manually change Draft -> Upcoming
+   * Other transitions (Upcoming -> Active -> Completed) are automatic
    */
   getAvailableStatusTransitions(currentStatus: string): string[] {
-    const currentIndex = this.statusOrder.indexOf(currentStatus);
-    if (currentIndex === -1) return this.statusOrder;
-    if (currentIndex >= this.statusOrder.length - 1) return [currentStatus]; // Completed - no transitions
-
-    // Return current status and next status only
-    return this.statusOrder.slice(currentIndex, currentIndex + 2);
+    // Admin can only change Draft to Upcoming
+    // Once Upcoming, status changes are automatic based on dates
+    if (currentStatus === 'Draft') {
+      return ['Draft', 'Upcoming'];
+    }
+    // For Upcoming, Active, Completed - admin cannot change, it's automatic
+    return [currentStatus];
   }
 
   // Client-side validation matching backend rules
@@ -524,9 +527,11 @@ export class AdminEventsComponent implements OnInit {
       }
     }
 
-    // Event end date validation
+    // Event end date validation - MANDATORY
     const eventEndDate = this.selectedEvent.eventEndDate;
-    if (eventDate && eventEndDate) {
+    if (!eventEndDate) {
+      this.eventModalValidationErrors.push('Event end date is required');
+    } else if (eventDate) {
       const startDate = new Date(eventDate);
       const endDate = new Date(eventEndDate);
       if (endDate < startDate) {
@@ -534,9 +539,17 @@ export class AdminEventsComponent implements OnInit {
       }
     }
 
-    // Registration dates validation
+    // Registration dates validation - MANDATORY
     const regStartDate = this.selectedEvent.registrationStartDate;
     const regEndDate = this.selectedEvent.registrationEndDate;
+    
+    if (!regStartDate) {
+      this.eventModalValidationErrors.push('Registration start date is required');
+    }
+    if (!regEndDate) {
+      this.eventModalValidationErrors.push('Registration end date is required');
+    }
+    
     if (regStartDate && regEndDate) {
       const regStart = new Date(regStartDate);
       const regEnd = new Date(regEndDate);

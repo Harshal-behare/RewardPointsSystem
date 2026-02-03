@@ -252,7 +252,7 @@
           </div>
 
           <div class="form-group">
-            <label for="eventEndDate">Event End Date</label>
+            <label for="eventEndDate">Event End Date *</label>
             <input
               id="eventEndDate"
               type="date"
@@ -260,9 +260,10 @@
               (ngModelChange)="validateEventModalRealtime()"
               name="eventEndDate"
               placeholder="YYYY-MM-DD"
+              required
               [min]="selectedEvent.eventDate"
             />
-            <small class="form-hint">Must be after start date</small>
+            <small class="form-hint">Must be after start date. Event becomes Completed after this date.</small>
           </div>
         </div>
 
@@ -281,7 +282,9 @@
               }
             </select>
             @if (modalMode() === 'create') {
-              <small class="form-hint">New events can only be Draft or Upcoming</small>
+              <small class="form-hint">New events start as Draft. Change to Upcoming when ready for employees to see.</small>
+            } @else {
+              <small class="form-hint">Only Draft → Upcoming can be changed manually. Other status changes are automatic.</small>
             }
           </div>
 
@@ -396,11 +399,11 @@
 
         <!-- Registration Period Section -->
         <div class="form-section">
-          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period (Optional)</h4>
+          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period *</h4>
           
           <div class="form-row">
             <div class="form-group">
-              <label for="registrationStartDate">Registration Opens</label>
+              <label for="registrationStartDate">Registration Opens *</label>
               <input
                 id="registrationStartDate"
                 type="date"
@@ -408,11 +411,13 @@
                 (ngModelChange)="validateEventModalRealtime()"
                 name="registrationStartDate"
                 placeholder="YYYY-MM-DD"
+                required
               />
+              <small class="form-hint">When employees can see and register for event</small>
             </div>
 
             <div class="form-group">
-              <label for="registrationEndDate">Registration Closes</label>
+              <label for="registrationEndDate">Registration Closes *</label>
               <input
                 id="registrationEndDate"
                 type="date"
@@ -420,6 +425,7 @@
                 (ngModelChange)="validateEventModalRealtime()"
                 name="registrationEndDate"
                 placeholder="YYYY-MM-DD"
+                required
                 [max]="selectedEvent.eventDate"
               />
               <small class="form-hint">Must close before or on event start</small>
