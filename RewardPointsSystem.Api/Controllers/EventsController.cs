@@ -588,5 +588,42 @@ namespace RewardPointsSystem.Api.Controllers
                 return Error("Failed to unregister participant");
             }
         }
+
+        /// <summary>
+        /// Get active event registrations count for a specific user (Admin only - for deactivation check)
+        /// Returns count of events where user is registered and status is Upcoming or Active
+        /// </summary>
+        /// <param name="userId">User ID</param>
+        /// <response code="200">Returns count of active event registrations</response>
+        [HttpGet("user/{userId}/active-registrations-count")]
+        [Authorize(Roles = "Admin")]
+        [ProducesResponseType(typeof(ApiResponse<object>), StatusCodes.Status200OK)]
+        public async Task<IActionResult> GetUserActiveEventRegistrationsCount(Guid userId)
+        {
+            try
+            {
+                // Get all event participations for the user
+                var userParticipations = await _participationService.GetUserEventsAsync(userId);
+                
+                // Count registrations where the event is Upcoming or Active (not Draft or Completed)
+                var activeRegistrations = 0;
+                foreach (var participation in userParticipations)
+                {
+                    var eventEntity = await _eventService.GetEventByIdAsync(participation.EventId);
+                    if (eventEntity != null && 
+                        (eventEntity.Status == EventStatus.Upcoming || eventEntity.Status == EventStatus.Active))
+                    {
+                        activeRegistrations++;
+                    }
+                }
+
+                return Success(new { count = activeRegistrations });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving active event registrations count for user {UserId}", userId);
+                return Error("Failed to retrieve active event registrations count");
+            }
+        }
     }
 }

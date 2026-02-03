@@ -354,7 +354,7 @@
 /* ===== DASHBOARD GRID ===== */
 .dashboard-grid {
   display: grid;
-  grid-template-columns: 1fr 400px;
+  grid-template-columns: 0.8fr 400px; /* Reduced left column by 20% */
   gap: 30px;
 
   .dashboard-column {
@@ -507,8 +507,9 @@
 /* ===== PRODUCTS GRID ===== */
 .products-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); /* Responsive grid for reduced width */
   gap: 16px;
+  max-width: 100%;
 
   .product-card {
     background-color: #ffffff;

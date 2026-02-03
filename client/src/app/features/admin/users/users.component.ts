@@ -11,6 +11,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
 import { AdminService } from '../../../core/services/admin.service';
 import { RedemptionService } from '../../../core/services/redemption.service';
+import { EventService } from '../../../core/services/event.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -147,6 +148,7 @@ export class AdminUsersComponent implements OnInit {
     private userService: UserService,
     private adminService: AdminService,
     private redemptionService: RedemptionService,
+    private eventService: EventService,
     private authService: AuthService,
     private toast: ToastService,
     private apiService: ApiService,
@@ -652,8 +654,14 @@ export class AdminUsersComponent implements OnInit {
       }
 
       // Check for pending redemptions before deactivating
-      const canDeactivate = await this.checkPendingRedemptionsForDeactivation(user);
-      if (!canDeactivate) {
+      const canDeactivatePendingRedemptions = await this.checkPendingRedemptionsForDeactivation(user);
+      if (!canDeactivatePendingRedemptions) {
+        return;
+      }
+
+      // Check for active event registrations before deactivating
+      const canDeactivateActiveEvents = await this.checkActiveEventRegistrationsForDeactivation(user);
+      if (!canDeactivateActiveEvents) {
         return;
       }
     }
@@ -719,6 +727,35 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error checking pending redemptions:', error);
+          // If the API endpoint doesn't exist yet, allow deactivation to proceed
+          // The backend should also validate this
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  /**
+   * Check if user is registered for active or upcoming events before allowing deactivation
+   * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
+   */
+  private async checkActiveEventRegistrationsForDeactivation(user: DisplayUser): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.eventService.getUserActiveEventRegistrationsCount(user.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data && response.data.count > 0) {
+            const count = response.data.count;
+            this.toast.error(
+              `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${count} upcoming or active event${count > 1 ? 's' : ''}. ` +
+              `Please remove the user from these events or wait until they are completed before deactivating.`
+            );
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        },
+        error: (error) => {
+          console.error('Error checking active event registrations:', error);
           // If the API endpoint doesn't exist yet, allow deactivation to proceed
           // The backend should also validate this
           resolve(true);

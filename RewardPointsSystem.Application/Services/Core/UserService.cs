@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
+using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Domain.Entities.Operations;
 using RewardPointsSystem.Domain.Exceptions;
 
@@ -99,6 +100,26 @@ namespace RewardPointsSystem.Application.Services.Core
                 throw new InvalidOperationException(
                     $"Cannot deactivate user with {pendingRedemptions.Count()} pending redemption(s). " +
                     "Please process all redemptions before deactivating the user.");
+
+            // Check for active event registrations (Upcoming or Active events)
+            var userParticipations = await _unitOfWork.EventParticipants.FindAsync(
+                p => p.UserId == id);
+            
+            var activeEventCount = 0;
+            foreach (var participation in userParticipations)
+            {
+                var eventEntity = await _unitOfWork.Events.GetByIdAsync(participation.EventId);
+                if (eventEntity != null && 
+                    (eventEntity.Status == EventStatus.Upcoming || eventEntity.Status == EventStatus.Active))
+                {
+                    activeEventCount++;
+                }
+            }
+
+            if (activeEventCount > 0)
+                throw new InvalidOperationException(
+                    $"Cannot deactivate user who is registered for {activeEventCount} upcoming or active event(s). " +
+                    "Please remove the user from these events or wait until they are completed before deactivating.");
 
             // Check if this is the last admin
             await ValidateLastAdminProtectionAsync(id, "deactivate");

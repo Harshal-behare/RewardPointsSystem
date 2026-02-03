@@ -8,6 +8,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../../../core/services/product.service';
+import { RedemptionService } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -137,6 +138,7 @@ export class AdminProductsComponent implements OnInit {
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
   selectedProduct: Partial<DisplayProduct> = {};
+  originalProductStatus: 'Active' | 'Inactive' | null = null; // Track original status for deactivation check
 
   viewMode = signal<'grid' | 'table'>('grid');
 
@@ -144,6 +146,7 @@ export class AdminProductsComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private productService: ProductService,
+    private redemptionService: RedemptionService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
   ) {
@@ -363,6 +366,7 @@ export class AdminProductsComponent implements OnInit {
       imageUrl: product.imageUrl,
       status: product.status
     };
+    this.originalProductStatus = product.status; // Store original status for deactivation check
     this.modalValidationErrors = [];
     this.validateProductModalRealtime();
     this.showModal.set(true);
@@ -371,9 +375,10 @@ export class AdminProductsComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.selectedProduct = {};
+    this.originalProductStatus = null;
   }
 
-  saveProduct(): void {
+  async saveProduct(): Promise<void> {
     // Client-side validation
     if (!this.validateProductModal()) {
       return;
@@ -405,6 +410,17 @@ export class AdminProductsComponent implements OnInit {
         }
       });
     } else {
+      // Check if trying to deactivate (status changing from Active to Inactive)
+      const isDeactivating = this.originalProductStatus === 'Active' && this.selectedProduct.status === 'Inactive';
+      
+      if (isDeactivating) {
+        // Check for pending redemptions before deactivating
+        const canDeactivate = await this.checkPendingRedemptionsForDeactivation();
+        if (!canDeactivate) {
+          return;
+        }
+      }
+
       const updateData: UpdateProductDto = {
         name: this.selectedProduct.name,
         description: this.selectedProduct.description,
@@ -431,6 +447,35 @@ export class AdminProductsComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Check if product has pending redemptions before deactivation
+   * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
+   */
+  private async checkPendingRedemptionsForDeactivation(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.redemptionService.getProductPendingRedemptionsCount(this.selectedProduct.id!).subscribe({
+        next: (response) => {
+          if (response.success && response.data && response.data.count > 0) {
+            const count = response.data.count;
+            this.toast.error(
+              `Cannot deactivate product. "${this.selectedProduct.name}" has ${count} pending redemption request${count > 1 ? 's' : ''}. ` +
+              `Please approve or reject all pending redemptions before deactivating this product.`
+            );
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        },
+        error: (error) => {
+          console.error('Error checking pending redemptions:', error);
+          // If the API endpoint doesn't exist yet, allow deactivation to proceed
+          // The backend should also validate this
+          resolve(true);
+        }
+      });
+    });
   }
 
   toggleViewMode(): void {
