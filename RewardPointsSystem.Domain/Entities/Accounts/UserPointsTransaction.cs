@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using RewardPointsSystem.Domain.Entities.Core;
 
 namespace RewardPointsSystem.Domain.Entities.Accounts
@@ -24,29 +23,20 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Required(ErrorMessage = "Points value is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "Points must be a positive value")]
         public int UserPoints { get; private set; }
 
-        [Required(ErrorMessage = "Transaction type is required")]
         public TransactionCategory TransactionType { get; private set; }
 
-        [Required(ErrorMessage = "Transaction source is required")]
         public TransactionOrigin TransactionSource { get; private set; }
 
-        [Required(ErrorMessage = "Source ID is required")]
         public Guid SourceId { get; private set; }
 
-        [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
         public string? Description { get; private set; }
 
         public DateTime Timestamp { get; private set; }
 
-        [Required(ErrorMessage = "Balance after transaction is required")]
-        [Range(0, int.MaxValue, ErrorMessage = "Balance after cannot be negative")]
         public int BalanceAfter { get; private set; }
 
         // Navigation Properties

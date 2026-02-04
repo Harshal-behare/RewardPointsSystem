@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace RewardPointsSystem.Domain.Entities.Products
 {
@@ -10,14 +9,10 @@ namespace RewardPointsSystem.Domain.Entities.Products
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Product ID is required")]
         public Guid ProductId { get; private set; }
 
-        [Required(ErrorMessage = "Points cost is required")]
-        [Range(1, 1000000, ErrorMessage = "Points cost must be between 1 and 1,000,000")]
         public int PointsCost { get; private set; }
 
-        [Required(ErrorMessage = "Effective from date is required")]
         public DateTime EffectiveFrom { get; private set; }
 
         public DateTime? EffectiveTo { get; private set; }

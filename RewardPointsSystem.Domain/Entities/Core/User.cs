@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using RewardPointsSystem.Domain.Entities.Accounts;
 using RewardPointsSystem.Domain.Entities.Events;
@@ -20,20 +19,12 @@ namespace RewardPointsSystem.Domain.Entities.Core
 
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Email is required")]
-        [EmailAddress(ErrorMessage = "Invalid email format")]
-        [StringLength(255, ErrorMessage = "Email cannot exceed 255 characters")]
         public string Email { get; private set; }
 
-        [Required(ErrorMessage = "First name is required")]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "First name must be between 1 and 100 characters")]
         public string FirstName { get; private set; }
 
-        [Required(ErrorMessage = "Last name is required")]
-        [StringLength(100, MinimumLength = 1, ErrorMessage = "Last name must be between 1 and 100 characters")]
         public string LastName { get; private set; }
 
-        [StringLength(500, ErrorMessage = "Password hash cannot exceed 500 characters")]
         public string? PasswordHash { get; private set; }
 
         public bool IsActive { get; private set; }

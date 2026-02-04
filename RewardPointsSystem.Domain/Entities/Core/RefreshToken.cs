@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace RewardPointsSystem.Domain.Entities.Core
 {
@@ -11,31 +10,23 @@ namespace RewardPointsSystem.Domain.Entities.Core
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Required(ErrorMessage = "Token is required")]
-        [StringLength(500, ErrorMessage = "Token cannot exceed 500 characters")]
         public string Token { get; private set; }
 
-        [Required(ErrorMessage = "Expires at is required")]
         public DateTime ExpiresAt { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
 
-        [StringLength(45, ErrorMessage = "IP address cannot exceed 45 characters")]
         public string? CreatedByIp { get; private set; }
 
         public bool IsRevoked { get; private set; }
         public DateTime? RevokedAt { get; private set; }
 
-        [StringLength(45, ErrorMessage = "IP address cannot exceed 45 characters")]
         public string? RevokedByIp { get; private set; }
 
-        [StringLength(500, ErrorMessage = "Replaced by token cannot exceed 500 characters")]
         public string? ReplacedByToken { get; private set; }
 
-        [StringLength(200, ErrorMessage = "Revocation reason cannot exceed 200 characters")]
         public string? RevocationReason { get; private set; }
 
         // Navigation Property
