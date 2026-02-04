@@ -122,4 +122,13 @@ namespace RewardPointsSystem.Application.DTOs.Events
         public int Position { get; set; }
         public DateTime AwardedAt { get; set; }
     }
+
+    /// <summary>
+    /// DTO for user event registrations count
+    /// </summary>
+    public class UserEventRegistrationsCountDto
+    {
+        public int Count { get; set; }
+        public int PendingAwardsCount { get; set; }
+    }
 }

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
@@ -33,6 +33,16 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- 
+      Clean Architecture Note:
+      - Domain: Core business entities (no dependencies)
+      - Application: Business logic, interfaces (depends on Domain)
+      - Infrastructure: Data access, external services (depends on Domain & Application)
+      - Api: Presentation layer (depends on Application for interfaces, Infrastructure ONLY for DI composition root)
+      
+      The Infrastructure reference is needed ONLY for dependency injection registration in Program.cs.
+      Controllers and other API code should ONLY use Application layer interfaces.
+    -->
     <ProjectReference Include="..\RewardPointsSystem.Domain\RewardPointsSystem.Domain.csproj" />
     <ProjectReference Include="..\RewardPointsSystem.Application\RewardPointsSystem.Application.csproj" />
     <ProjectReference Include="..\RewardPointsSystem.Infrastructure\RewardPointsSystem.Infrastructure.csproj" />

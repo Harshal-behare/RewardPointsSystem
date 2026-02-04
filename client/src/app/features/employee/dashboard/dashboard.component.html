@@ -1,11 +1,35 @@
 <div class="employee-dashboard">
-  <!-- Header Section -->
+  <!-- Header Section with Quick Actions -->
   <div class="dashboard-header">
-    <h1 class="dashboard-title">Welcome back, {{ userName }}!</h1>
-    <p class="dashboard-subtitle">Here's your rewards summary</p>
+    <div class="header-content">
+      <h1 class="dashboard-title">Welcome back, {{ userName }}!</h1>
+      <p class="dashboard-subtitle">Here's your rewards summary</p>
+    </div>
+    
+    <!-- Quick Actions - Floating Icons with Hover Reveal -->
+    <div class="quick-actions-floating">
+      <div class="quick-action-item" (click)="navigateToEvents()">
+        <div class="action-icon-circle">
+          <app-icon name="celebrate" [size]="22"></app-icon>
+        </div>
+        <span class="action-tooltip">Browse Events</span>
+      </div>
+      <div class="quick-action-item" (click)="navigateToProducts()">
+        <div class="action-icon-circle">
+          <app-icon name="shopping-cart" [size]="22"></app-icon>
+        </div>
+        <span class="action-tooltip">Shop Products</span>
+      </div>
+      <div class="quick-action-item" (click)="navigateToAccount()">
+        <div class="action-icon-circle">
+          <app-icon name="chart-bar" [size]="22"></app-icon>
+        </div>
+        <span class="action-tooltip">View History</span>
+      </div>
+    </div>
   </div>
 
-  <!-- Points Balance Section -->
+  <!-- Points Balance Section (KPI Cards) -->
   <div class="points-balance-section">
     <div class="balance-card main-balance">
       <div class="balance-icon"><app-icon name="trophy" [size]="28"></app-icon></div>
@@ -40,272 +64,206 @@
     </div>
   </div>
 
-  <!-- My Redemptions Summary Section -->
-  <div class="redemptions-summary-section">
-    <div class="section-header">
-      <h2 class="section-title"><app-icon name="cart" [size]="20"></app-icon> My Redemptions</h2>
-      <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
-    </div>
-    <div class="chart-stats-container">
-      <!-- Pie Chart -->
-      <div class="chart-wrapper">
-        @if (redemptionsSummary().pending + redemptionsSummary().approved + redemptionsSummary().delivered > 0) {
-          <apx-chart
-            [series]="redemptionsChartSeries"
-            [chart]="redemptionsChartOptions.chart"
-            [labels]="redemptionsChartOptions.labels"
-            [colors]="redemptionsChartOptions.colors"
-            [legend]="redemptionsChartOptions.legend"
-            [dataLabels]="redemptionsChartOptions.dataLabels"
-            [plotOptions]="redemptionsChartOptions.plotOptions"
-            [fill]="redemptionsChartOptions.fill"
-            [stroke]="redemptionsChartOptions.stroke"
-            [tooltip]="redemptionsChartOptions.tooltip"
-            [responsive]="redemptionsChartOptions.responsive"
-          ></apx-chart>
-        } @else {
-          <div class="empty-chart-state">
-            <app-icon name="cart" [size]="48"></app-icon>
-            <p>No redemptions yet</p>
+  <!-- Upcoming Events + Featured Products Row (below KPI) -->
+  <div class="content-row events-products-row">
+    <!-- Upcoming Events -->
+    <div class="section-card">
+      <div class="section-header">
+        <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> Upcoming Events</h2>
+        <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+      </div>
+
+      <div class="events-list">
+        @for (event of upcomingEvents(); track event.id) {
+          <div class="event-item clickable" (click)="navigateToEvent(event.name)">
+            <img [src]="event.image" [alt]="event.name" class="event-image" />
+            <div class="event-details">
+              <h3 class="event-name">{{ event.name }}</h3>
+              <p class="event-meta">
+                <span class="event-date"><app-icon name="calendar" [size]="14"></app-icon> {{ event.date }}</span>
+                <span class="event-location"><app-icon name="location" [size]="14"></app-icon> {{ event.location }}</span>
+              </p>
+              <div class="event-footer">
+                <span class="event-points">+{{ event.points }} points</span>
+                @if (!event.registered) {
+                  <button
+                    class="register-btn"
+                    (click)="registerForEvent(event); $event.stopPropagation()"
+                  >
+                    Register
+                  </button>
+                } @else {
+                  <span class="registered-badge"><app-icon name="check" [size]="14"></app-icon> Registered</span>
+                }
+              </div>
+            </div>
+          </div>
+        }
+
+        @if (upcomingEvents().length === 0 && !isLoading()) {
+          <div class="empty-state">
+            <p>No upcoming events at the moment</p>
           </div>
         }
       </div>
-      <!-- Stats Cards -->
-      <div class="redemptions-summary-grid">
-        <div class="redemption-stat pending-stat">
-          <div class="redemption-icon"><app-icon name="pending" [size]="24"></app-icon></div>
-          <div class="redemption-content">
-            <span class="redemption-label">Pending</span>
-            <span class="redemption-value">{{ redemptionsSummary().pending }}</span>
+    </div>
+
+    <!-- Featured Products -->
+    <div class="section-card">
+      <div class="section-header">
+        <h2 class="section-title"><app-icon name="gift" [size]="20"></app-icon> Featured Products</h2>
+        <button class="view-all-btn" (click)="navigateToProducts()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
+      </div>
+
+      <div class="products-grid">
+        @for (product of featuredProducts(); track product.id) {
+          <div class="product-card">
+            <img [src]="product.image" [alt]="product.name" class="product-image" />
+            <div class="product-info">
+              <span class="product-category">{{ product.category }}</span>
+              <h3 class="product-name">{{ product.name }}</h3>
+              <div class="product-footer">
+                <span class="product-points">{{ product.points }} pts</span>
+                <span
+                  class="product-stock"
+                  [class.low-stock]="product.stock < 10"
+                >
+                  {{ product.stock }} left
+                </span>
+              </div>
+              <button
+                class="redeem-btn"
+                [disabled]="pointsBalance().available < product.points"
+                (click)="redeemProduct(product)"
+              >
+                {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
+              </button>
+            </div>
           </div>
-        </div>
-        <div class="redemption-stat approved-stat">
-          <div class="redemption-icon"><app-icon name="check-circle" [size]="24"></app-icon></div>
-          <div class="redemption-content">
-            <span class="redemption-label">Approved</span>
-            <span class="redemption-value">{{ redemptionsSummary().approved }}</span>
-          </div>
-        </div>
-        <div class="redemption-stat delivered-stat">
-          <div class="redemption-icon"><app-icon name="gift" [size]="24"></app-icon></div>
-          <div class="redemption-content">
-            <span class="redemption-label">Delivered</span>
-            <span class="redemption-value">{{ redemptionsSummary().delivered }}</span>
-          </div>
-        </div>
+        }
       </div>
     </div>
   </div>
 
-  <!-- My Events Participation Section -->
-  <div class="events-participation-section">
-    <div class="section-header">
-      <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> My Events Participation</h2>
-      <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
-    </div>
-    <div class="chart-stats-container">
-      <!-- Pie Chart -->
-      <div class="chart-wrapper">
-        @if (eventParticipationStats().registered + eventParticipationStats().completed > 0) {
-          <apx-chart
-            [series]="eventsParticipationChartSeries"
-            [chart]="eventsParticipationChartOptions.chart"
-            [labels]="eventsParticipationChartOptions.labels"
-            [colors]="eventsParticipationChartOptions.colors"
-            [legend]="eventsParticipationChartOptions.legend"
-            [dataLabels]="eventsParticipationChartOptions.dataLabels"
-            [plotOptions]="eventsParticipationChartOptions.plotOptions"
-            [fill]="eventsParticipationChartOptions.fill"
-            [stroke]="eventsParticipationChartOptions.stroke"
-            [tooltip]="eventsParticipationChartOptions.tooltip"
-            [responsive]="eventsParticipationChartOptions.responsive"
-          ></apx-chart>
-        } @else {
-          <div class="empty-chart-state">
-            <app-icon name="celebrate" [size]="48"></app-icon>
-            <p>No events participated yet</p>
-          </div>
-        }
-      </div>
-      <!-- Stats Cards -->
-      <div class="events-participation-grid">
-        <div class="participation-stat registered-stat">
-          <div class="participation-icon"><app-icon name="calendar" [size]="24"></app-icon></div>
-          <div class="participation-content">
-            <span class="participation-label">Registered</span>
-            <span class="participation-value">{{ eventParticipationStats().registered }}</span>
-          </div>
-        </div>
-        <div class="participation-stat completed-stat">
-          <div class="participation-icon"><app-icon name="check-circle" [size]="24"></app-icon></div>
-          <div class="participation-content">
-            <span class="participation-label">Completed</span>
-            <span class="participation-value">{{ eventParticipationStats().completed }}</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Two Column Layout -->
-  <div class="dashboard-grid">
-    <!-- Row 1: Upcoming Events + Recent Transactions -->
-    <div class="dashboard-row">
-      <!-- Upcoming Events -->
-      <div class="section-card half-width">
+  <!-- Charts + Transactions Row -->
+  <div class="content-row charts-transactions-row">
+    <!-- Left Column: Charts (1 col, 2 rows) -->
+    <div class="charts-column">
+      <!-- My Participation Chart -->
+      <div class="chart-card compact">
         <div class="section-header">
-          <h2 class="section-title"><app-icon name="celebrate" [size]="20"></app-icon> Upcoming Events</h2>
+          <h2 class="section-title"><app-icon name="celebrate" [size]="18"></app-icon> My Participation</h2>
           <button class="view-all-btn" (click)="navigateToEvents()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
         </div>
-
-        <div class="events-list">
-          @for (event of upcomingEvents(); track event.id) {
-            <div class="event-item clickable" (click)="navigateToEvent(event.name)">
-              <img [src]="event.image" [alt]="event.name" class="event-image" />
-              <div class="event-details">
-                <h3 class="event-name">{{ event.name }}</h3>
-                <p class="event-meta">
-                  <span class="event-date"><app-icon name="calendar" [size]="14"></app-icon> {{ event.date }}</span>
-                  <span class="event-location"><app-icon name="location" [size]="14"></app-icon> {{ event.location }}</span>
-                </p>
-                <div class="event-footer">
-                  <span class="event-points">+{{ event.points }} points</span>
-                  @if (!event.registered) {
-                    <button
-                      class="register-btn"
-                      (click)="registerForEvent(event); $event.stopPropagation()"
-                    >
-                      Register
-                    </button>
-                  } @else {
-                    <span class="registered-badge"><app-icon name="check" [size]="14"></app-icon> Registered</span>
-                  }
-                </div>
-              </div>
-            </div>
-          }
-
-          @if (upcomingEvents().length === 0 && !isLoading()) {
-            <div class="empty-state">
-              <p>No upcoming events at the moment</p>
+        <div class="chart-only-container">
+          @if (eventParticipationStats().registered + eventParticipationStats().completed > 0) {
+            <apx-chart
+              [series]="eventsParticipationChartSeries"
+              [chart]="eventsParticipationChartOptions.chart"
+              [labels]="eventsParticipationChartOptions.labels"
+              [colors]="eventsParticipationChartOptions.colors"
+              [legend]="eventsParticipationChartOptions.legend"
+              [dataLabels]="eventsParticipationChartOptions.dataLabels"
+              [plotOptions]="eventsParticipationChartOptions.plotOptions"
+              [fill]="eventsParticipationChartOptions.fill"
+              [stroke]="eventsParticipationChartOptions.stroke"
+              [tooltip]="eventsParticipationChartOptions.tooltip"
+              [responsive]="eventsParticipationChartOptions.responsive"
+            ></apx-chart>
+          } @else {
+            <div class="empty-chart-state">
+              <app-icon name="celebrate" [size]="36"></app-icon>
+              <p>No events yet</p>
             </div>
           }
         </div>
       </div>
 
-      <!-- Recent Transactions -->
-      <div class="section-card transactions-card half-width">
+      <!-- My Redemptions Chart -->
+      <div class="chart-card compact">
         <div class="section-header">
-          <h2 class="section-title"><app-icon name="wallet" [size]="20"></app-icon> Recent Transactions</h2>
+          <h2 class="section-title"><app-icon name="cart" [size]="18"></app-icon> My Redemptions</h2>
           <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
         </div>
-
-        <div class="transactions-list">
-          @for (transaction of recentTransactions(); track transaction.id) {
-            <div
-              class="transaction-item"
-              [class.earned]="transaction.type === 'earned'"
-              [class.redeemed]="transaction.type === 'redeemed'"
-            >
-              <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
-                @if (transaction.type === 'earned') {
-                  <app-icon name="trending-up" [size]="20"></app-icon>
-                }
-                @if (transaction.type === 'redeemed') {
-                  <app-icon name="shopping-cart" [size]="20"></app-icon>
-                }
-              </div>
-              <div class="transaction-details">
-                <span class="transaction-description">{{ transaction.description }}</span>
-                <div class="transaction-meta">
-                  <span class="transaction-date">{{ transaction.date }}</span>
-                  @if (transaction.source) {
-                    <span class="transaction-source" [class]="'source-' + transaction.source.toLowerCase()">
-                      {{ transaction.source }}
-                    </span>
-                  }
-                </div>
-                @if (transaction.eventName) {
-                  <div class="transaction-event">
-                    <span class="event-name"><app-icon name="celebrate" [size]="14"></app-icon> {{ transaction.eventName }}</span>
-                    @if (transaction.eventRank) {
-                      <span class="event-rank"><app-icon name="trophy" [size]="14"></app-icon> #{{ transaction.eventRank }}</span>
-                    }
-                  </div>
-                }
-              </div>
-              <div class="transaction-amount" 
-                   [class.positive]="transaction.points > 0"
-                   [class.negative]="transaction.points < 0">
-                {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
-              </div>
-            </div>
-          }
-
-          @if (recentTransactions().length === 0 && !isLoading()) {
-            <div class="empty-state">
-              <p>No transactions yet</p>
+        <div class="chart-only-container">
+          @if (redemptionsSummary().pending + redemptionsSummary().approved + redemptionsSummary().delivered > 0) {
+            <apx-chart
+              [series]="redemptionsChartSeries"
+              [chart]="redemptionsChartOptions.chart"
+              [labels]="redemptionsChartOptions.labels"
+              [colors]="redemptionsChartOptions.colors"
+              [legend]="redemptionsChartOptions.legend"
+              [dataLabels]="redemptionsChartOptions.dataLabels"
+              [plotOptions]="redemptionsChartOptions.plotOptions"
+              [fill]="redemptionsChartOptions.fill"
+              [stroke]="redemptionsChartOptions.stroke"
+              [tooltip]="redemptionsChartOptions.tooltip"
+              [responsive]="redemptionsChartOptions.responsive"
+            ></apx-chart>
+          } @else {
+            <div class="empty-chart-state">
+              <app-icon name="cart" [size]="36"></app-icon>
+              <p>No redemptions yet</p>
             </div>
           }
         </div>
       </div>
     </div>
 
-    <!-- Row 2: Featured Products + Quick Actions -->
-    <div class="dashboard-row">
-      <!-- Featured Products -->
-      <div class="section-card half-width">
-        <div class="section-header">
-          <h2 class="section-title"><app-icon name="gift" [size]="20"></app-icon> Featured Products</h2>
-          <button class="view-all-btn" (click)="navigateToProducts()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
-        </div>
-
-        <div class="products-grid">
-          @for (product of featuredProducts(); track product.id) {
-            <div class="product-card">
-              <img [src]="product.image" [alt]="product.name" class="product-image" />
-              <div class="product-info">
-                <span class="product-category">{{ product.category }}</span>
-                <h3 class="product-name">{{ product.name }}</h3>
-                <div class="product-footer">
-                  <span class="product-points">{{ product.points }} pts</span>
-                  <span
-                    class="product-stock"
-                    [class.low-stock]="product.stock < 10"
-                  >
-                    {{ product.stock }} left
-                  </span>
-                </div>
-                <button
-                  class="redeem-btn"
-                  [disabled]="pointsBalance().available < product.points"
-                  (click)="redeemProduct(product)"
-                >
-                  {{ pointsBalance().available >= product.points ? 'Redeem' : 'Insufficient Points' }}
-                </button>
-              </div>
-            </div>
-          }
-        </div>
+    <!-- Right Column: Recent Transactions -->
+    <div class="transactions-column">
+      <div class="section-header">
+        <h2 class="section-title"><app-icon name="wallet" [size]="20"></app-icon> Recent Transactions</h2>
+        <button class="view-all-btn" (click)="navigateToAccount()">View All <app-icon name="chevron-right" [size]="14"></app-icon></button>
       </div>
 
-      <!-- Quick Actions -->
-      <div class="section-card quick-actions-card half-width">
-        <h2 class="section-title"><app-icon name="flash" [size]="20"></app-icon> Quick Actions</h2>
-        <div class="quick-actions">
-          <button class="action-btn" (click)="navigateToEvents()">
-            <span class="action-icon"><app-icon name="celebrate" [size]="24"></app-icon></span>
-            <span class="action-text">Browse Events</span>
-          </button>
-          <button class="action-btn" (click)="navigateToProducts()">
-            <span class="action-icon"><app-icon name="shopping-cart" [size]="24"></app-icon></span>
-            <span class="action-text">Shop Products</span>
-          </button>
-          <button class="action-btn" (click)="navigateToAccount()">
-            <span class="action-icon"><app-icon name="chart-bar" [size]="24"></app-icon></span>
-            <span class="action-text">View History</span>
-          </button>
-        </div>
+      <div class="transactions-list vertical">
+        @for (transaction of recentTransactions(); track transaction.id) {
+          <div
+            class="transaction-item"
+            [class.earned]="transaction.type === 'earned'"
+            [class.redeemed]="transaction.type === 'redeemed'"
+          >
+            <div class="transaction-icon-wrapper" [class.earned]="transaction.type === 'earned'" [class.redeemed]="transaction.type === 'redeemed'">
+              @if (transaction.type === 'earned') {
+                <app-icon name="trending-up" [size]="20"></app-icon>
+              }
+              @if (transaction.type === 'redeemed') {
+                <app-icon name="shopping-cart" [size]="20"></app-icon>
+              }
+            </div>
+            <div class="transaction-details">
+              <span class="transaction-description">{{ transaction.description }}</span>
+              <div class="transaction-meta">
+                <span class="transaction-date">{{ transaction.date }}</span>
+                @if (transaction.source) {
+                  <span class="transaction-source" [class]="'source-' + transaction.source.toLowerCase()">
+                    {{ transaction.source }}
+                  </span>
+                }
+              </div>
+              @if (transaction.eventName) {
+                <div class="transaction-event">
+                  <span class="event-name"><app-icon name="celebrate" [size]="14"></app-icon> {{ transaction.eventName }}</span>
+                  @if (transaction.eventRank) {
+                    <span class="event-rank"><app-icon name="trophy" [size]="14"></app-icon> #{{ transaction.eventRank }}</span>
+                  }
+                </div>
+              }
+            </div>
+            <div class="transaction-amount" 
+                 [class.positive]="transaction.points > 0"
+                 [class.negative]="transaction.points < 0">
+              {{ transaction.points > 0 ? '+' : '' }}{{ transaction.points }}
+            </div>
+          </div>
+        }
+
+        @if (recentTransactions().length === 0 && !isLoading()) {
+          <div class="empty-state">
+            <p>No transactions yet</p>
+          </div>
+        }
       </div>
     </div>
   </div>

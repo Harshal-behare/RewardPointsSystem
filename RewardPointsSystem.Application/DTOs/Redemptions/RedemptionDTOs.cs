@@ -3,11 +3,11 @@ using System;
 namespace RewardPointsSystem.Application.DTOs.Redemptions
 {
     /// <summary>
-    /// DTO for creating a redemption
+    /// DTO for creating a redemption.
+    /// UserId is not included - it's derived from JWT/ICurrentUserContext in the Application layer.
     /// </summary>
     public class CreateRedemptionDto
     {
-        public Guid UserId { get; set; }
         public Guid ProductId { get; set; }
         public int Quantity { get; set; } = 1;
     }
@@ -75,5 +75,13 @@ namespace RewardPointsSystem.Application.DTOs.Redemptions
     public class RejectRedemptionDto
     {
         public string RejectionReason { get; set; }
+    }
+
+    /// <summary>
+    /// DTO for returning count values
+    /// </summary>
+    public class PendingCountDto
+    {
+        public int Count { get; set; }
     }
 }

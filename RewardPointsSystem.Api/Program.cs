@@ -1,15 +1,14 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Reflection;
-using FluentValidation;
 using FluentValidation.AspNetCore;
 using RewardPointsSystem.Application.Configuration;
+using RewardPointsSystem.Application;
+using RewardPointsSystem.Infrastructure;
 using RewardPointsSystem.Infrastructure.Data;
-using RewardPointsSystem.Api.Configuration;
 
 namespace RewardPointsSystem.Api
 {
@@ -25,42 +24,39 @@ namespace RewardPointsSystem.Api
             var configuration = builder.Configuration;
 
             // =====================================================
-            // 2. DATABASE CONFIGURATION
+            // 2. CLEAN ARCHITECTURE - DEPENDENCY INJECTION
             // =====================================================
-            builder.Services.AddDbContext<RewardPointsDbContext>(options =>
-                options.UseSqlServer(configuration.GetConnectionString("DefaultConnection")));
+            // Infrastructure layer (DbContext, Repositories, External Services)
+            builder.Services.AddInfrastructure(configuration);
+            
+            // Application layer (Business Services, AutoMapper, FluentValidation)
+            builder.Services.AddApplication();
+
+            // HTTP Context Accessor for ICurrentUserContext
+            builder.Services.AddHttpContextAccessor();
+            builder.Services.AddScoped<RewardPointsSystem.Application.Interfaces.ICurrentUserContext, 
+                RewardPointsSystem.Api.Services.HttpCurrentUserContext>();
 
             // =====================================================
-            // 3. DEPENDENCY INJECTION - SERVICES
-            // =====================================================
-            builder.Services.RegisterRewardPointsServices(configuration);
-
-            // =====================================================
-            // 4. AUTOMAPPER CONFIGURATION (Phase 6)
-            // =====================================================
-            builder.Services.AddAutoMapper(typeof(RewardPointsSystem.Application.MappingProfiles.UserMappingProfile).Assembly);
-
-            // =====================================================
-            // 5. FLUENTVALIDATION CONFIGURATION (Phase 5)
+            // 3. FLUENTVALIDATION ASP.NET CORE INTEGRATION
             // =====================================================
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
-            builder.Services.AddValidatorsFromAssemblyContaining<RewardPointsSystem.Application.Validators.Auth.LoginRequestDtoValidator>();
 
             // =====================================================
-            // 5.1 HEALTH CHECKS (MVP)
+            // 4. HEALTH CHECKS (MVP)
             // =====================================================
             builder.Services.AddHealthChecks()
                 .AddDbContextCheck<RewardPointsDbContext>("database");
 
             // =====================================================
-            // 6. CONTROLLERS & API EXPLORER
+            // 5. CONTROLLERS & API EXPLORER
             // =====================================================
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
             // =====================================================
-            // 7. SWAGGER/OPENAPI CONFIGURATION
+            // 6. SWAGGER/OPENAPI CONFIGURATION
             // =====================================================
             builder.Services.AddSwaggerGen(options =>
             {
@@ -118,7 +114,7 @@ namespace RewardPointsSystem.Api
             });
 
             // =====================================================
-            // 8. JWT AUTHENTICATION (Phase 7)
+            // 7. JWT AUTHENTICATION
             // =====================================================
             var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
             if (jwtSettings == null)
@@ -150,7 +146,7 @@ namespace RewardPointsSystem.Api
             });
 
             // =====================================================
-            // 8.1. AUTHORIZATION POLICIES
+            // 8. AUTHORIZATION POLICIES
             // =====================================================
             builder.Services.AddAuthorization(options =>
             {

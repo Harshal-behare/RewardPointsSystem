@@ -20,5 +20,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task ReleaseReservationAsync(Guid productId, int quantity);
         Task ConfirmFulfillmentAsync(Guid productId, int quantity);
         Task<IEnumerable<InventoryAlert>> GetLowStockItemsAsync();
+        Task<int> GetAvailableStockAsync(Guid productId);
+        Task AdjustStockAsync(Guid productId, int targetQuantity, Guid adjustedBy);
     }
 }

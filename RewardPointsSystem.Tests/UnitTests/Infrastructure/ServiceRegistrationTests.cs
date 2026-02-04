@@ -2,15 +2,16 @@ using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using RewardPointsSystem.Api.Configuration;
-using RewardPointsSystem.Infrastructure.Configuration;
+using RewardPointsSystem.Application;
+using RewardPointsSystem.Infrastructure;
 using RewardPointsSystem.Infrastructure.Data;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
 {
     /// <summary>
-    /// Test Case 3: The RegisterRewardPointsServices method correctly registers DbContext and other services with configuration.
+    /// Test Case 3: Clean Architecture DI registration tests.
+    /// Tests that AddInfrastructure and AddApplication correctly register services.
     /// </summary>
     public class ServiceRegistrationTests
     {
@@ -27,61 +28,6 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         }
 
         [Fact]
-        public void RegisterRewardPointsServices_ShouldRegisterDbContext()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var configuration = CreateTestConfiguration("Server=TestServer;Database=TestDB;Integrated Security=true");
-
-            // Act
-            services.RegisterRewardPointsServices(configuration);
-            var serviceProvider = services.BuildServiceProvider();
-
-            // Assert
-            var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
-            dbContext.Should().NotBeNull();
-        }
-
-        [Fact]
-        public void RegisterRewardPointsServices_ShouldConfigureDbContextWithCorrectConnectionString()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var expectedConnectionString = "Server=TestServer;Database=TestDB;Integrated Security=true";
-            var configuration = CreateTestConfiguration(expectedConnectionString);
-
-            // Act
-            services.RegisterRewardPointsServices(configuration);
-            var serviceProvider = services.BuildServiceProvider();
-
-            // Assert
-            var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
-            dbContext.Should().NotBeNull();
-
-            var actualConnectionString = dbContext!.Database.GetConnectionString();
-            actualConnectionString.Should().Be(expectedConnectionString);
-        }
-
-        [Fact]
-        public void RegisterRewardPointsServices_ShouldRegisterAllRequiredServices()
-        {
-            // Arrange
-            var services = new ServiceCollection();
-            var configuration = CreateTestConfiguration("Server=TestServer;Database=TestDB;Integrated Security=true");
-
-            // Act
-            services.RegisterRewardPointsServices(configuration);
-            var serviceProvider = services.BuildServiceProvider();
-
-            // Assert - Verify DbContext is registered
-            var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
-            dbContext.Should().NotBeNull();
-
-            // Verify the service collection contains the DbContext registration
-            services.Should().Contain(sd => sd.ServiceType == typeof(RewardPointsDbContext));
-        }
-
-        [Fact]
         public void AddInfrastructure_ShouldRegisterDbContext()
         {
             // Arrange
@@ -95,6 +41,45 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             // Assert
             var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
             dbContext.Should().NotBeNull();
+        }
+
+        [Fact]
+        public void AddInfrastructure_ShouldConfigureDbContextWithCorrectConnectionString()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var expectedConnectionString = "Server=TestServer;Database=TestDB;Integrated Security=true";
+            var configuration = CreateTestConfiguration(expectedConnectionString);
+
+            // Act
+            services.AddInfrastructure(configuration);
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Assert
+            var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
+            dbContext.Should().NotBeNull();
+
+            var actualConnectionString = dbContext!.Database.GetConnectionString();
+            actualConnectionString.Should().Be(expectedConnectionString);
+        }
+
+        [Fact]
+        public void AddInfrastructure_ShouldRegisterAllRequiredServices()
+        {
+            // Arrange
+            var services = new ServiceCollection();
+            var configuration = CreateTestConfiguration("Server=TestServer;Database=TestDB;Integrated Security=true");
+
+            // Act
+            services.AddInfrastructure(configuration);
+            var serviceProvider = services.BuildServiceProvider();
+
+            // Assert - Verify DbContext is registered
+            var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
+            dbContext.Should().NotBeNull();
+
+            // Verify the service collection contains the DbContext registration
+            services.Should().Contain(sd => sd.ServiceType == typeof(RewardPointsDbContext));
         }
 
         [Fact]
@@ -132,28 +117,28 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         }
 
         [Fact]
-        public void RegisterRewardPointsServices_ShouldHandleMissingConnectionString()
+        public void AddInfrastructure_ShouldHandleMissingConnectionString()
         {
             // Arrange
             var services = new ServiceCollection();
             var emptyConfiguration = new ConfigurationBuilder().Build();
 
             // Act & Assert
-            var act = () => services.RegisterRewardPointsServices(emptyConfiguration);
+            var act = () => services.AddInfrastructure(emptyConfiguration);
             
             // Should not throw during registration, but connection string will be null
             act.Should().NotThrow();
         }
 
         [Fact]
-        public void ServiceRegistration_ShouldAllowMultipleDbContextsInDifferentScopes()
+        public void AddInfrastructure_ShouldAllowMultipleDbContextsInDifferentScopes()
         {
             // Arrange
             var services = new ServiceCollection();
             var configuration = CreateTestConfiguration("Server=TestServer;Database=TestDB;Integrated Security=true");
 
             // Act
-            services.RegisterRewardPointsServices(configuration);
+            services.AddInfrastructure(configuration);
             var serviceProvider = services.BuildServiceProvider();
 
             // Assert
@@ -172,7 +157,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
         }
 
         [Fact]
-        public void AddInfrastructure_ShouldConfigureSqlServerRetryLogic()
+        public void AddInfrastructure_ShouldConfigureSqlServerProvider()
         {
             // Arrange
             var services = new ServiceCollection();
@@ -186,7 +171,7 @@ namespace RewardPointsSystem.Tests.UnitTests.Infrastructure
             var dbContext = serviceProvider.GetService<RewardPointsDbContext>();
             dbContext.Should().NotBeNull();
             
-            // Verify SQL Server provider is configured (retry logic is part of the options)
+            // Verify SQL Server provider is configured
             dbContext!.Database.ProviderName.Should().Be("Microsoft.EntityFrameworkCore.SqlServer");
         }
     }
