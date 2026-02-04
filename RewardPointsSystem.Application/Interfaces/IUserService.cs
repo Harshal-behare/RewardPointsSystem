@@ -18,6 +18,7 @@ namespace RewardPointsSystem.Application.Interfaces
         Task<IEnumerable<User>> GetActiveUsersAsync();
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> UpdateUserAsync(Guid id, UserUpdateDto updates);
+        Task ActivateUserAsync(Guid userId, Guid activatedBy);
         Task DeactivateUserAsync(Guid id);
     }
 

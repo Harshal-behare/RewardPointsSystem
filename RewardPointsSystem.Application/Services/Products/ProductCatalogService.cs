@@ -120,5 +120,59 @@ namespace RewardPointsSystem.Application.Services.Products
             product.Deactivate();
             await _unitOfWork.SaveChangesAsync();
         }
+
+        public async Task<Product?> GetProductByIdAsync(Guid id)
+        {
+            return await _unitOfWork.Products.GetByIdAsync(id);
+        }
+
+        public async Task ActivateProductAsync(Guid id)
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(id);
+            if (product == null)
+                throw new KeyNotFoundException($"Product with ID {id} not found");
+
+            product.Activate();
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task UpdateProductCategoryAsync(Guid productId, Guid categoryId)
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(productId);
+            if (product == null)
+                throw new KeyNotFoundException($"Product with ID {productId} not found");
+
+            var category = await _unitOfWork.ProductCategories.GetByIdAsync(categoryId);
+            if (category == null)
+                throw new KeyNotFoundException($"Category with ID {categoryId} not found");
+
+            product.UpdateCategory(categoryId);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
+        public async Task SetProductActiveStatusAsync(Guid productId, bool isActive)
+        {
+            var product = await _unitOfWork.Products.GetByIdAsync(productId);
+            if (product == null)
+                throw new KeyNotFoundException($"Product with ID {productId} not found");
+
+            if (isActive)
+            {
+                product.Activate();
+            }
+            else
+            {
+                // Check for pending redemptions before deactivating
+                var redemptions = await _unitOfWork.Redemptions.GetAllAsync();
+                var hasPendingRedemptions = redemptions.Any(r => r.ProductId == productId && 
+                                                               r.Status == RedemptionStatus.Pending);
+
+                if (hasPendingRedemptions)
+                    throw new InvalidOperationException("Cannot deactivate product with pending redemptions");
+
+                product.Deactivate();
+            }
+            await _unitOfWork.SaveChangesAsync();
+        }
     }
 }

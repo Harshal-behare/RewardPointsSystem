@@ -1,12 +1,42 @@
-<div class="dashboard-container">
-  <!-- Page Header -->
-  <div class="page-header">
-    <h1>Admin Dashboard</h1>
-    <p class="subtitle">System overview and quick actions</p>
+<div class="dashboard-container compact">
+  <!-- Page Header with Quick Actions -->
+  <div class="page-header-row">
+    <div class="page-header">
+      <h1>Admin Dashboard</h1>
+      <p class="subtitle">System overview and quick actions</p>
+    </div>
+    
+    <!-- Quick Actions - Admin Style Floating Icons -->
+    <div class="quick-actions-floating admin">
+      <div class="quick-action-item" (click)="navigateToPage('/admin/redemptions')">
+        <div class="action-icon-circle orange">
+          <app-icon name="shopping-cart" [size]="20"></app-icon>
+        </div>
+        <span class="action-tooltip">Redemptions</span>
+      </div>
+      <div class="quick-action-item" (click)="navigateToPage('/admin/users')">
+        <div class="action-icon-circle purple">
+          <app-icon name="users" [size]="20"></app-icon>
+        </div>
+        <span class="action-tooltip">Manage Users</span>
+      </div>
+      <div class="quick-action-item" (click)="openEventModal()">
+        <div class="action-icon-circle green">
+          <app-icon name="calendar" [size]="20"></app-icon>
+        </div>
+        <span class="action-tooltip">Create Event</span>
+      </div>
+      <div class="quick-action-item" (click)="openProductModal()">
+        <div class="action-icon-circle blue">
+          <app-icon name="gift" [size]="20"></app-icon>
+        </div>
+        <span class="action-tooltip">Add Product</span>
+      </div>
+    </div>
   </div>
 
   <!-- Section 1: System Overview (5 KPI Cards) -->
-  <section class="kpi-section">
+  <section class="kpi-section compact">
     @for (kpi of kpiData(); track kpi.label) {
       <app-kpi-card
         [icon]="kpi.icon"
@@ -208,43 +238,6 @@
       </div>
     </app-card>
   </div>
-
-  <!-- Quick Actions Section -->
-  <app-card title="Quick Actions" class="quick-actions-card">
-    <div class="quick-actions-grid">
-      <button class="quick-action-btn redemptions-btn" (click)="navigateToPage('/admin/redemptions')">
-        <span class="action-icon"><app-icon name="shopping-cart" [size]="24"></app-icon></span>
-        <div class="action-content">
-          <h3>Redemptions</h3>
-          <p>Process pending redemptions</p>
-        </div>
-      </button>
-
-      <button class="quick-action-btn users-btn" (click)="navigateToPage('/admin/users')">
-        <span class="action-icon"><app-icon name="users" [size]="24"></app-icon></span>
-        <div class="action-content">
-          <h3>Manage Users</h3>
-          <p>View and manage users</p>
-        </div>
-      </button>
-
-      <button class="quick-action-btn event-btn" (click)="openEventModal()">
-        <span class="action-icon"><app-icon name="calendar" [size]="24"></app-icon></span>
-        <div class="action-content">
-          <h3>Create Event</h3>
-          <p>Add a new reward event</p>
-        </div>
-      </button>
-
-      <button class="quick-action-btn product-btn" (click)="openProductModal()">
-        <span class="action-icon"><app-icon name="gift" [size]="24"></app-icon></span>
-        <div class="action-content">
-          <h3>Add Product</h3>
-          <p>Add new product to catalog</p>
-        </div>
-      </button>
-    </div>
-  </app-card>
 </div>
 
 <!-- Create Event Modal -->

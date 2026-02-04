@@ -4,15 +4,13 @@ using RewardPointsSystem.Application.DTOs.Redemptions;
 namespace RewardPointsSystem.Application.Validators.Redemptions
 {
     /// <summary>
-    /// Validator for creating a redemption request
+    /// Validator for creating a redemption request.
+    /// UserId is derived from ICurrentUserContext, not from the DTO.
     /// </summary>
     public class CreateRedemptionDtoValidator : AbstractValidator<CreateRedemptionDto>
     {
         public CreateRedemptionDtoValidator()
         {
-            RuleFor(x => x.UserId)
-                .NotEmpty().WithMessage("User ID is required");
-
             RuleFor(x => x.ProductId)
                 .NotEmpty().WithMessage("Product ID is required");
 

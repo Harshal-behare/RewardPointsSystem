@@ -1,6 +1,5 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using System.Security.Claims;
 using RewardPointsSystem.Application.DTOs.Common;
 using RewardPointsSystem.Application.DTOs.Roles;
 using RewardPointsSystem.Application.Interfaces;
@@ -13,17 +12,17 @@ namespace RewardPointsSystem.Api.Controllers
     [Authorize(Roles = "Admin")]
     public class RolesController : BaseApiController
     {
-        private readonly IRoleService _roleService;
-        private readonly IUserRoleService _userRoleService;
+        private readonly IRoleQueryService _roleQueryService;
+        private readonly IRoleManagementService _roleManagementService;
         private readonly ILogger<RolesController> _logger;
 
         public RolesController(
-            IRoleService roleService,
-            IUserRoleService userRoleService,
+            IRoleQueryService roleQueryService,
+            IRoleManagementService roleManagementService,
             ILogger<RolesController> logger)
         {
-            _roleService = roleService;
-            _userRoleService = userRoleService;
+            _roleQueryService = roleQueryService;
+            _roleManagementService = roleManagementService;
             _logger = logger;
         }
 
@@ -37,16 +36,8 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var roles = await _roleService.GetAllRolesAsync();
-                var roleDtos = roles.Select(r => new RoleResponseDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Description = r.Description,
-                    CreatedAt = r.CreatedAt
-                });
-
-                return Success(roleDtos);
+                var roles = await _roleQueryService.GetAllRolesAsync();
+                return Success(roles);
             }
             catch (Exception ex)
             {
@@ -68,19 +59,11 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var role = await _roleService.GetRoleByIdAsync(id);
+                var role = await _roleQueryService.GetRoleByIdAsync(id);
                 if (role == null)
                     return NotFoundError($"Role with ID {id} not found");
 
-                var roleDto = new RoleResponseDto
-                {
-                    Id = role.Id,
-                    Name = role.Name,
-                    Description = role.Description,
-                    CreatedAt = role.CreatedAt
-                };
-
-                return Success(roleDto);
+                return Success(role);
             }
             catch (Exception ex)
             {
@@ -104,21 +87,14 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var role = await _roleService.CreateRoleAsync(dto.Name, dto.Description);
+                var result = await _roleManagementService.CreateRoleAsync(dto);
 
-                var roleDto = new RoleResponseDto
+                if (!result.Success)
                 {
-                    Id = role.Id,
-                    Name = role.Name,
-                    Description = role.Description,
-                    CreatedAt = role.CreatedAt
-                };
+                    return MapRoleErrorToResponse(result);
+                }
 
-                return Created(roleDto, "Role created successfully");
-            }
-            catch (InvalidOperationException ex) when (ex.Message.Contains("already exists"))
-            {
-                return ConflictError(ex.Message);
+                return Created(result.Data!, "Role created successfully");
             }
             catch (Exception ex)
             {
@@ -141,22 +117,14 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var role = await _roleService.GetRoleByIdAsync(id);
-                if (role == null)
-                    return NotFoundError($"Role with ID {id} not found");
+                var result = await _roleManagementService.UpdateRoleAsync(id, dto);
 
-                // Update role (assuming service has update method)
-                role = await _roleService.UpdateRoleAsync(id, dto.Name, dto.Description);
-
-                var roleDto = new RoleResponseDto
+                if (!result.Success)
                 {
-                    Id = role.Id,
-                    Name = role.Name,
-                    Description = role.Description,
-                    CreatedAt = role.CreatedAt
-                };
+                    return MapRoleErrorToResponse(result);
+                }
 
-                return Success(roleDto, "Role updated successfully");
+                return Success(result.Data!, "Role updated successfully");
             }
             catch (Exception ex)
             {
@@ -178,11 +146,12 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var role = await _roleService.GetRoleByIdAsync(id);
-                if (role == null)
-                    return NotFoundError($"Role with ID {id} not found");
+                var result = await _roleManagementService.DeleteRoleAsync(id);
 
-                await _roleService.DeleteRoleAsync(id);
+                if (!result.Success)
+                {
+                    return MapRoleErrorToResponse(result);
+                }
 
                 return Success<object>(null, "Role deleted successfully");
             }
@@ -207,21 +176,18 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Get admin user ID from JWT claims
-                var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(adminIdClaim) || !Guid.TryParse(adminIdClaim, out var adminUserId))
+                var adminUserId = GetCurrentUserId();
+                if (!adminUserId.HasValue)
                     return UnauthorizedError("Admin user not authenticated");
 
-                await _userRoleService.AssignRoleAsync(userId, dto.RoleId, adminUserId);
+                var result = await _roleManagementService.AssignRoleToUserAsync(userId, dto.RoleId, adminUserId.Value);
+
+                if (!result.Success)
+                {
+                    return MapRoleErrorToResponse(result);
+                }
+
                 return Success<object>(null, "Role assigned successfully");
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFoundError("User or role not found");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Error(ex.Message, 400);
             }
             catch (Exception ex)
             {
@@ -244,16 +210,14 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                await _userRoleService.RevokeRoleAsync(userId, roleId);
+                var result = await _roleManagementService.RevokeRoleFromUserAsync(userId, roleId);
+
+                if (!result.Success)
+                {
+                    return MapRoleErrorToResponse(result);
+                }
+
                 return Success<object>(null, "Role revoked successfully");
-            }
-            catch (KeyNotFoundException)
-            {
-                return NotFoundError("User or role not found");
-            }
-            catch (InvalidOperationException ex)
-            {
-                return Error(ex.Message, 400);
             }
             catch (Exception ex)
             {
@@ -275,16 +239,8 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                var roles = await _userRoleService.GetUserRolesAsync(userId);
-                var roleDtos = roles.Select(r => new RoleResponseDto
-                {
-                    Id = r.Id,
-                    Name = r.Name,
-                    Description = r.Description,
-                    CreatedAt = r.CreatedAt
-                });
-
-                return Success(roleDtos);
+                var roles = await _roleQueryService.GetUserRolesAsync(userId);
+                return Success(roles);
             }
             catch (KeyNotFoundException)
             {
@@ -295,6 +251,20 @@ namespace RewardPointsSystem.Api.Controllers
                 _logger.LogError(ex, "Error retrieving user roles for {UserId}", userId);
                 return Error("Failed to retrieve user roles");
             }
+        }
+
+        /// <summary>
+        /// Maps role operation result errors to appropriate HTTP responses
+        /// </summary>
+        private IActionResult MapRoleErrorToResponse(RoleOperationResult result)
+        {
+            return result.ErrorType switch
+            {
+                RoleOperationErrorType.NotFound => NotFoundError(result.ErrorMessage!),
+                RoleOperationErrorType.Conflict => ConflictError(result.ErrorMessage!),
+                RoleOperationErrorType.Unauthorized => UnauthorizedError(result.ErrorMessage!),
+                _ => Error(result.ErrorMessage!, 400)
+            };
         }
     }
 }
