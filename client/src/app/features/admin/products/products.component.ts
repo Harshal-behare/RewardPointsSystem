@@ -177,7 +177,7 @@ export class AdminProductsComponent implements OnInit {
     this.loadCategories();
     this.loadProducts();
     
-    // Check for search query from URL params (from inventory alerts)
+    // Check for search query from URL params (from dashboard inventory alerts)
     this.route.queryParams.pipe(
       takeUntilDestroyed(this.destroyRef)
     ).subscribe(params => {
