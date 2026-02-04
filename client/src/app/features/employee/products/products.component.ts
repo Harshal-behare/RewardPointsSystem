@@ -26,6 +26,9 @@ interface Product {
   styleUrl: './products.component.scss'
 })
 export class EmployeeProductsComponent implements OnInit {
+  // Expose Math for template use
+  Math = Math;
+  
   products = signal<Product[]>([]);
   filteredProducts = signal<Product[]>([]);
   selectedCategory = signal<string>('all');
@@ -306,6 +309,101 @@ export class EmployeeProductsComponent implements OnInit {
     this.redemptionQuantity.set(1);
     this.redemptionValidationErrors.set([]);
   }
+  /**
+ * Always keep quantity as integer and between 1 and 10
+ */
+onQuantityChange(value: any): void {
+  // If input is cleared or invalid → default to 1
+  if (value === '' || value === null || value === undefined) {
+    this.redemptionQuantity.set(1);
+    return;
+  }
+
+  let qty = Number(value);
+
+  // NaN / Infinity protection
+  if (!Number.isFinite(qty)) {
+    this.redemptionQuantity.set(1);
+    return;
+  }
+
+  // Force integer (no decimals)
+  qty = Math.trunc(qty);
+
+  // Clamp between 1 and 10
+  qty = Math.max(1, Math.min(10, qty));
+
+  this.redemptionQuantity.set(qty);
+}
+
+/**
+ * Prevent typing invalid characters and prevent typing > 10
+ */
+restrictQuantityKeys(event: KeyboardEvent): void {
+  const blocked = ['e', 'E', '+', '-', '.', ',', ' '];
+
+  // Allow navigation/edit keys
+  const allowedControl = [
+    'Backspace', 'Delete', 'Tab', 'Escape', 'Enter',
+    'ArrowLeft', 'ArrowRight', 'Home', 'End'
+  ];
+
+  if (allowedControl.includes(event.key)) return;
+
+  // Block invalid characters
+  if (blocked.includes(event.key)) {
+    event.preventDefault();
+    return;
+  }
+
+  // Allow only digits
+  if (!/^\d$/.test(event.key)) {
+    event.preventDefault();
+    return;
+  }
+
+  // Prevent typing a value > 10 (example: block 11)
+  const input = event.target as HTMLInputElement;
+  const selectionStart = input.selectionStart ?? input.value.length;
+  const selectionEnd = input.selectionEnd ?? input.value.length;
+
+  const nextValue =
+    input.value.slice(0, selectionStart) +
+    event.key +
+    input.value.slice(selectionEnd);
+
+  const nextNum = Number(nextValue);
+
+  if (Number.isFinite(nextNum) && nextNum > 10) {
+    event.preventDefault();
+  }
+}
+
+/**
+ * Prevent pasting values outside 1..10 or non-numeric
+ */
+restrictQuantityPaste(event: ClipboardEvent): void {
+  const pasted = event.clipboardData?.getData('text') ?? '';
+
+  // Only digits
+  if (!/^\d+$/.test(pasted)) {
+    event.preventDefault();
+    return;
+  }
+
+  const num = Number(pasted);
+  if (!Number.isFinite(num) || num < 1 || num > 10) {
+    event.preventDefault();
+  }
+}
+
+/**
+ * Prevent mouse wheel changing number input
+ */
+disableNumberWheel(event: WheelEvent): void {
+  (event.target as HTMLInputElement).blur();
+  event.preventDefault();
+}
 
   // Client-side validation for redemption
   validateRedemption(): boolean {
@@ -313,7 +411,10 @@ export class EmployeeProductsComponent implements OnInit {
     const product = this.selectedProduct();
     const quantity = this.redemptionQuantity();
     
-    // Quantity validation
+    // Quantity validation - must be integer
+    if (!Number.isInteger(quantity)) {
+      errors.push('Quantity must be a whole number');
+    }
     if (quantity < 1) {
       errors.push('Quantity must be at least 1');
     }
@@ -391,5 +492,13 @@ export class EmployeeProductsComponent implements OnInit {
 
   isLowStock(product: Product): boolean {
     return product.stock > 0 && product.stock < 10;
+  }
+
+  // Prevent decimal input in quantity field
+  preventDecimalInput(event: KeyboardEvent): void {
+    // Block decimal point and 'e' (scientific notation)
+    if (event.key === '.' || event.key === ',' || event.key === 'e' || event.key === 'E') {
+      event.preventDefault();
+    }
   }
 }

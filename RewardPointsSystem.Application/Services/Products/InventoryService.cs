@@ -155,7 +155,8 @@ namespace RewardPointsSystem.Application.Services.Products
             if (inventory == null)
                 return 0;
 
-            return inventory.QuantityAvailable - inventory.QuantityReserved;
+            // QuantityAvailable already accounts for reserved items (Reserve method subtracts from Available)
+            return inventory.QuantityAvailable;
         }
 
         public async Task AdjustStockAsync(Guid productId, int targetQuantity, Guid adjustedBy)

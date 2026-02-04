@@ -63,7 +63,8 @@ namespace RewardPointsSystem.Application.Services.Products
             var price = await _pricingService.GetCurrentPointsCostAsync(productId);
             var inStock = await _inventoryService.IsInStockAsync(productId);
             var inventory = await _unitOfWork.Inventory.SingleOrDefaultAsync(i => i.ProductId == productId);
-            var stockQuantity = inventory != null ? inventory.QuantityAvailable - inventory.QuantityReserved : 0;
+            // QuantityAvailable already accounts for reserved items (Reserve method subtracts from Available)
+            var stockQuantity = inventory != null ? inventory.QuantityAvailable : 0;
 
             return new ProductResponseDto
             {
@@ -101,7 +102,8 @@ namespace RewardPointsSystem.Application.Services.Products
                 var price = await _pricingService.GetCurrentPointsCostAsync(product.Id);
                 var inStock = await _inventoryService.IsInStockAsync(product.Id);
                 var inventoryItem = inventory.FirstOrDefault(i => i.ProductId == product.Id);
-                var stockQuantity = inventoryItem != null ? inventoryItem.QuantityAvailable - inventoryItem.QuantityReserved : 0;
+                // QuantityAvailable already accounts for reserved items (Reserve method subtracts from Available)
+                var stockQuantity = inventoryItem != null ? inventoryItem.QuantityAvailable : 0;
 
                 productDtos.Add(new ProductResponseDto
                 {
