@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
@@ -42,37 +41,27 @@ namespace RewardPointsSystem.Domain.Entities.Events
 
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Event name is required")]
-        [StringLength(200, MinimumLength = 3, ErrorMessage = "Event name must be between 3 and 200 characters")]
         public string Name { get; private set; }
 
-        [StringLength(2000, ErrorMessage = "Description cannot exceed 2000 characters")]
         public string? Description { get; private set; }
 
-        [Required(ErrorMessage = "Event date is required")]
         public DateTime EventDate { get; private set; }
 
         public EventStatus Status { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Total points pool cannot be negative")]
         public int TotalPointsPool { get; private set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "Max participants must be at least 1")]
         public int? MaxParticipants { get; private set; }
 
         public DateTime? RegistrationStartDate { get; private set; }
         public DateTime? RegistrationEndDate { get; private set; }
 
-        [StringLength(500, ErrorMessage = "Location cannot exceed 500 characters")]
         public string? Location { get; private set; }
 
-        [StringLength(1000, ErrorMessage = "Virtual link cannot exceed 1000 characters")]
         public string? VirtualLink { get; private set; }
 
-        [StringLength(1000, ErrorMessage = "Banner image URL cannot exceed 1000 characters")]
         public string? BannerImageUrl { get; private set; }
 
-        [Required(ErrorMessage = "Created by user ID is required")]
         public Guid CreatedBy { get; private set; }
 
         public DateTime CreatedAt { get; private set; }
@@ -82,13 +71,10 @@ namespace RewardPointsSystem.Domain.Entities.Events
         public DateTime? EventEndDate { get; private set; }
 
         // Prize Distribution for ranks (points to award for 1st, 2nd, 3rd place)
-        [Range(0, int.MaxValue, ErrorMessage = "First place points cannot be negative")]
         public int? FirstPlacePoints { get; private set; }
         
-        [Range(0, int.MaxValue, ErrorMessage = "Second place points cannot be negative")]
         public int? SecondPlacePoints { get; private set; }
         
-        [Range(0, int.MaxValue, ErrorMessage = "Third place points cannot be negative")]
         public int? ThirdPlacePoints { get; private set; }
 
         // Navigation Properties - Encapsulated collection

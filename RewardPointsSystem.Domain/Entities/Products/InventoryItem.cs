@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Domain.Entities.Products
@@ -11,16 +10,12 @@ namespace RewardPointsSystem.Domain.Entities.Products
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Product ID is required")]
         public Guid ProductId { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity available cannot be negative")]
         public int QuantityAvailable { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Quantity reserved cannot be negative")]
         public int QuantityReserved { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Reorder level cannot be negative")]
         public int ReorderLevel { get; private set; }
 
         public DateTime LastRestocked { get; private set; }

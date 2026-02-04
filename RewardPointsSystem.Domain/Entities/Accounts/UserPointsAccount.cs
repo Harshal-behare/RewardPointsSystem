@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 
@@ -13,19 +12,14 @@ namespace RewardPointsSystem.Domain.Entities.Accounts
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Current balance cannot be negative")]
         public int CurrentBalance { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Total earned cannot be negative")]
         public int TotalEarned { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Total redeemed cannot be negative")]
         public int TotalRedeemed { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Pending points cannot be negative")]
         public int PendingPoints { get; private set; }
 
         public DateTime CreatedAt { get; private set; }

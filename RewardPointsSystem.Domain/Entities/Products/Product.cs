@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Operations;
@@ -18,23 +17,17 @@ namespace RewardPointsSystem.Domain.Entities.Products
 
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Product name is required")]
-        [StringLength(200, MinimumLength = 2, ErrorMessage = "Product name must be between 2 and 200 characters")]
         public string Name { get; private set; }
 
-        [StringLength(1000, ErrorMessage = "Description cannot exceed 1000 characters")]
         public string? Description { get; private set; }
 
         public Guid? CategoryId { get; private set; }
 
-        [Url(ErrorMessage = "Invalid URL format")]
-        [StringLength(500, ErrorMessage = "Image URL cannot exceed 500 characters")]
         public string? ImageUrl { get; private set; }
 
         public bool IsActive { get; private set; }
         public DateTime CreatedAt { get; private set; }
 
-        [Required(ErrorMessage = "Created by user ID is required")]
         public Guid CreatedBy { get; private set; }
 
         // Navigation Properties - Encapsulated collections

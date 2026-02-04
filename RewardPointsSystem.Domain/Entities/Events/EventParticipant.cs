@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 
@@ -21,19 +20,14 @@ namespace RewardPointsSystem.Domain.Entities.Events
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "Event ID is required")]
         public Guid EventId { get; private set; }
 
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Range(0, int.MaxValue, ErrorMessage = "Points awarded cannot be negative")]
         public int? PointsAwarded { get; private set; }
 
-        [Range(1, int.MaxValue, ErrorMessage = "Event rank must be a positive number")]
         public int? EventRank { get; private set; }
 
-        [Required(ErrorMessage = "Attendance status is required")]
         public AttendanceStatus AttendanceStatus { get; private set; }
 
         public DateTime RegisteredAt { get; private set; }

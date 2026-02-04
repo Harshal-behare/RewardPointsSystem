@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 
 namespace RewardPointsSystem.Domain.Entities.Core
 {
@@ -9,15 +8,12 @@ namespace RewardPointsSystem.Domain.Entities.Core
     /// </summary>
     public class UserRole
     {
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Required(ErrorMessage = "Role ID is required")]
         public Guid RoleId { get; private set; }
 
         public DateTime AssignedAt { get; private set; }
 
-        [Required(ErrorMessage = "Assigned by user ID is required")]
         public Guid AssignedBy { get; private set; }
 
         public bool IsActive { get; private set; }

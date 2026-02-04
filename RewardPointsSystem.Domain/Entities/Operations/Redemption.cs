@@ -1,5 +1,4 @@
 using System;
-using System.ComponentModel.DataAnnotations;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Exceptions;
@@ -22,18 +21,12 @@ namespace RewardPointsSystem.Domain.Entities.Operations
     {
         public Guid Id { get; private set; }
 
-        [Required(ErrorMessage = "User ID is required")]
         public Guid UserId { get; private set; }
 
-        [Required(ErrorMessage = "Product ID is required")]
         public Guid ProductId { get; private set; }
 
-        [Required(ErrorMessage = "Points spent is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "Points spent must be a positive value")]
         public int PointsSpent { get; private set; }
 
-        [Required(ErrorMessage = "Quantity is required")]
-        [Range(1, int.MaxValue, ErrorMessage = "Quantity must be at least 1")]
         public int Quantity { get; private set; }
 
         public RedemptionStatus Status { get; private set; }
@@ -43,7 +36,6 @@ namespace RewardPointsSystem.Domain.Entities.Operations
         public DateTime? ProcessedAt { get; private set; }
         public Guid? ProcessedBy { get; private set; }
 
-        [StringLength(500, ErrorMessage = "Rejection reason cannot exceed 500 characters")]
         public string? RejectionReason { get; private set; }
 
        
