@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using RewardPointsSystem.Application.Common;
 using RewardPointsSystem.Application.DTOs.Common;
 
 namespace RewardPointsSystem.Api.Controllers
@@ -143,5 +144,63 @@ namespace RewardPointsSystem.Api.Controllers
 
             return userId;
         }
+
+        #region Result Pattern Mapping
+
+        /// <summary>
+        /// Maps a Result object to an appropriate HTTP response.
+        /// This is the standard way to convert Application layer results to HTTP responses.
+        /// </summary>
+        protected IActionResult ToActionResult(Result result, string? successMessage = null)
+        {
+            if (result.IsSuccess)
+                return Success<object?>(null, successMessage);
+
+            return MapErrorToResponse(result);
+        }
+
+        /// <summary>
+        /// Maps a Result&lt;T&gt; object to an appropriate HTTP response.
+        /// </summary>
+        protected IActionResult ToActionResult<T>(Result<T> result, string? successMessage = null)
+        {
+            if (result.IsSuccess)
+                return Success(result.Data!, successMessage);
+
+            return MapErrorToResponse(result);
+        }
+
+        /// <summary>
+        /// Maps a Result&lt;T&gt; object to a 201 Created response on success.
+        /// </summary>
+        protected IActionResult ToCreatedResult<T>(Result<T> result, string? successMessage = null)
+        {
+            if (result.IsSuccess)
+                return Created(result.Data!, successMessage ?? "Resource created successfully");
+
+            return MapErrorToResponse(result);
+        }
+
+        /// <summary>
+        /// Maps Result errors to appropriate HTTP status codes and responses.
+        /// </summary>
+        private IActionResult MapErrorToResponse(Result result)
+        {
+            return result.ErrorType switch
+            {
+                ErrorType.Validation when result.ValidationErrors.Any() => ValidationError(result.ValidationErrors),
+                ErrorType.Validation => Error(result.ErrorMessage ?? "Validation failed", StatusCodes.Status422UnprocessableEntity),
+                ErrorType.NotFound => NotFoundError(result.ErrorMessage ?? "Resource not found"),
+                ErrorType.Conflict => ConflictError(result.ErrorMessage ?? "Conflict occurred"),
+                ErrorType.Unauthorized => UnauthorizedError(result.ErrorMessage ?? "Unauthorized"),
+                ErrorType.Forbidden => ForbiddenError(result.ErrorMessage ?? "Access denied"),
+                ErrorType.BusinessRule => Error(result.ErrorMessage ?? "Business rule violation", StatusCodes.Status400BadRequest),
+                ErrorType.ExternalService => Error(result.ErrorMessage ?? "External service error", StatusCodes.Status502BadGateway),
+                ErrorType.Internal => Error(result.ErrorMessage ?? "Internal error", StatusCodes.Status500InternalServerError),
+                _ => Error(result.ErrorMessage ?? "An error occurred", StatusCodes.Status400BadRequest)
+            };
+        }
+
+        #endregion
     }
 }

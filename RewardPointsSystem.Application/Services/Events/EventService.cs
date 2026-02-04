@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
@@ -118,12 +117,12 @@ namespace RewardPointsSystem.Application.Services.Events
                     await _unitOfWork.Users.AddAsync(systemUser);
                     await _unitOfWork.SaveChangesAsync();
                 }
-                catch (DbUpdateException)
+                catch (Exception ex) when (ex is ConcurrencyException || ex.Message.Contains("duplicate") || ex.Message.Contains("unique constraint"))
                 {
                     // Handle race condition - another request may have created the user
                     systemUser = await _unitOfWork.Users.SingleOrDefaultAsync(u => u.Email == systemEmail);
                     if (systemUser == null)
-                        throw; // Re-throw if it's a different error
+                        throw new ConcurrencyException("Failed to create system user due to concurrency conflict", ex);
                 }
             }
             

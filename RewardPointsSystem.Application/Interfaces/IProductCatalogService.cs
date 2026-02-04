@@ -16,8 +16,12 @@ namespace RewardPointsSystem.Application.Interfaces
     {
         Task<Product> CreateProductAsync(CreateProductDto dto, Guid createdBy);
         Task<Product> UpdateProductAsync(Guid id, ProductUpdateDto updates);
+        Task<Product?> GetProductByIdAsync(Guid id);
         Task<IEnumerable<Product>> GetActiveProductsAsync();
         Task<IEnumerable<Product>> GetProductsByCategoryAsync(Guid? categoryId);
         Task DeactivateProductAsync(Guid id);
+        Task ActivateProductAsync(Guid id);
+        Task UpdateProductCategoryAsync(Guid productId, Guid categoryId);
+        Task SetProductActiveStatusAsync(Guid productId, bool isActive);
     }
 }

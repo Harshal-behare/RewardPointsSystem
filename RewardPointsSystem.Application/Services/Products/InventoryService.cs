@@ -146,5 +146,41 @@ namespace RewardPointsSystem.Application.Services.Products
 
             return lowStockItems;
         }
+
+        public async Task<int> GetAvailableStockAsync(Guid productId)
+        {
+            var allInventory = await _unitOfWork.Inventory.GetAllAsync();
+            var inventory = allInventory.FirstOrDefault(i => i.ProductId == productId);
+
+            if (inventory == null)
+                return 0;
+
+            return inventory.QuantityAvailable - inventory.QuantityReserved;
+        }
+
+        public async Task AdjustStockAsync(Guid productId, int targetQuantity, Guid adjustedBy)
+        {
+            var allInventory = await _unitOfWork.Inventory.GetAllAsync();
+            var inventory = allInventory.FirstOrDefault(i => i.ProductId == productId);
+
+            if (inventory == null)
+            {
+                // Create new inventory if it doesn't exist
+                await CreateInventoryAsync(productId, targetQuantity, 10);
+                return;
+            }
+
+            // The target is the displayed stock (QuantityAvailable - QuantityReserved)
+            // So the target QuantityAvailable should be: targetQuantity + QuantityReserved
+            var targetQuantityAvailable = targetQuantity + inventory.QuantityReserved;
+            var currentStock = inventory.QuantityAvailable;
+            var difference = targetQuantityAvailable - currentStock;
+
+            if (difference != 0)
+            {
+                inventory.Adjust(difference, adjustedBy);
+                await _unitOfWork.SaveChangesAsync();
+            }
+        }
     }
 }

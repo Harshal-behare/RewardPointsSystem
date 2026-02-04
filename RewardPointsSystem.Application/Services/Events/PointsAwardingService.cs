@@ -173,15 +173,16 @@ namespace RewardPointsSystem.Application.Services.Events
             if (winners == null || !winners.Any())
                 throw new ArgumentException("Winners list cannot be empty", nameof(winners));
 
+            // Validate the awards first
+            var validation = await ValidateWinnerAwardsAsync(eventId, winners);
+            if (!validation.IsValid)
+                throw new InvalidOperationException(validation.ErrorMessage);
+
             var eventEntity = await _unitOfWork.Events.GetByIdAsync(eventId);
             if (eventEntity == null)
                 throw new InvalidOperationException($"Event with ID {eventId} not found");
 
             var totalPointsRequired = winners.Sum(w => w.Points);
-            var totalAwarded = await GetTotalPointsAwardedAsync(eventId);
-
-            if (totalAwarded + totalPointsRequired > eventEntity.TotalPointsPool)
-                throw new InvalidOperationException($"Not enough points remaining in pool");
 
             // Validate admin budget upfront for total points
             if (awardingAdminId.HasValue)
@@ -197,6 +198,50 @@ namespace RewardPointsSystem.Application.Services.Events
             {
                 await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.EventRank, awardingAdminId);
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<AwardValidationResult> ValidateWinnerAwardsAsync(Guid eventId, List<WinnerDto> winners)
+        {
+            if (winners == null || !winners.Any())
+                return AwardValidationResult.Failed("Awards list cannot be empty");
+
+            // Validate ranks are unique
+            var ranks = winners.Select(a => a.EventRank).ToList();
+            if (ranks.Distinct().Count() != ranks.Count)
+                return AwardValidationResult.Failed("Each winner must have a unique rank");
+
+            // Validate ranks are within 1-3
+            if (ranks.Any(r => r < 1 || r > 3))
+                return AwardValidationResult.Failed("Ranks must be between 1 and 3");
+
+            var eventEntity = await _unitOfWork.Events.GetByIdAsync(eventId);
+            if (eventEntity == null)
+                return AwardValidationResult.Failed($"Event with ID {eventId} not found");
+
+            // Validate points match event configuration if set
+            if (eventEntity.FirstPlacePoints.HasValue)
+            {
+                var firstPlace = winners.FirstOrDefault(a => a.EventRank == 1);
+                var secondPlace = winners.FirstOrDefault(a => a.EventRank == 2);
+                var thirdPlace = winners.FirstOrDefault(a => a.EventRank == 3);
+
+                if (firstPlace != null && firstPlace.Points != eventEntity.FirstPlacePoints.Value)
+                    return AwardValidationResult.Failed($"First place points must be {eventEntity.FirstPlacePoints.Value}");
+                if (secondPlace != null && eventEntity.SecondPlacePoints.HasValue && secondPlace.Points != eventEntity.SecondPlacePoints.Value)
+                    return AwardValidationResult.Failed($"Second place points must be {eventEntity.SecondPlacePoints.Value}");
+                if (thirdPlace != null && eventEntity.ThirdPlacePoints.HasValue && thirdPlace.Points != eventEntity.ThirdPlacePoints.Value)
+                    return AwardValidationResult.Failed($"Third place points must be {eventEntity.ThirdPlacePoints.Value}");
+            }
+
+            // Validate total points don't exceed pool
+            var totalPointsRequired = winners.Sum(w => w.Points);
+            var totalAwarded = await GetTotalPointsAwardedAsync(eventId);
+
+            if (totalAwarded + totalPointsRequired > eventEntity.TotalPointsPool)
+                return AwardValidationResult.Failed($"Not enough points remaining in pool");
+
+            return AwardValidationResult.Success();
         }
 
         public async Task<bool> HasUserBeenAwardedAsync(Guid eventId, Guid userId)

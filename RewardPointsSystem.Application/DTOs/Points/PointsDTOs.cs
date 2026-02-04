@@ -58,4 +58,16 @@ namespace RewardPointsSystem.Application.DTOs.Points
         public int Points { get; set; }
         public string Reason { get; set; }
     }
+
+    /// <summary>
+    /// DTO for points system summary statistics
+    /// </summary>
+    public class PointsSummaryDto
+    {
+        public int TotalUsers { get; set; }
+        public long TotalPointsDistributed { get; set; }
+        public long TotalPointsRedeemed { get; set; }
+        public long TotalPointsInCirculation { get; set; }
+        public double AverageBalance { get; set; }
+    }
 }

@@ -7,34 +7,20 @@ using RewardPointsSystem.Application.Interfaces;
 namespace RewardPointsSystem.Api.Controllers
 {
     /// <summary>
-    /// Manages authentication and authorization operations
+    /// Manages authentication and authorization operations.
+    /// Clean Architecture compliant - delegates all business logic to IAuthService.
     /// </summary>
     public class AuthController : BaseApiController
     {
-        private readonly IUserService _userService;
-        private readonly IRoleService _roleService;
-        private readonly IUserRoleService _userRoleService;
-        private readonly ITokenService _tokenService;
-        private readonly IPasswordHasher _passwordHasher;
+        private readonly IAuthService _authService;
         private readonly ILogger<AuthController> _logger;
-        private readonly IConfiguration _configuration;
 
         public AuthController(
-            IUserService userService,
-            IRoleService roleService,
-            IUserRoleService userRoleService,
-            ITokenService tokenService,
-            IPasswordHasher passwordHasher,
-            ILogger<AuthController> logger,
-            IConfiguration configuration)
+            IAuthService authService,
+            ILogger<AuthController> logger)
         {
-            _userService = userService;
-            _roleService = roleService;
-            _userRoleService = userRoleService;
-            _tokenService = tokenService;
-            _passwordHasher = passwordHasher;
+            _authService = authService;
             _logger = logger;
-            _configuration = configuration;
         }
 
         /// <summary>
@@ -55,63 +41,15 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Check if passwords match
-                if (dto.Password != dto.ConfirmPassword)
-                    return Error("Passwords do not match", 400);
+                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var result = await _authService.RegisterAsync(dto, clientIp);
 
-                // Check if user already exists
-                var existingUser = await _userService.GetUserByEmailAsync(dto.Email);
-                if (existingUser != null)
-                    return ConflictError($"User with email {dto.Email} already exists");
-
-                // Create user
-                var user = await _userService.CreateUserAsync(dto.Email, dto.FirstName, dto.LastName);
-
-                // Hash and set password
-                var passwordHash = _passwordHasher.HashPassword(dto.Password);
-                user.SetPasswordHash(passwordHash);
-                var updateDto = new Application.Interfaces.UserUpdateDto
+                if (!result.Success)
                 {
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName
-                };
-                await _userService.UpdateUserAsync(user.Id, updateDto);
-
-                // Assign default "Employee" role
-                var employeeRole = await _roleService.GetRoleByNameAsync("Employee");
-                if (employeeRole != null)
-                {
-                    await _userRoleService.AssignRoleAsync(user.Id, employeeRole.Id, user.Id);
+                    return MapAuthErrorToResponse(result.ErrorType, result.ErrorMessage!);
                 }
 
-                // Get user roles for token generation
-                var roles = await _userRoleService.GetUserRolesAsync(user.Id);
-
-                // Generate JWT tokens
-                var accessToken = _tokenService.GenerateAccessToken(user, roles);
-                var refreshToken = _tokenService.GenerateRefreshToken();
-
-                // Store refresh token
-                var jwtSettings = _configuration.GetSection("JwtSettings").Get<Application.Configuration.JwtSettings>();
-                var refreshTokenExpiry = DateTime.UtcNow.AddDays(jwtSettings.RefreshTokenExpirationDays);
-                var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-                await _tokenService.StoreRefreshTokenAsync(user.Id, refreshToken, refreshTokenExpiry, clientIp);
-
-                var response = new LoginResponseDto
-                {
-                    UserId = user.Id,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                    ExpiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes),
-                    Roles = roles.Select(r => r.Name).ToArray()
-                };
-
-                _logger.LogInformation("User {Email} registered successfully", user.Email);
-                return Created(response, "User registered successfully");
+                return Created(result.Data!, "User registered successfully");
             }
             catch (Exception ex)
             {
@@ -136,46 +74,15 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Get user by email
-                var user = await _userService.GetUserByEmailAsync(dto.Email);
-                if (user == null)
-                    return Error("Invalid email or password", 400);
-
-                // Check if user is active
-                if (!user.IsActive)
-                    return Error("User account is inactive", 400);
-
-                // Verify password
-                if (!user.HasPassword() || !_passwordHasher.VerifyPassword(dto.Password, user.PasswordHash!))
-                    return Error("Invalid email or password", 400);
-
-                // Get user roles for token generation
-                var roles = await _userRoleService.GetUserRolesAsync(user.Id);
-
-                // Generate JWT tokens
-                var accessToken = _tokenService.GenerateAccessToken(user, roles);
-                var refreshToken = _tokenService.GenerateRefreshToken();
-
-                // Store refresh token
-                var jwtSettings = _configuration.GetSection("JwtSettings").Get<Application.Configuration.JwtSettings>();
-                var refreshTokenExpiry = DateTime.UtcNow.AddDays(jwtSettings.RefreshTokenExpirationDays);
                 var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-                await _tokenService.StoreRefreshTokenAsync(user.Id, refreshToken, refreshTokenExpiry, clientIp);
+                var result = await _authService.LoginAsync(dto, clientIp);
 
-                var response = new LoginResponseDto
+                if (!result.Success)
                 {
-                    UserId = user.Id,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    AccessToken = accessToken,
-                    RefreshToken = refreshToken,
-                    ExpiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes),
-                    Roles = roles.Select(r => r.Name).ToArray()
-                };
+                    return MapAuthErrorToResponse(result.ErrorType, result.ErrorMessage!);
+                }
 
-                _logger.LogInformation("User {Email} logged in successfully", user.Email);
-                return Success(response, "Login successful");
+                return Success(result.Data!, "Login successful");
             }
             catch (Exception ex)
             {
@@ -198,41 +105,15 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Validate refresh token
-                var userId = await _tokenService.ValidateRefreshTokenAsync(dto.RefreshToken);
-                if (userId == null)
-                    return UnauthorizedError("Invalid or expired refresh token");
-
-                // Get user
-                var user = await _userService.GetUserByIdAsync(userId.Value);
-                if (user == null || !user.IsActive)
-                    return UnauthorizedError("User not found or inactive");
-
-                // Get user roles
-                var roles = await _userRoleService.GetUserRolesAsync(user.Id);
-
-                // Generate new tokens
-                var newAccessToken = _tokenService.GenerateAccessToken(user, roles);
-                var newRefreshToken = _tokenService.GenerateRefreshToken();
-
-                // Store new refresh token
-                var jwtSettings = _configuration.GetSection("JwtSettings").Get<Application.Configuration.JwtSettings>();
-                var refreshTokenExpiry = DateTime.UtcNow.AddDays(jwtSettings.RefreshTokenExpirationDays);
                 var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-                await _tokenService.StoreRefreshTokenAsync(user.Id, newRefreshToken, refreshTokenExpiry, clientIp);
+                var result = await _authService.RefreshTokenAsync(dto.RefreshToken, clientIp);
 
-                // Revoke old refresh token
-                await _tokenService.RevokeRefreshTokenAsync(dto.RefreshToken, clientIp, "Replaced by new token", newRefreshToken);
-
-                var response = new TokenResponseDto
+                if (!result.Success)
                 {
-                    AccessToken = newAccessToken,
-                    RefreshToken = newRefreshToken,
-                    ExpiresAt = DateTime.UtcNow.AddMinutes(jwtSettings.AccessTokenExpirationMinutes)
-                };
+                    return MapAuthErrorToResponse(result.ErrorType, result.ErrorMessage!);
+                }
 
-                _logger.LogInformation("Token refreshed for user {UserId}", user.Id);
-                return Success(response, "Token refreshed successfully");
+                return Success(result.Data!, "Token refreshed successfully");
             }
             catch (Exception ex)
             {
@@ -252,17 +133,19 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Get user ID from claims
-                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                    return UnauthorizedError("Invalid user");
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return UnauthorizedError("User not authenticated");
 
-                // Revoke all refresh tokens for the user
                 var clientIp = HttpContext.Connection.RemoteIpAddress?.ToString();
-                var revokedCount = await _tokenService.RevokeAllUserRefreshTokensAsync(userId, clientIp, "User logout");
 
-                _logger.LogInformation("User {UserId} logged out, {Count} tokens revoked", userId, revokedCount);
+                await _authService.LogoutAsync(userId.Value, clientIp);
+
                 return Success<object>(null, "Logout successful");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return UnauthorizedError("Invalid user");
             }
             catch (Exception ex)
             {
@@ -284,32 +167,35 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Get user ID from JWT claims
-                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                    return UnauthorizedError("Invalid user");
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return UnauthorizedError("User not authenticated");
 
-                // Fetch user from database
-                var user = await _userService.GetUserByIdAsync(userId);
-                if (user == null)
-                    return NotFoundError("User not found");
+                var result = await _authService.GetCurrentUserAsync(userId.Value);
 
-                // Get user roles
-                var roles = await _userRoleService.GetUserRolesAsync(user.Id);
+                if (!result.Success)
+                {
+                    return MapAuthErrorToResponse(result.ErrorType, result.ErrorMessage!);
+                }
 
+                // Map UserInfoDto to LoginResponseDto for backward compatibility
                 var response = new LoginResponseDto
                 {
-                    UserId = user.Id,
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName,
-                    AccessToken = string.Empty, // Not returning new token
-                    RefreshToken = string.Empty, // Not returning new token
+                    UserId = result.Data!.UserId,
+                    Email = result.Data.Email,
+                    FirstName = result.Data.FirstName,
+                    LastName = result.Data.LastName,
+                    AccessToken = string.Empty,
+                    RefreshToken = string.Empty,
                     ExpiresAt = DateTime.UtcNow,
-                    Roles = roles.Select(r => r.Name).ToArray()
+                    Roles = result.Data.Roles
                 };
 
                 return Success(response);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return UnauthorizedError("Invalid user");
             }
             catch (Exception ex)
             {
@@ -334,48 +220,47 @@ namespace RewardPointsSystem.Api.Controllers
         {
             try
             {
-                // Validate input
-                if (string.IsNullOrEmpty(dto.CurrentPassword) || string.IsNullOrEmpty(dto.NewPassword))
-                    return Error("Current password and new password are required", 400);
+                var userId = GetCurrentUserId();
+                if (!userId.HasValue)
+                    return UnauthorizedError("User not authenticated");
 
-                if (dto.NewPassword.Length < 8)
-                    return Error("New password must be at least 8 characters long", 400);
+                var result = await _authService.ChangePasswordAsync(userId.Value, dto);
 
-                // Get user ID from JWT claims
-                var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-                    return UnauthorizedError("Invalid user");
-
-                // Fetch user from database
-                var user = await _userService.GetUserByIdAsync(userId);
-                if (user == null)
-                    return NotFoundError("User not found");
-
-                // Verify current password
-                if (!user.HasPassword() || !_passwordHasher.VerifyPassword(dto.CurrentPassword, user.PasswordHash!))
-                    return Error("Current password is incorrect", 400);
-
-                // Hash and set new password
-                var newPasswordHash = _passwordHasher.HashPassword(dto.NewPassword);
-                user.SetPasswordHash(newPasswordHash);
-
-                // Update user to save new password hash
-                var updateDto = new Application.Interfaces.UserUpdateDto
+                if (!result.Success)
                 {
-                    Email = user.Email,
-                    FirstName = user.FirstName,
-                    LastName = user.LastName
-                };
-                await _userService.UpdateUserAsync(user.Id, updateDto);
+                    return MapAuthErrorToResponse(result.ErrorType, result.ErrorMessage!);
+                }
 
-                _logger.LogInformation("User {UserId} changed their password", userId);
                 return Success<object>(null, "Password changed successfully");
+            }
+            catch (UnauthorizedAccessException)
+            {
+                return UnauthorizedError("Invalid user");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password");
-                return Error("Failed to change password");
+                return Error("Failed to change password");;
             }
         }
+
+        #region Private Helper Methods
+
+        /// <summary>
+        /// Maps AuthErrorType to appropriate HTTP response.
+        /// </summary>
+        private IActionResult MapAuthErrorToResponse(AuthErrorType errorType, string message)
+        {
+            return errorType switch
+            {
+                AuthErrorType.Unauthorized => UnauthorizedError(message),
+                AuthErrorType.NotFound => NotFoundError(message),
+                AuthErrorType.Conflict => ConflictError(message),
+                AuthErrorType.ValidationError => Error(message, 422),
+                _ => Error(message, 400)
+            };
+        }
+
+        #endregion
     }
 }

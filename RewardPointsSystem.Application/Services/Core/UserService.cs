@@ -85,6 +85,20 @@ namespace RewardPointsSystem.Application.Services.Core
             return user;
         }
 
+        public async Task ActivateUserAsync(Guid userId, Guid activatedBy)
+        {
+            var user = await _unitOfWork.Users.GetByIdAsync(userId);
+            if (user == null)
+                throw new UserNotFoundException(userId);
+
+            if (user.IsActive)
+                return; // Already active, nothing to do
+
+            user.Activate(activatedBy);
+            await _unitOfWork.Users.UpdateAsync(user);
+            await _unitOfWork.SaveChangesAsync();
+        }
+
         public async Task DeactivateUserAsync(Guid id)
         {
             var user = await _unitOfWork.Users.GetByIdAsync(id);
