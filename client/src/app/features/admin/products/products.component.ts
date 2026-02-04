@@ -1,4 +1,4 @@
-import { Component, OnInit, signal, DestroyRef, inject } from '@angular/core';
+import { Component, OnInit, signal, computed, DestroyRef, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, NavigationEnd, ActivatedRoute } from '@angular/router';
 import { filter } from 'rxjs';
@@ -8,6 +8,7 @@ import { ButtonComponent } from '../../../shared/components/button/button.compon
 import { BadgeComponent } from '../../../shared/components/badge/badge.component';
 import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { ProductService, ProductDto, CreateProductDto, UpdateProductDto, CategoryDto, CreateCategoryDto, UpdateCategoryDto } from '../../../core/services/product.service';
+import { RedemptionService } from '../../../core/services/redemption.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 
@@ -119,6 +120,24 @@ export class AdminProductsComponent implements OnInit {
   selectedStatus = signal<string>('all'); // Status filter: 'all', 'Active', 'Inactive'
   categories = signal<string[]>(['all']);
   
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(10);
+  
+  // Computed paginated products
+  paginatedProducts = computed(() => {
+    const filtered = this.filteredProducts();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredProducts().length / this.pageSize()));
+  
+  // Sorting
+  sortBy = signal<'none' | 'stock' | 'points'>('none');
+  sortOrder = signal<'asc' | 'desc'>('asc');
+  
   // Categories from database
   dbCategories = signal<CategoryDto[]>([]);
 
@@ -133,6 +152,7 @@ export class AdminProductsComponent implements OnInit {
   showModal = signal(false);
   modalMode = signal<'create' | 'edit'>('create');
   selectedProduct: Partial<DisplayProduct> = {};
+  originalProductStatus: 'Active' | 'Inactive' | null = null; // Track original status for deactivation check
 
   viewMode = signal<'grid' | 'table'>('grid');
 
@@ -140,6 +160,7 @@ export class AdminProductsComponent implements OnInit {
     private router: Router,
     private route: ActivatedRoute,
     private productService: ProductService,
+    private redemptionService: RedemptionService,
     private toast: ToastService,
     private confirmDialog: ConfirmDialogService
   ) {
@@ -261,7 +282,25 @@ export class AdminProductsComponent implements OnInit {
       );
     }
 
+    // Apply sorting
+    const sortBy = this.sortBy();
+    const sortOrder = this.sortOrder();
+    
+    if (sortBy !== 'none') {
+      filtered.sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'stock') {
+          comparison = a.stock - b.stock;
+        } else if (sortBy === 'points') {
+          comparison = a.pointsPrice - b.pointsPrice;
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+    }
+
     this.filteredProducts.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
   }
 
   onCategoryChange(category: string): void {
@@ -276,6 +315,67 @@ export class AdminProductsComponent implements OnInit {
 
   onSearchChange(): void {
     this.applyFilters();
+  }
+
+  onSortChange(sortBy: 'none' | 'stock' | 'points'): void {
+    if (this.sortBy() === sortBy) {
+      // Toggle order if same sort field clicked
+      this.sortOrder.set(this.sortOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortBy.set(sortBy);
+      this.sortOrder.set('asc');
+    }
+    this.applyFilters();
+  }
+
+  clearSort(): void {
+    this.sortBy.set('none');
+    this.sortOrder.set('asc');
+    this.currentPage.set(1);
+    this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   getStockStatus(stock: number): { label: string; variant: 'success' | 'warning' | 'danger' } {
@@ -326,6 +426,7 @@ export class AdminProductsComponent implements OnInit {
       imageUrl: product.imageUrl,
       status: product.status
     };
+    this.originalProductStatus = product.status; // Store original status for deactivation check
     this.modalValidationErrors = [];
     this.validateProductModalRealtime();
     this.showModal.set(true);
@@ -334,9 +435,10 @@ export class AdminProductsComponent implements OnInit {
   closeModal(): void {
     this.showModal.set(false);
     this.selectedProduct = {};
+    this.originalProductStatus = null;
   }
 
-  saveProduct(): void {
+  async saveProduct(): Promise<void> {
     // Client-side validation
     if (!this.validateProductModal()) {
       return;
@@ -368,6 +470,17 @@ export class AdminProductsComponent implements OnInit {
         }
       });
     } else {
+      // Check if trying to deactivate (status changing from Active to Inactive)
+      const isDeactivating = this.originalProductStatus === 'Active' && this.selectedProduct.status === 'Inactive';
+      
+      if (isDeactivating) {
+        // Check for pending redemptions before deactivating
+        const canDeactivate = await this.checkPendingRedemptionsForDeactivation();
+        if (!canDeactivate) {
+          return;
+        }
+      }
+
       const updateData: UpdateProductDto = {
         name: this.selectedProduct.name,
         description: this.selectedProduct.description,
@@ -394,6 +507,35 @@ export class AdminProductsComponent implements OnInit {
         }
       });
     }
+  }
+
+  /**
+   * Check if product has pending redemptions before deactivation
+   * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
+   */
+  private async checkPendingRedemptionsForDeactivation(): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.redemptionService.getProductPendingRedemptionsCount(this.selectedProduct.id!).subscribe({
+        next: (response) => {
+          if (response.success && response.data && response.data.count > 0) {
+            const count = response.data.count;
+            this.toast.error(
+              `Cannot deactivate product. "${this.selectedProduct.name}" has ${count} pending redemption request${count > 1 ? 's' : ''}. ` +
+              `Please approve or reject all pending redemptions before deactivating this product.`
+            );
+            resolve(false);
+          } else {
+            resolve(true);
+          }
+        },
+        error: (error) => {
+          console.error('Error checking pending redemptions:', error);
+          // If the API endpoint doesn't exist yet, allow deactivation to proceed
+          // The backend should also validate this
+          resolve(true);
+        }
+      });
+    });
   }
 
   toggleViewMode(): void {

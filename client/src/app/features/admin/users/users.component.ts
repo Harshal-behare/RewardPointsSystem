@@ -11,6 +11,7 @@ import { IconComponent } from '../../../shared/components/icon/icon.component';
 import { UserService, UserDto, CreateUserDto, UpdateUserDto } from '../../../core/services/user.service';
 import { AdminService } from '../../../core/services/admin.service';
 import { RedemptionService } from '../../../core/services/redemption.service';
+import { EventService } from '../../../core/services/event.service';
 import { ToastService } from '../../../core/services/toast.service';
 import { ConfirmDialogService } from '../../../core/services/confirm-dialog.service';
 import { AuthService } from '../../../auth/auth.service';
@@ -122,6 +123,16 @@ export class AdminUsersComponent implements OnInit {
     return result;
   });
   
+  // Computed paginated users
+  paginatedUsers = computed(() => {
+    const filtered = this.filteredUsers();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredUsers().length / this.pageSize()));
+  
   // Admin protection
   adminCount = signal(0);
   currentUserId = signal<string>('');
@@ -147,6 +158,7 @@ export class AdminUsersComponent implements OnInit {
     private userService: UserService,
     private adminService: AdminService,
     private redemptionService: RedemptionService,
+    private eventService: EventService,
     private authService: AuthService,
     private toast: ToastService,
     private apiService: ApiService,
@@ -278,20 +290,72 @@ export class AdminUsersComponent implements OnInit {
     this.roleFilter.set('all');
     this.sortField.set('name');
     this.sortDirection.set('asc');
+    this.currentPage.set(1);
+  }
+
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   /**
    * Check if admin actions (deactivate/delete) should be disabled for a user
    * This protects the last admin from being removed from the system
+   * Also prevents self-deactivation
    */
   isAdminActionDisabled(user: DisplayUser): boolean {
-    // Only protect admins
+    // Can't deactivate yourself
+    if (user.id === this.currentUserId()) {
+      return true;
+    }
+    
+    // Only protect admins from last-admin rule
     if (user.role !== 'Admin') {
       return false;
     }
     
     // If there's only one admin, disable actions for that admin
     return this.adminCount() <= 1;
+  }
+  
+  /**
+   * Check if the user is the currently logged-in user
+   */
+  isSelf(user: DisplayUser): boolean {
+    return user.id === this.currentUserId();
   }
 
   /**
@@ -329,9 +393,16 @@ export class AdminUsersComponent implements OnInit {
    * Get tooltip message for disabled admin actions
    */
   getAdminActionTooltip(user: DisplayUser): string {
-    if (this.isAdminActionDisabled(user)) {
-      return 'Cannot deactivate or delete the last admin in the system';
+    // Can't deactivate yourself
+    if (user.id === this.currentUserId()) {
+      return 'You cannot deactivate your own account';
     }
+    
+    // Last admin protection
+    if (user.role === 'Admin' && this.adminCount() <= 1) {
+      return 'Cannot deactivate the last admin in the system';
+    }
+    
     return user.status === 'Active' ? 'Deactivate' : 'Activate';
   }
 
@@ -645,15 +716,27 @@ export class AdminUsersComponent implements OnInit {
   async toggleUserStatus(user: DisplayUser): Promise<void> {
     // Only check validations when deactivating
     if (user.status === 'Active') {
+      // Check if user is trying to deactivate themselves
+      if (user.id === this.currentUserId()) {
+        this.toast.error('You cannot deactivate your own account. Please ask another admin to do this.');
+        return;
+      }
+      
       // Check if this is the last admin
-      if (this.isAdminActionDisabled(user)) {
+      if (user.role === 'Admin' && this.adminCount() <= 1) {
         this.toast.error('Cannot deactivate the last admin in the system. At least one admin must remain active.');
         return;
       }
 
       // Check for pending redemptions before deactivating
-      const canDeactivate = await this.checkPendingRedemptionsForDeactivation(user);
-      if (!canDeactivate) {
+      const canDeactivatePendingRedemptions = await this.checkPendingRedemptionsForDeactivation(user);
+      if (!canDeactivatePendingRedemptions) {
+        return;
+      }
+
+      // Check for active event registrations before deactivating
+      const canDeactivateActiveEvents = await this.checkActiveEventRegistrationsForDeactivation(user);
+      if (!canDeactivateActiveEvents) {
         return;
       }
     }
@@ -719,6 +802,52 @@ export class AdminUsersComponent implements OnInit {
         },
         error: (error) => {
           console.error('Error checking pending redemptions:', error);
+          // If the API endpoint doesn't exist yet, allow deactivation to proceed
+          // The backend should also validate this
+          resolve(true);
+        }
+      });
+    });
+  }
+
+  /**
+   * Check if user is registered for active or upcoming events before allowing deactivation
+   * Also checks for completed events with pending point awards
+   * @returns Promise<boolean> - true if can proceed with deactivation, false if blocked
+   */
+  private async checkActiveEventRegistrationsForDeactivation(user: DisplayUser): Promise<boolean> {
+    return new Promise((resolve) => {
+      this.eventService.getUserActiveEventRegistrationsCount(user.id).subscribe({
+        next: (response) => {
+          if (response.success && response.data) {
+            const activeCount = response.data.count;
+            const pendingAwardsCount = response.data.pendingAwardsCount || 0;
+            
+            if (activeCount > 0) {
+              this.toast.error(
+                `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${activeCount} upcoming or active event${activeCount > 1 ? 's' : ''}. ` +
+                `Please remove the user from these events or wait until they are completed before deactivating.`
+              );
+              resolve(false);
+              return;
+            }
+            
+            if (pendingAwardsCount > 0) {
+              this.toast.error(
+                `Cannot deactivate user. ${user.firstName} ${user.lastName} is registered for ${pendingAwardsCount} completed event${pendingAwardsCount > 1 ? 's' : ''} with pending point awards. ` +
+                `Please award points or remove the user from these events before deactivating.`
+              );
+              resolve(false);
+              return;
+            }
+            
+            resolve(true);
+          } else {
+            resolve(true);
+          }
+        },
+        error: (error) => {
+          console.error('Error checking active event registrations:', error);
           // If the API endpoint doesn't exist yet, allow deactivation to proceed
           // The backend should also validate this
           resolve(true);

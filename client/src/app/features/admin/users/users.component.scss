@@ -287,6 +287,18 @@
   strong {
     font-weight: 600;
   }
+  
+  .user-name-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    
+    .you-badge {
+      font-size: 11px;
+      color: #27AE60;
+      font-weight: 600;
+    }
+  }
 }
 
 .user-avatar {
@@ -301,6 +313,20 @@
   font-weight: 600;
   font-size: 13px;
   flex-shrink: 0;
+  
+  &.current-user-avatar {
+    background-color: #2980b9;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #2980b9;
+  }
+}
+
+// Current user row highlight
+.current-user-row {
+  background-color: #f0f9ff !important;
+  
+  &:hover {
+    background-color: #e1f3ff !important;
+  }
 }
 
 .points-value {
@@ -596,4 +622,78 @@ app-button.disabled-btn,
 .modal-footer app-button[disabled] {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+// Pagination styles
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px;
+  border-top: 1px solid #E1E8ED;
+  margin-top: 16px;
+
+  .page-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #E1E8ED;
+    border-radius: 6px;
+    color: #2c3e50;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: #F4FBF7;
+      border-color: #27AE60;
+      color: #27AE60;
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+  }
+
+  .page-numbers {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+
+    .page-num {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border: 1px solid #E1E8ED;
+      border-radius: 6px;
+      color: #2c3e50;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(.active) {
+        background: #F4FBF7;
+        border-color: #27AE60;
+      }
+
+      &.active {
+        background: #27AE60;
+        border-color: #27AE60;
+        color: white;
+      }
+    }
+
+    .ellipsis {
+      width: 36px;
+      text-align: center;
+      color: #7A7A7A;
+    }
+  }
 }

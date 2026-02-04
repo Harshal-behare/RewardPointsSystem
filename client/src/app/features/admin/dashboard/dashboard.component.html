@@ -20,13 +20,138 @@
     }
   </section>
 
+  <!-- Monthly Budget Section -->
+  <section class="budget-section">
+    <app-card title="Monthly Points Budget" subtitle="Track your points awarding for this month">
+      @if (adminBudget()) {
+        <div class="budget-overview" [class]="budgetUsageClass()">
+          <div class="budget-stats">
+            <div class="budget-stat-item">
+              <span class="stat-label">Budget Limit</span>
+              <span class="stat-value">{{ formatNumber(adminBudget()!.budgetLimit) }} pts</span>
+            </div>
+            <div class="budget-stat-item">
+              <span class="stat-label">Points Awarded</span>
+              <span class="stat-value">{{ formatNumber(adminBudget()!.pointsAwarded) }} pts</span>
+            </div>
+            <div class="budget-stat-item">
+              <span class="stat-label">Remaining</span>
+              <span class="stat-value" [class.negative]="adminBudget()!.remainingBudget < 0">
+                {{ formatNumber(adminBudget()!.remainingBudget) }} pts
+              </span>
+            </div>
+          </div>
+
+          <div class="budget-progress-container">
+            <div class="budget-progress-header">
+              <span class="progress-label">{{ adminBudget()!.monthYearDisplay }}</span>
+              <span class="progress-percentage" [class.over-budget]="adminBudget()!.isOverBudget" [class.warning]="adminBudget()!.isWarningZone">
+                {{ adminBudget()!.usagePercentage | number:'1.0-1' }}% used
+              </span>
+            </div>
+            <div class="budget-progress-bar">
+              <div 
+                class="budget-progress-fill" 
+                [class.over-budget]="adminBudget()!.isOverBudget"
+                [class.warning]="adminBudget()!.isWarningZone"
+                [style.width.%]="adminBudget()!.usagePercentage > 100 ? 100 : adminBudget()!.usagePercentage">
+              </div>
+              @if (adminBudget()!.warningThreshold < 100) {
+                <div class="warning-threshold-marker" [style.left.%]="adminBudget()!.warningThreshold"></div>
+              }
+            </div>
+          </div>
+
+          <div class="budget-info">
+            @if (adminBudget()!.isOverBudget) {
+              <div class="budget-alert danger">
+                <app-icon name="warning" [size]="16"></app-icon>
+                <span>You have exceeded your monthly budget by {{ formatNumber(adminBudget()!.pointsAwarded - adminBudget()!.budgetLimit) }} points</span>
+              </div>
+            } @else if (adminBudget()!.isWarningZone) {
+              <div class="budget-alert warning">
+                <app-icon name="warning" [size]="16"></app-icon>
+                <span>You've used {{ adminBudget()!.usagePercentage | number:'1.0-1' }}% of your budget. {{ formatNumber(adminBudget()!.remainingBudget) }} points remaining.</span>
+              </div>
+            }
+            <div class="budget-type">
+              <app-badge [variant]="adminBudget()!.isHardLimit ? 'danger' : 'secondary'" size="sm">
+                {{ adminBudget()!.isHardLimit ? 'Hard Limit' : 'Soft Limit' }}
+              </app-badge>
+              <span class="type-description">
+                {{ adminBudget()!.isHardLimit ? 'Points awarding blocked when exceeded' : 'Warning only when exceeded' }}
+              </span>
+            </div>
+          </div>
+
+          <!-- Pending Event Points Section -->
+          @if (adminBudget()!.pendingEventCount > 0) {
+            <div class="pending-events-section">
+              <div class="pending-events-header">
+                <app-icon name="calendar" [size]="16"></app-icon>
+                <span class="pending-title">Pending Event Prizes</span>
+                <app-badge variant="info" size="sm">{{ adminBudget()!.pendingEventCount }} events</app-badge>
+              </div>
+              <div class="pending-events-summary">
+                <div class="pending-stat">
+                  <span class="pending-label">Reserved for Events:</span>
+                  <span class="pending-value warning">{{ formatNumber(adminBudget()!.pendingEventPoints) }} pts</span>
+                </div>
+                <div class="pending-stat effective">
+                  <span class="pending-label">Effective Remaining:</span>
+                  <span class="pending-value" [class.negative]="adminBudget()!.effectiveRemainingBudget <= 0">
+                    {{ formatNumber(adminBudget()!.effectiveRemainingBudget) }} pts
+                  </span>
+                </div>
+              </div>
+              <div class="pending-events-list">
+                @for (event of adminBudget()!.pendingEvents; track event.eventId) {
+                  <div class="pending-event-item">
+                    <span class="event-name">{{ event.eventName }}</span>
+                    <span class="event-points">{{ event.pendingPoints }} pts</span>
+                    <app-badge [variant]="event.status === 'Completed' ? 'success' : 'warning'" size="sm">
+                      {{ event.status }}
+                    </app-badge>
+                  </div>
+                }
+              </div>
+              <p class="pending-events-note">
+                <app-icon name="info" [size]="12"></app-icon>
+                These points are reserved for events ending this month. Award winners after event completion.
+              </p>
+            </div>
+          }
+
+          <div class="budget-actions">
+            <app-button variant="secondary" size="sm" (clicked)="openBudgetModal('edit')">
+              <app-icon name="settings" [size]="14"></app-icon>
+              Edit Budget
+            </app-button>
+          </div>
+        </div>
+      } @else {
+        <div class="no-budget-state">
+          <div class="no-budget-icon">
+            <app-icon name="coins" [size]="48"></app-icon>
+          </div>
+          <h3>No Budget Set</h3>
+          <p>Set a monthly points budget to track and control your points awarding.</p>
+          <app-button (clicked)="openBudgetModal('create')">
+            <app-icon name="plus" [size]="16"></app-icon>
+            Set Monthly Budget
+          </app-button>
+        </div>
+      }
+    </app-card>
+  </section>
+
   <!-- Inventory Alerts (Full Width) -->
   <section class="inventory-section">
     <app-card title="Inventory Alerts" subtitle="Low stock products requiring attention">
       @if (inventoryAlerts().length > 0) {
         <div class="inventory-alerts-list">
           @for (alert of inventoryAlerts(); track alert.productId) {
-            <div class="inventory-alert-item">
+            <div class="inventory-alert-item clickable" (click)="navigateToProduct(alert.productName)">
               <div class="alert-icon" [class.critical]="alert.currentStock === 0">
                 <app-icon name="warning" [size]="18"></app-icon>
               </div>
@@ -39,6 +164,9 @@
                     <app-badge variant="warning" size="sm">Low Stock ({{ alert.currentStock }} units)</app-badge>
                   }
                 </div>
+              </div>
+              <div class="alert-action">
+                <app-icon name="chevron-right" [size]="16"></app-icon>
               </div>
             </div>
           }
@@ -477,6 +605,98 @@
         Add Product
       </app-button>
     </div>
+    </div>
+  </div>
+}
+
+<!-- Budget Settings Modal -->
+@if (showBudgetModal()) {
+  <div class="modal-overlay" (click)="closeBudgetModal()">
+    <div class="modal-content budget-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ budgetModalMode() === 'create' ? 'Set Monthly Budget' : 'Edit Monthly Budget' }}</h3>
+      </div>
+
+      <div class="modal-body">
+        <!-- Validation Errors -->
+        @if (budgetValidationErrors().length > 0) {
+          <div class="error-list">
+            @for (error of budgetValidationErrors(); track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+
+        <div class="budget-form-info">
+          <app-icon name="info" [size]="18"></app-icon>
+          <p>Set a monthly points budget to track how many points you award. The budget resets on the 1st of each month.</p>
+        </div>
+
+        <div class="form-group">
+          <label for="budgetLimit">Monthly Budget Limit *</label>
+          <input
+            id="budgetLimit"
+            type="number"
+            [ngModel]="budgetForm().budgetLimit"
+            (ngModelChange)="updateBudgetFormField('budgetLimit', $event)"
+            name="budgetLimit"
+            placeholder="50000"
+            required
+            min="1"
+            max="10000000"
+          />
+          <small class="form-hint">Maximum points you can award this month (1 - 10,000,000)</small>
+        </div>
+
+        <div class="form-group">
+          <label for="warningThreshold">Warning Threshold (%)</label>
+          <input
+            id="warningThreshold"
+            type="number"
+            [ngModel]="budgetForm().warningThreshold"
+            (ngModelChange)="updateBudgetFormField('warningThreshold', $event)"
+            name="warningThreshold"
+            placeholder="80"
+            min="0"
+            max="100"
+          />
+          <small class="form-hint">You'll see a warning when usage reaches this percentage (default: 80%)</small>
+        </div>
+
+        <div class="form-group checkbox-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [ngModel]="budgetForm().isHardLimit"
+              (ngModelChange)="updateBudgetFormField('isHardLimit', $event)"
+              name="isHardLimit"
+            />
+            <span class="checkbox-text">
+              <strong>Hard Limit</strong>
+              <small>Block awarding when budget is exceeded (otherwise only shows warning)</small>
+            </span>
+          </label>
+        </div>
+
+        @if (adminBudget() && budgetModalMode() === 'edit') {
+          <div class="current-usage-info">
+            <h4>Current Month Usage</h4>
+            <div class="usage-details">
+              <span>Points Awarded: <strong>{{ formatNumber(adminBudget()!.pointsAwarded) }}</strong></span>
+              <span>Remaining: <strong [class.negative]="adminBudget()!.remainingBudget < 0">{{ formatNumber(adminBudget()!.remainingBudget) }}</strong></span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <app-button variant="secondary" (clicked)="closeBudgetModal()">
+          Cancel
+        </app-button>
+        <app-button (clicked)="saveBudget()">
+          {{ budgetModalMode() === 'create' ? 'Set Budget' : 'Update Budget' }}
+        </app-button>
+      </div>
     </div>
   </div>
 }

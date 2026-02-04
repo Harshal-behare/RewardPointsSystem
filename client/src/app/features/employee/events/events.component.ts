@@ -47,12 +47,26 @@ export class EmployeeEventsComponent implements OnInit {
   
   events = signal<DisplayEvent[]>([]);
   filteredEvents = signal<DisplayEvent[]>([]);
-  selectedFilter = signal<'all' | 'Upcoming' | 'Active' | 'Completed'>('all');
+  selectedFilter = signal<'all' | 'Upcoming' | 'Active' | 'Completed' | 'registered'>('all');
   searchQuery = signal('');
   selectedEvent = signal<DisplayEvent | null>(null);
   showDetailsModal = signal(false);
   currentUserId = signal<string>('');
   isLoading = signal(false);
+  
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(9);
+  
+  // Computed paginated events
+  paginatedEvents = computed(() => {
+    const filtered = this.filteredEvents();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredEvents().length / this.pageSize()));
 
   // Computed statistics
   stats = computed(() => {
@@ -202,8 +216,10 @@ export class EmployeeEventsComponent implements OnInit {
   applyFilters(): void {
     let filtered = [...this.events()];
 
-    // Filter by status
-    if (this.selectedFilter() !== 'all') {
+    // Filter by status or registered
+    if (this.selectedFilter() === 'registered') {
+      filtered = filtered.filter(event => event.registered);
+    } else if (this.selectedFilter() !== 'all') {
       filtered = filtered.filter(event => event.status === this.selectedFilter());
     }
 
@@ -227,9 +243,11 @@ export class EmployeeEventsComponent implements OnInit {
     });
 
     this.filteredEvents.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
   }
 
-  onFilterChange(filter: 'all' | 'Upcoming' | 'Active' | 'Completed'): void {
+  onFilterChange(filter: 'all' | 'Upcoming' | 'Active' | 'Completed' | 'registered'): void {
     this.selectedFilter.set(filter);
     this.applyFilters();
   }
@@ -240,7 +258,51 @@ export class EmployeeEventsComponent implements OnInit {
 
   clearSearch(): void {
     this.searchQuery.set('');
+    this.currentPage.set(1);
     this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   registerForEvent(event: DisplayEvent): void {

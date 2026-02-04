@@ -13,17 +13,29 @@ namespace RewardPointsSystem.Application.Services.Events
     public class PointsAwardingService : IPointsAwardingService
     {
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IAdminBudgetService _budgetService;
 
-        public PointsAwardingService(IUnitOfWork unitOfWork)
+        public PointsAwardingService(IUnitOfWork unitOfWork, IAdminBudgetService budgetService)
         {
             _unitOfWork = unitOfWork ?? throw new ArgumentNullException(nameof(unitOfWork));
+            _budgetService = budgetService ?? throw new ArgumentNullException(nameof(budgetService));
         }
 
-        public async Task AwardPointsAsync(Guid userId, int points, string description, Guid? eventId = null)
+        public async Task AwardPointsAsync(Guid userId, int points, string description, Guid? eventId = null, Guid? awardingAdminId = null)
         {
             // Simple award points without event context
             if (points <= 0)
                 throw new ArgumentException("Points must be greater than zero", nameof(points));
+
+            // Validate and track admin budget if admin ID is provided
+            if (awardingAdminId.HasValue)
+            {
+                var budgetValidation = await _budgetService.ValidatePointsAwardAsync(awardingAdminId.Value, points);
+                if (!budgetValidation.IsAllowed)
+                {
+                    throw new InvalidOperationException(budgetValidation.Message ?? "Budget validation failed");
+                }
+            }
 
             // Verify user exists
             var user = await _unitOfWork.Users.GetByIdAsync(userId);
@@ -101,9 +113,15 @@ namespace RewardPointsSystem.Application.Services.Events
 
             await _unitOfWork.UserPointsTransactions.AddAsync(transaction);
             await _unitOfWork.SaveChangesAsync();
+
+            // Record points against admin's monthly budget
+            if (awardingAdminId.HasValue)
+            {
+                await _budgetService.RecordPointsAwardedAsync(awardingAdminId.Value, points);
+            }
         }
 
-        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int eventRank)
+        public async Task AwardPointsAsync(Guid eventId, Guid userId, int points, int eventRank, Guid? awardingAdminId = null)
         {
             if (points <= 0)
                 throw new ArgumentException("Points must be greater than zero", nameof(points));
@@ -128,13 +146,29 @@ namespace RewardPointsSystem.Application.Services.Events
             if (totalAwarded + points > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
+            // Validate and track admin budget if admin ID is provided
+            if (awardingAdminId.HasValue)
+            {
+                var budgetValidation = await _budgetService.ValidatePointsAwardAsync(awardingAdminId.Value, points);
+                if (!budgetValidation.IsAllowed)
+                {
+                    throw new InvalidOperationException(budgetValidation.Message ?? "Budget validation failed");
+                }
+            }
+
             participant.AwardPoints(points, eventRank, eventEntity.CreatedBy);
 
             await _unitOfWork.EventParticipants.UpdateAsync(participant);
             await _unitOfWork.SaveChangesAsync();
+
+            // Record points against admin's monthly budget
+            if (awardingAdminId.HasValue)
+            {
+                await _budgetService.RecordPointsAwardedAsync(awardingAdminId.Value, points);
+            }
         }
 
-        public async Task BulkAwardPointsAsync(Guid eventId, List<WinnerDto> winners)
+        public async Task BulkAwardPointsAsync(Guid eventId, List<WinnerDto> winners, Guid? awardingAdminId = null)
         {
             if (winners == null || !winners.Any())
                 throw new ArgumentException("Winners list cannot be empty", nameof(winners));
@@ -149,9 +183,19 @@ namespace RewardPointsSystem.Application.Services.Events
             if (totalAwarded + totalPointsRequired > eventEntity.TotalPointsPool)
                 throw new InvalidOperationException($"Not enough points remaining in pool");
 
+            // Validate admin budget upfront for total points
+            if (awardingAdminId.HasValue)
+            {
+                var budgetValidation = await _budgetService.ValidatePointsAwardAsync(awardingAdminId.Value, totalPointsRequired);
+                if (!budgetValidation.IsAllowed)
+                {
+                    throw new InvalidOperationException(budgetValidation.Message ?? "Budget validation failed");
+                }
+            }
+
             foreach (var winner in winners)
             {
-                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.EventRank);
+                await AwardPointsAsync(eventId, winner.UserId, winner.Points, winner.EventRank, awardingAdminId);
             }
         }
 

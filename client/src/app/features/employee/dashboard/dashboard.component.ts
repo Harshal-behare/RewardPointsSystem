@@ -356,6 +356,7 @@ export class EmployeeDashboardComponent implements OnInit {
     });
 
     // Load upcoming events - only show Upcoming events to employees (not Draft or Completed)
+    // Sort by earliest event date and show max 3
     this.eventService.getAllEvents().subscribe({
       next: (response) => {
         if (response.success && response.data) {
@@ -363,7 +364,8 @@ export class EmployeeDashboardComponent implements OnInit {
                         (response.data as any).items || [];
           const upcomingEvents = events
             .filter((e: EventDto) => e.status === 'Upcoming')
-            .slice(0, 3)
+            .sort((a: EventDto, b: EventDto) => new Date(a.eventDate).getTime() - new Date(b.eventDate).getTime()) // Sort by earliest date
+            .slice(0, 3) // Max 3 events
             .map((e: EventDto) => ({
               id: e.id,
               name: e.name,
@@ -419,7 +421,7 @@ export class EmployeeDashboardComponent implements OnInit {
       }
     });
 
-    // Load featured products
+    // Load featured products - recently added products (sorted by createdAt descending)
     this.productService.getProducts().subscribe({
       next: (response) => {
         if (response.success && response.data) {
@@ -427,6 +429,12 @@ export class EmployeeDashboardComponent implements OnInit {
                           (response.data as any).items || [];
           const featured = products
             .filter((p: ProductDto) => p.isActive && p.isInStock)
+            .sort((a: ProductDto, b: ProductDto) => {
+              // Sort by createdAt descending (newest first) - featured products are recently added
+              const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+              const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+              return dateB - dateA;
+            })
             .slice(0, 4)
             .map((p: ProductDto) => ({
               id: p.id,
@@ -527,6 +535,10 @@ export class EmployeeDashboardComponent implements OnInit {
 
   navigateToEvents(): void {
     this.router.navigate(['/employee/events']);
+  }
+
+  navigateToEvent(eventName: string): void {
+    this.router.navigate(['/employee/events'], { queryParams: { search: eventName } });
   }
 
   navigateToProducts(): void {

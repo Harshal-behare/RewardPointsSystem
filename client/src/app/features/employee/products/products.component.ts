@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ProductService, ProductDto, CategoryDto } from '../../../core/services/product.service';
 import { RedemptionService, CreateRedemptionDto, RedemptionDto } from '../../../core/services/redemption.service';
@@ -30,6 +30,10 @@ export class EmployeeProductsComponent implements OnInit {
   filteredProducts = signal<Product[]>([]);
   selectedCategory = signal<string>('all');
   searchQuery = signal<string>('');
+  
+  // Sorting filters (same as admin)
+  sortBy = signal<'none' | 'stock' | 'points'>('none');
+  sortOrder = signal<'asc' | 'desc'>('asc');
   userPoints = signal<number>(0);
   selectedProduct = signal<Product | null>(null);
   showRedeemModal = signal<boolean>(false);
@@ -37,6 +41,20 @@ export class EmployeeProductsComponent implements OnInit {
   redemptionValidationErrors = signal<string[]>([]);
   isLoading = signal<boolean>(true);
   currentUserId: string = '';
+  
+  // Pagination
+  currentPage = signal(1);
+  pageSize = signal(12);
+  
+  // Computed paginated products
+  paginatedProducts = computed(() => {
+    const filtered = this.filteredProducts();
+    const start = (this.currentPage() - 1) * this.pageSize();
+    const end = start + this.pageSize();
+    return filtered.slice(start, end);
+  });
+  
+  totalPages = computed(() => Math.ceil(this.filteredProducts().length / this.pageSize()));
   
   // Track pending redemption product IDs
   pendingRedemptionProductIds = signal<Set<string>>(new Set());
@@ -183,7 +201,43 @@ export class EmployeeProductsComponent implements OnInit {
       );
     }
 
+    // Apply sorting
+    const sortBy = this.sortBy();
+    const sortOrder = this.sortOrder();
+    
+    if (sortBy !== 'none') {
+      filtered.sort((a, b) => {
+        let comparison = 0;
+        if (sortBy === 'stock') {
+          comparison = a.stock - b.stock;
+        } else if (sortBy === 'points') {
+          comparison = a.points - b.points;
+        }
+        return sortOrder === 'asc' ? comparison : -comparison;
+      });
+    }
+
     this.filteredProducts.set(filtered);
+    // Reset to first page when filters change
+    this.currentPage.set(1);
+  }
+
+  onSortChange(sortBy: 'none' | 'stock' | 'points'): void {
+    if (this.sortBy() === sortBy) {
+      // Toggle order if same sort field clicked
+      this.sortOrder.set(this.sortOrder() === 'asc' ? 'desc' : 'asc');
+    } else {
+      this.sortBy.set(sortBy);
+      this.sortOrder.set('asc');
+    }
+    this.applyFilters();
+  }
+
+  clearSort(): void {
+    this.sortBy.set('none');
+    this.sortOrder.set('asc');
+    this.currentPage.set(1);
+    this.applyFilters();
   }
 
   onCategoryChange(category: string): void {
@@ -194,6 +248,49 @@ export class EmployeeProductsComponent implements OnInit {
   onSearchChange(value: string): void {
     this.searchQuery.set(value);
     this.applyFilters();
+  }
+  
+  // Pagination methods
+  goToPage(page: number): void {
+    if (page >= 1 && page <= this.totalPages()) {
+      this.currentPage.set(page);
+    }
+  }
+  
+  nextPage(): void {
+    if (this.currentPage() < this.totalPages()) {
+      this.currentPage.set(this.currentPage() + 1);
+    }
+  }
+  
+  previousPage(): void {
+    if (this.currentPage() > 1) {
+      this.currentPage.set(this.currentPage() - 1);
+    }
+  }
+  
+  onPageSizeChange(size: number): void {
+    this.pageSize.set(size);
+    this.currentPage.set(1);
+  }
+  
+  getPageNumbers(): number[] {
+    const total = this.totalPages();
+    const current = this.currentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1); // ellipsis
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1); // ellipsis
+      pages.push(total);
+    }
+    return pages;
   }
 
   openRedeemModal(product: Product): void {

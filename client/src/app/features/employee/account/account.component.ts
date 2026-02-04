@@ -1,4 +1,4 @@
-import { Component, OnInit, signal } from '@angular/core';
+import { Component, OnInit, signal, computed } from '@angular/core';
 import { NgClass, TitleCasePipe } from '@angular/common';
 import { PointsService, PointsAccountDto, PointsTransactionDto } from '../../../core/services/points.service';
 import { RedemptionService, RedemptionDto } from '../../../core/services/redemption.service';
@@ -55,6 +55,32 @@ export class EmployeeAccountComponent implements OnInit {
   isLoadingPoints = signal<boolean>(true);
   isLoadingRedemptions = signal<boolean>(true);
   isLoadingAccount = signal<boolean>(true);
+
+  // Pagination for Earning History
+  earningsCurrentPage = signal(1);
+  earningsPageSize = signal(10);
+  
+  paginatedPointsHistory = computed(() => {
+    const history = this.pointsHistory();
+    const start = (this.earningsCurrentPage() - 1) * this.earningsPageSize();
+    const end = start + this.earningsPageSize();
+    return history.slice(start, end);
+  });
+  
+  earningsTotalPages = computed(() => Math.ceil(this.pointsHistory().length / this.earningsPageSize()));
+
+  // Pagination for Redemption History
+  redemptionsCurrentPage = signal(1);
+  redemptionsPageSize = signal(10);
+  
+  paginatedRedemptionHistory = computed(() => {
+    const history = this.redemptionHistory();
+    const start = (this.redemptionsCurrentPage() - 1) * this.redemptionsPageSize();
+    const end = start + this.redemptionsPageSize();
+    return history.slice(start, end);
+  });
+  
+  redemptionsTotalPages = computed(() => Math.ceil(this.redemptionHistory().length / this.redemptionsPageSize()));
 
   // Current user
   currentUserId: string = '';
@@ -326,6 +352,82 @@ export class EmployeeAccountComponent implements OnInit {
 
   switchTab(tab: 'points' | 'redemptions'): void {
     this.activeTab = tab;
+  }
+
+  // Pagination methods for Earnings
+  goToEarningsPage(page: number): void {
+    if (page >= 1 && page <= this.earningsTotalPages()) {
+      this.earningsCurrentPage.set(page);
+    }
+  }
+  
+  nextEarningsPage(): void {
+    if (this.earningsCurrentPage() < this.earningsTotalPages()) {
+      this.earningsCurrentPage.set(this.earningsCurrentPage() + 1);
+    }
+  }
+  
+  previousEarningsPage(): void {
+    if (this.earningsCurrentPage() > 1) {
+      this.earningsCurrentPage.set(this.earningsCurrentPage() - 1);
+    }
+  }
+  
+  getEarningsPageNumbers(): number[] {
+    const total = this.earningsTotalPages();
+    const current = this.earningsCurrentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1);
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1);
+      pages.push(total);
+    }
+    return pages;
+  }
+
+  // Pagination methods for Redemptions
+  goToRedemptionsPage(page: number): void {
+    if (page >= 1 && page <= this.redemptionsTotalPages()) {
+      this.redemptionsCurrentPage.set(page);
+    }
+  }
+  
+  nextRedemptionsPage(): void {
+    if (this.redemptionsCurrentPage() < this.redemptionsTotalPages()) {
+      this.redemptionsCurrentPage.set(this.redemptionsCurrentPage() + 1);
+    }
+  }
+  
+  previousRedemptionsPage(): void {
+    if (this.redemptionsCurrentPage() > 1) {
+      this.redemptionsCurrentPage.set(this.redemptionsCurrentPage() - 1);
+    }
+  }
+  
+  getRedemptionsPageNumbers(): number[] {
+    const total = this.redemptionsTotalPages();
+    const current = this.redemptionsCurrentPage();
+    const pages: number[] = [];
+    
+    if (total <= 7) {
+      for (let i = 1; i <= total; i++) pages.push(i);
+    } else {
+      pages.push(1);
+      if (current > 3) pages.push(-1);
+      for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+        pages.push(i);
+      }
+      if (current < total - 2) pages.push(-1);
+      pages.push(total);
+    }
+    return pages;
   }
 
   async cancelRedemption(redemption: RedemptionRecord): Promise<void> {

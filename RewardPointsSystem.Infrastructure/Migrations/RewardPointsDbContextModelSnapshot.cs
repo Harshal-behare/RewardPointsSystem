@@ -554,10 +554,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Category")
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
                     b.Property<Guid?>("CategoryId")
                         .HasColumnType("uniqueidentifier");
 
@@ -584,8 +580,6 @@ namespace RewardPointsSystem.Infrastructure.Migrations
                         .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("Category");
 
                     b.HasIndex("CategoryId");
 

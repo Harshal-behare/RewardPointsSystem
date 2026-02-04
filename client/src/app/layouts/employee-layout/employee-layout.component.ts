@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { filter, Subscription } from 'rxjs';
 import { IconComponent } from '../../shared/components/icon/icon.component';
+import { AuthService } from '../../auth/auth.service';
 
 @Component({
   selector: 'app-employee-layout',
@@ -19,6 +20,7 @@ export class EmployeeLayoutComponent implements OnInit, OnDestroy {
   pageTitle = 'Dashboard';
   
   private routerSubscription?: Subscription;
+  private nameUpdateSubscription?: Subscription;
   
   // Route to page title mapping
   private readonly pageTitleMap: { [key: string]: string } = {
@@ -37,7 +39,10 @@ export class EmployeeLayoutComponent implements OnInit, OnDestroy {
     { name: 'Profile', icon: 'user', route: '/employee/profile', active: false }
   ];
 
-  constructor(private router: Router) {}
+  constructor(
+    private router: Router,
+    private authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadUserInfo();
@@ -51,11 +56,22 @@ export class EmployeeLayoutComponent implements OnInit, OnDestroy {
     ).subscribe((event: any) => {
       this.updatePageTitle(event.urlAfterRedirects || event.url);
     });
+    
+    // Subscribe to user name changes (e.g., from Profile page updates)
+    this.nameUpdateSubscription = this.authService.userNameUpdated$.subscribe(nameData => {
+      if (nameData) {
+        this.userName = `${nameData.firstName} ${nameData.lastName}`.trim();
+        this.userInitials = this.getInitials(nameData.firstName, nameData.lastName);
+      }
+    });
   }
   
   ngOnDestroy(): void {
     if (this.routerSubscription) {
       this.routerSubscription.unsubscribe();
+    }
+    if (this.nameUpdateSubscription) {
+      this.nameUpdateSubscription.unsubscribe();
     }
   }
   

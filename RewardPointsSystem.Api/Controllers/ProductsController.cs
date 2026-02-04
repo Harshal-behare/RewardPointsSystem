@@ -94,7 +94,7 @@ namespace RewardPointsSystem.Api.Controllers
             {
                 // Load ALL products for admin (including inactive)
                 var products = await _unitOfWork.Products.FindWithIncludesAsync(
-                    p => true, // No filter - return all products
+                    p => true, 
                     p => p.ProductCategory
                 );
                 var allInventory = await _unitOfWork.Inventory.GetAllAsync();

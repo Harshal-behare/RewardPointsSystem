@@ -119,7 +119,7 @@ export class ToastComponent {
   getIcon(type: string): string {
     const icons = {
       success: 'check',
-      error: 'close',
+      error: 'error',
       warning: 'warning',
       info: 'info'
     };
