@@ -68,12 +68,12 @@ namespace RewardPointsSystem.Api
                     //Contact = new OpenApiContact
                     //{
                     //    Name = "Development Team",
-                    //    Email = "dev@rewardpoints.com"
+                    //    Email = "dev@agdata.com"
                     //},
                     //License = new OpenApiLicense
                     //{
                     //    Name = "MIT License",
-                    //    Url = new Uri("https://opensource.org/licenses/MITz")
+                    //    Url = new Uri("https://agdata.com")
                     //}
                 });
 
