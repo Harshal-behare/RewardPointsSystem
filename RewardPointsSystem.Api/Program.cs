@@ -9,6 +9,7 @@ using RewardPointsSystem.Application.Configuration;
 using RewardPointsSystem.Application;
 using RewardPointsSystem.Infrastructure;
 using RewardPointsSystem.Infrastructure.Data;
+using Serilog;
 
 namespace RewardPointsSystem.Api
 {
@@ -16,12 +17,32 @@ namespace RewardPointsSystem.Api
     {
         public static async Task Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            // =====================================================
+            // SERILOG BOOTSTRAP LOGGER (for startup errors)
+            // =====================================================
+            Log.Logger = new LoggerConfiguration()
+                .WriteTo.Console()
+                .WriteTo.File("Logs/startup-.txt", rollingInterval: RollingInterval.Day)
+                .CreateBootstrapLogger();
 
-            // =====================================================
-            // 1. CONFIGURATION
-            // =====================================================
-            var configuration = builder.Configuration;
+            try
+            {
+                Log.Information("Starting Reward Points System API...");
+
+                var builder = WebApplication.CreateBuilder(args);
+
+                // =====================================================
+                // SERILOG CONFIGURATION (reads from appsettings.json)
+                // =====================================================
+                builder.Host.UseSerilog((context, services, configuration) => configuration
+                    .ReadFrom.Configuration(context.Configuration)
+                    .ReadFrom.Services(services)
+                    .Enrich.FromLogContext());
+
+                // =====================================================
+                // 1. CONFIGURATION
+                // =====================================================
+                var configuration = builder.Configuration;
 
             // =====================================================
             // 2. CLEAN ARCHITECTURE - DEPENDENCY INJECTION
@@ -220,6 +241,14 @@ namespace RewardPointsSystem.Api
                 options.DocumentTitle = "Reward Points API Documentation";
             });
 
+            // =====================================================
+            // SERILOG REQUEST LOGGING (logs all HTTP requests)
+            // =====================================================
+            app.UseSerilogRequestLogging(options =>
+            {
+                options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
+            });
+
             // HTTPS Redirection
             app.UseHttpsRedirection();
 
@@ -256,14 +285,24 @@ namespace RewardPointsSystem.Api
             // =====================================================
             // 13. RUN THE APPLICATION
             // =====================================================
-            Console.WriteLine("========================================");
-            Console.WriteLine("  Reward Points System API");
-            Console.WriteLine("========================================");
-            Console.WriteLine($"Environment: {app.Environment.EnvironmentName}");
-            Console.WriteLine($"Swagger UI: http://localhost:1352 ");
-            Console.WriteLine("========================================\n");
+            Log.Information("========================================");
+            Log.Information("  Reward Points System API Started");
+            Log.Information("========================================");
+            Log.Information("Environment: {Environment}", app.Environment.EnvironmentName);
+            Log.Information("Swagger UI: http://localhost:1352");
+            Log.Information("Logs are being written to: Logs/ folder");
+            Log.Information("========================================");
 
             app.Run();
+            }
+            catch (Exception ex)
+            {
+                Log.Fatal(ex, "Application terminated unexpectedly");
+            }
+            finally
+            {
+                Log.CloseAndFlush();
+            }
         }
     }
 }

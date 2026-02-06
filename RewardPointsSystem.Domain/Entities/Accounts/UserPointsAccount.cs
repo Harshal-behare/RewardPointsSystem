@@ -1,4 +1,4 @@
-using System;
+
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 
