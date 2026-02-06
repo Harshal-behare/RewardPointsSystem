@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Tests.TestHelpers;
 
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
@@ -55,7 +56,7 @@ namespace RewardPointsSystem.Tests.FunctionalTests
 
                 // Replace UnitOfWork with InMemory version
                 services.RemoveAll<IUnitOfWork>();
-                services.AddScoped<IUnitOfWork, InMemoryUnitOfWork>();
+                services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             });
 
             builder.UseEnvironment("Testing");

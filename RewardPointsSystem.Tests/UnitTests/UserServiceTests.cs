@@ -6,6 +6,7 @@ using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Infrastructure.Repositories;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Exceptions;
+using RewardPointsSystem.Tests.TestHelpers;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
@@ -15,12 +16,12 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class UserServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
 
         public UserServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
         }
 

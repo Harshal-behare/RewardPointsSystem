@@ -6,8 +6,10 @@ using RewardPointsSystem.Domain.Entities.Events;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.DTOs;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
@@ -27,12 +29,12 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class EventServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly EventService _eventService;
 
         public EventServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _eventService = new EventService(_unitOfWork);
         }
 

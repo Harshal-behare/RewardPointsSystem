@@ -13,6 +13,7 @@ using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Application.DTOs.Products;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.DTOs.Admin;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
@@ -36,7 +37,7 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class EventRewardOrchestratorTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
         private readonly EventService _eventService;
         private readonly EventParticipationService _participationService;
@@ -48,7 +49,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public EventRewardOrchestratorTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);
@@ -188,7 +189,7 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class RedemptionOrchestratorTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
         private readonly UserPointsAccountService _accountService;
         private readonly UserPointsTransactionService _transactionService;
@@ -200,7 +201,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public RedemptionOrchestratorTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
             _transactionService = new UserPointsTransactionService(_unitOfWork);

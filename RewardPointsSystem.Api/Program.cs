@@ -213,19 +213,35 @@ namespace RewardPointsSystem.Api
             {
                 errorApp.Run(async context =>
                 {
-                    context.Response.StatusCode = 500;
-                    context.Response.ContentType = "application/json";
-
                     var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
                     if (exceptionHandlerFeature != null)
                     {
                         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-                        logger.LogError(exceptionHandlerFeature.Error, "Unhandled exception occurred");
+                        var exception = exceptionHandlerFeature.Error;
+                        
+                        // Determine status code and message based on exception type
+                        int statusCode = 500;
+                        string message = "An unexpected error occurred. Please try again.";
+                        
+                        // Domain exceptions should return 400 with actual message
+                        if (exception is RewardPointsSystem.Domain.Exceptions.DomainException domainEx)
+                        {
+                            statusCode = 400;
+                            message = domainEx.Message;
+                            logger.LogWarning(exception, "Domain exception: {Message}", message);
+                        }
+                        else
+                        {
+                            logger.LogError(exception, "Unhandled exception occurred");
+                        }
+                        
+                        context.Response.StatusCode = statusCode;
+                        context.Response.ContentType = "application/json";
 
                         await context.Response.WriteAsJsonAsync(new
                         {
                             success = false,
-                            message = "An unexpected error occurred. Please try again.",
+                            message = message,
                             timestamp = DateTime.UtcNow
                         });
                     }
