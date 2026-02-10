@@ -1,0 +1,370 @@
+<div class="users-container">
+  <!-- Quick Actions Bar -->
+  <div class="quick-actions-bar">
+    <button class="quick-action-btn primary" (click)="openCreateModal()">
+      <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
+      <span>Add New User</span>
+    </button>
+  </div>
+
+  <app-card>
+    <!-- Header -->
+    <div header class="users-header">
+      <div>
+        <h2>User Management</h2>
+        <p class="subtitle">Manage system users and their roles</p>
+      </div>
+      <app-button (clicked)="openCreateModal()">
+        <app-icon name="add" [size]="16"></app-icon> Add User
+      </app-button>
+    </div>
+
+    <!-- Filters & Search Section -->
+    <div class="filters-section">
+      <div class="filter-row">
+        <div class="search-box">
+          <input
+            type="text"
+            placeholder="Search by name or email..."
+            [ngModel]="searchQuery()"
+            (ngModelChange)="searchQuery.set($event)"
+            class="search-input"
+          />
+          <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
+        </div>
+        
+        <div class="filter-controls">
+          <div class="filter-group">
+            <label>Status:</label>
+            <select [ngModel]="statusFilter()" (ngModelChange)="onStatusFilterChange($event)">
+              <option value="all">All Status</option>
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Role:</label>
+            <select [ngModel]="roleFilter()" (ngModelChange)="onRoleFilterChange($event)">
+              <option value="all">All Roles</option>
+              <option value="Admin">Admin</option>
+              <option value="Employee">Employee</option>
+            </select>
+          </div>
+          
+          <button class="clear-filters-btn" (click)="clearFilters()" title="Clear all filters">
+            <app-icon name="refresh" [size]="16"></app-icon> Clear
+          </button>
+        </div>
+      </div>
+      
+      <div class="results-info">
+        <span>Showing {{ paginatedUsers().length }} of {{ filteredUsers().length }} users (Page {{ currentPage() }} of {{ totalPages() || 1 }})</span>
+      </div>
+    </div>
+
+    <!-- Users Table -->
+    <div class="table-container">
+      <table class="users-table">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="toggleSort('name')">
+              Name <span class="sort-icon">{{ getSortIcon('name') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('email')">
+              Email <span class="sort-icon">{{ getSortIcon('email') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('role')">
+              Role <span class="sort-icon">{{ getSortIcon('role') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('status')">
+              Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('pointsBalance')">
+              Points Balance <span class="sort-icon">{{ getSortIcon('pointsBalance') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('createdAt')">
+              Created Date <span class="sort-icon">{{ getSortIcon('createdAt') }}</span>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (user of paginatedUsers(); track user.id) {
+            <tr [class.inactive-row]="user.status === 'Inactive'" [class.current-user-row]="isSelf(user)">
+              <td>
+                <div class="user-name">
+                  <div class="user-avatar" [class.current-user-avatar]="isSelf(user)">
+                    {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                  </div>
+                  <div class="user-name-text">
+                    <strong>{{ user.firstName }} {{ user.lastName }}</strong>
+                    @if (isSelf(user)) {
+                      <span class="you-badge">(You)</span>
+                    }
+                  </div>
+                </div>
+              </td>
+              <td>{{ user.email }}</td>
+              <td>
+                <app-badge [variant]="getRoleBadgeVariant(user.role)">
+                  {{ user.role }}
+                </app-badge>
+              </td>
+              <td>
+                <app-badge [variant]="getStatusVariant(user.status)">
+                  {{ user.status }}
+                </app-badge>
+              </td>
+              <td>
+                @if (user.pointsBalance !== undefined) {
+                  <span class="points-value">
+                    {{ user.pointsBalance }} pts
+                  </span>
+                } @else {
+                  <span class="no-points">
+                    N/A
+                  </span>
+                }
+              </td>
+              <td>{{ user.createdAt | date: 'MMM dd, yyyy' }}</td>
+              <td>
+                <div class="action-buttons">
+                  <button 
+                    class="action-btn edit-btn" 
+                    (click)="openEditModal(user)" 
+                    title="Edit"
+                  >
+                    <app-icon name="edit" [size]="16"></app-icon>
+                  </button>
+                  <button 
+                    class="action-btn" 
+                    [class.toggle-active]="user.status === 'Active'"
+                    [class.toggle-inactive]="user.status === 'Inactive'"
+                    [class.disabled]="isAdminActionDisabled(user) && user.status === 'Active'"
+                    (click)="toggleUserStatus(user)" 
+                    [title]="getAdminActionTooltip(user)"
+                    [disabled]="isAdminActionDisabled(user) && user.status === 'Active'"
+                  >
+                    <app-icon [name]="user.status === 'Active' ? 'lock' : 'check-circle'" [size]="16"></app-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          
+          @if (filteredUsers().length === 0) {
+            <tr>
+              <td colspan="7" class="no-results">
+                <div class="no-results-content">
+                  <span class="no-results-icon"><app-icon name="search" [size]="32"></app-icon></span>
+                  <p>No users found matching your criteria</p>
+                  <button class="clear-filters-link" (click)="clearFilters()">Clear filters</button>
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+      
+      <!-- Pagination -->
+      @if (totalPages() > 1) {
+        <div class="pagination">
+          <button class="page-btn" [disabled]="currentPage() === 1" (click)="previousPage()">
+            <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+          </button>
+          
+          <div class="page-numbers">
+            @for (page of getPageNumbers(); track $index) {
+              @if (page === -1) {
+                <span class="ellipsis">...</span>
+              } @else {
+                <button 
+                  class="page-num" 
+                  [class.active]="page === currentPage()"
+                  (click)="goToPage(page)">
+                  {{ page }}
+                </button>
+              }
+            }
+          </div>
+          
+          <button class="page-btn" [disabled]="currentPage() === totalPages()" (click)="nextPage()">
+            Next <app-icon name="chevron-right" [size]="16"></app-icon>
+          </button>
+        </div>
+      }
+    </div>
+  </app-card>
+</div>
+
+<!-- User Modal -->
+@if (showModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ modalMode() === 'create' ? 'Add New User' : 'Edit User' }}</h3>
+      </div>
+
+    <div class="modal-body">
+      <form>
+        <!-- Validation Errors -->
+        @if (modalValidationErrors.length > 0) {
+          <div class="error-list">
+            @for (error of modalValidationErrors; track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name *</label>
+            <input
+              id="firstName"
+              type="text"
+              [(ngModel)]="selectedUser.firstName"
+              (ngModelChange)="validateUserModalRealtime()"
+              name="firstName"
+              placeholder="Enter first name"
+              required
+              maxlength="20"
+              pattern="^[a-zA-Z][a-zA-Z ]*$"
+              [class.invalid]="selectedUser.firstName !== undefined && (!selectedUser.firstName.trim() || selectedUser.firstName.trim().length === 0)"
+            />
+            <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name *</label>
+            <input
+              id="lastName"
+              type="text"
+              [(ngModel)]="selectedUser.lastName"
+              (ngModelChange)="validateUserModalRealtime()"
+              name="lastName"
+              placeholder="Enter last name"
+              required
+              maxlength="20"
+              pattern="^[a-zA-Z][a-zA-Z ]*$"
+              [class.invalid]="selectedUser.lastName !== undefined && (!selectedUser.lastName.trim() || selectedUser.lastName.trim().length === 0)"
+            />
+            <small class="form-hint">Letters and spaces only, max 20 characters, cannot start with space</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email *</label>
+          <input
+            id="email"
+            type="email"
+            [(ngModel)]="selectedUser.email"
+            (ngModelChange)="validateUserModalRealtime()"
+            name="email"
+            placeholder="user@agdata.com"
+            required
+            maxlength="255"
+            [readonly]="modalMode() === 'edit'"
+            [class.readonly]="modalMode() === 'edit'"
+            [class.invalid]="selectedUser.email !== undefined && (!selectedUser.email.trim() || !selectedUser.email.endsWith('@agdata.com'))"
+          />
+          @if (modalMode() === 'create') {
+            <small class="form-hint">Must be an @agdata.com email address</small>
+          } @else {
+            <small class="form-hint">Email cannot be changed after creation</small>
+          }
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="role">Role *</label>
+            <select
+              id="role"
+              [(ngModel)]="selectedUser.role"
+              (ngModelChange)="validateUserModalRealtime()"
+              name="role"
+              required
+              [disabled]="isLastAdminRoleProtected()"
+              [class.readonly]="isLastAdminRoleProtected()"
+            >
+              @for (role of roles(); track role.id) {
+                <option [value]="role.name">{{ role.name }}</option>
+              }
+            </select>
+            @if (isLastAdminRoleProtected()) {
+              <small class="form-warning"><app-icon name="warning" [size]="14"></app-icon> Cannot change role - this is the only admin in the system</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="status">Status *</label>
+            <select
+              id="status"
+              [(ngModel)]="selectedUser.status"
+              (ngModelChange)="validateUserModalRealtime()"
+              name="status"
+              required
+              [disabled]="isLastAdminStatusProtected()"
+              [class.readonly]="isLastAdminStatusProtected()"
+            >
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+            </select>
+            @if (isLastAdminStatusProtected()) {
+              <small class="form-warning"><app-icon name="warning" [size]="14"></app-icon> Cannot deactivate - this is the only admin in the system</small>
+            }
+          </div>
+        </div>
+
+        @if (modalMode() === 'create') {
+          <div class="form-group password-field">
+            <label for="password">Initial Password *</label>
+            <div class="password-input-wrapper">
+              <input
+                id="password"
+                [type]="showPassword() ? 'text' : 'password'"
+                [(ngModel)]="selectedUser.password"
+                (ngModelChange)="validateUserModalRealtime()"
+                placeholder="Enter initial password"
+                name="password"
+                required
+                minlength="8"
+                autocomplete="new-password"
+                [class.invalid]="selectedUser.password !== undefined && (selectedUser.password.length || 0) < 8"
+              />
+              <button 
+                type="button" 
+                class="toggle-password"
+                (mouseenter)="showPassword.set(true)"
+                (mouseleave)="showPassword.set(false)"
+                tabindex="-1"
+              >
+                <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+              </button>
+            </div>
+            <small class="form-help">Min 8 characters, must include: uppercase, lowercase, number, and special character</small>
+          </div>
+        }
+
+        @if (modalMode() === 'edit') {
+          <div class="info-box">
+            <strong>ℹ️ Note:</strong> User's password cannot be changed from here. Use the password reset feature.
+          </div>
+        }
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeModal()">
+        Cancel
+      </app-button>
+      <app-button 
+        (clicked)="saveUser()"
+        [disabled]="!isUserFormValid()"
+        [class.disabled-btn]="!isUserFormValid()">
+        {{ modalMode() === 'create' ? 'Create User' : 'Save Changes' }}
+      </app-button>
+    </div>
+    </div>
+  </div>
+}

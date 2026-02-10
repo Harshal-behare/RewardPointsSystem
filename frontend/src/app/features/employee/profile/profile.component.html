@@ -1,0 +1,222 @@
+<div class="profile-page">
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <span>Loading profile...</span>
+    </div>
+  } @else {
+    <header class="page-header">
+      <h1>My Profile</h1>
+      <span class="subtitle">Manage your personal information</span>
+    </header>
+
+    <div class="profile-grid">
+      <!-- Profile Information Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Profile Information</h2>
+        </div>
+        <div class="card-body">
+          <!-- Avatar Section -->
+          <div class="avatar-section">
+            <div class="avatar">{{ getInitials() }}</div>
+            <div class="avatar-info">
+              <h3>{{ profileData().firstName }} {{ profileData().lastName }}</h3>
+              <span class="role-badge">{{ profileData().role }}</span>
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- Profile Form -->
+          <form (ngSubmit)="updateProfile()">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="firstName">First Name</label>
+                <input
+                  id="firstName"
+                  type="text"
+                  [ngModel]="profileData().firstName"
+                  (ngModelChange)="updateFirstName($event)"
+                  name="firstName"
+                  (blur)="validateFirstName()"
+                  (input)="validateFirstName()"
+                  maxlength="20"
+                  placeholder="Enter first name"
+                  [class.error]="firstNameError"
+                />
+                @if (firstNameError) {
+                  <span class="error-text">{{ firstNameError }}</span>
+                }
+                <small class="hint">Letters and spaces only, max 20 characters</small>
+              </div>
+
+              <div class="form-group">
+                <label for="lastName">Last Name</label>
+                <input
+                  id="lastName"
+                  type="text"
+                  [ngModel]="profileData().lastName"
+                  (ngModelChange)="updateLastName($event)"
+                  name="lastName"
+                  (blur)="validateLastName()"
+                  (input)="validateLastName()"
+                  maxlength="20"
+                  placeholder="Enter last name"
+                  [class.error]="lastNameError"
+                />
+                @if (lastNameError) {
+                  <span class="error-text">{{ lastNameError }}</span>
+                }
+                <small class="hint">Letters and spaces only, max 20 characters</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="email">Email</label>
+              <input
+                id="email"
+                type="email"
+                [value]="profileData().email"
+                disabled
+                class="disabled"
+              />
+              <small class="hint">Email cannot be changed</small>
+            </div>
+
+            <div class="form-group">
+              <label for="role">Role</label>
+              <input
+                id="role"
+                type="text"
+                [value]="profileData().role"
+                disabled
+                class="disabled"
+              />
+              <small class="hint">Contact admin to change role</small>
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="isSaving() || firstNameError || lastNameError">
+                @if (isSaving()) { Saving... } @else { <app-icon name="save" [size]="16"></app-icon> Save Changes }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Change Password Card -->
+      <div class="card">
+        <div class="card-header">
+          <h2>Change Password</h2>
+        </div>
+        <div class="card-body">
+          <!-- Password Requirements Notice -->
+          <div class="notice">
+            <span class="notice-icon"><app-icon name="lock" [size]="20"></app-icon></span>
+            <div>
+              <strong>Password Requirements:</strong>
+              <ul>
+                <li>8-20 characters long</li>
+                <li>At least one uppercase letter (A-Z)</li>
+                <li>At least one lowercase letter (a-z)</li>
+                <li>At least one number (0-9)</li>
+                <li>At least one special character (!&#64;#$%^&amp;*)</li>
+              </ul>
+            </div>
+          </div>
+
+          <form (ngSubmit)="changePassword()">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <div class="password-wrapper">
+                <input
+                  id="currentPassword"
+                  [type]="showCurrentPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordData.currentPassword"
+                  name="currentPassword"
+                  placeholder="Enter current password"
+                  (ngModelChange)="validateNewPassword()"
+                  required
+                />
+                <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('current')">
+                  <app-icon [name]="showCurrentPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+                </button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <div class="password-wrapper">
+                <input
+                  id="newPassword"
+                  [type]="showNewPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordData.newPassword"
+                  name="newPassword"
+                  placeholder="Enter new password"
+                  (ngModelChange)="validateNewPassword()"
+                  required
+                />
+                <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('new')">
+                  <app-icon [name]="showNewPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+                </button>
+              </div>
+              <!-- Real-time password validation -->
+              @if (passwordData.newPassword) {
+                <div class="password-validation">
+                  <div class="validation-item" [class.valid]="passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20">
+                    <span class="validation-icon">{{ passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20 ? '✓' : '✗' }}</span>
+                    8-20 characters
+                  </div>
+                  <div class="validation-item" [class.valid]="hasUppercase(passwordData.newPassword)">
+                    <span class="validation-icon">{{ hasUppercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                    At least one uppercase letter
+                  </div>
+                  <div class="validation-item" [class.valid]="hasLowercase(passwordData.newPassword)">
+                    <span class="validation-icon">{{ hasLowercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                    At least one lowercase letter
+                  </div>
+                  <div class="validation-item" [class.valid]="hasNumber(passwordData.newPassword)">
+                    <span class="validation-icon">{{ hasNumber(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                    At least one number
+                  </div>
+                  <div class="validation-item" [class.valid]="hasSpecialChar(passwordData.newPassword)">
+                    <span class="validation-icon">{{ hasSpecialChar(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                    At least one special character
+                  </div>
+                </div>
+              }
+            </div>
+
+            <div class="form-group">
+              <label for="confirmPassword">Confirm New Password</label>
+              <div class="password-wrapper">
+                <input
+                  id="confirmPassword"
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  [(ngModel)]="passwordData.confirmPassword"
+                  name="confirmPassword"
+                  placeholder="Confirm new password"
+                  (ngModelChange)="validateNewPassword()"
+                  required
+                />
+                <button type="button" class="toggle-btn" (click)="togglePasswordVisibility('confirm')">
+                  <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+                </button>
+              </div>
+              @if (passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword) {
+                <span class="error-text">Passwords do not match</span>
+              }
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary" [disabled]="!isPasswordFormValid()">
+                <app-icon name="lock" [size]="16"></app-icon> Change Password
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+</div>

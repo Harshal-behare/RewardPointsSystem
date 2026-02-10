@@ -1,0 +1,367 @@
+<div class="events-page">
+  <!-- Compact Header -->
+  <header class="page-header">
+    <div class="header-left">
+      <h1>Events</h1>
+      <span class="subtitle">Participate & earn rewards</span>
+    </div>
+    <div class="header-stats">
+      <div class="stat" [class.active]="selectedFilter() === 'Upcoming'" (click)="onFilterChange('Upcoming')">
+        <span class="count">{{ stats().upcoming }}</span>
+        <span class="label">Upcoming</span>
+      </div>
+      <div class="stat" [class.active]="selectedFilter() === 'Active'" (click)="onFilterChange('Active')">
+        <span class="count">{{ stats().active }}</span>
+        <span class="label">Active</span>
+      </div>
+      <div class="stat highlight" [class.active]="selectedFilter() === 'registered'" (click)="onFilterChange('registered')">
+        <span class="count">{{ stats().registered }}</span>
+        <span class="label">My Events</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Filter Bar -->
+  <div class="filter-bar">
+    <div class="tabs">
+      <button class="tab" [class.active]="selectedFilter() === 'all'" (click)="onFilterChange('all')">
+        All <span class="badge">{{ stats().total }}</span>
+      </button>
+      <button class="tab" [class.active]="selectedFilter() === 'registered'" (click)="onFilterChange('registered')">
+        My Events <span class="badge">{{ stats().registered }}</span>
+      </button>
+      <button class="tab" [class.active]="selectedFilter() === 'Upcoming'" (click)="onFilterChange('Upcoming')">
+        Upcoming <span class="badge">{{ stats().upcoming }}</span>
+      </button>
+      <button class="tab" [class.active]="selectedFilter() === 'Active'" (click)="onFilterChange('Active')">
+        Active <span class="badge">{{ stats().active }}</span>
+      </button>
+      <button class="tab" [class.active]="selectedFilter() === 'Completed'" (click)="onFilterChange('Completed')">
+        Completed <span class="badge">{{ stats().completed }}</span>
+      </button>
+    </div>
+    <div class="search">
+      <input type="text" placeholder="Search events..." [ngModel]="searchQuery()" (ngModelChange)="searchQuery.set($event); onSearchChange()" />
+      @if (searchQuery()) {
+        <button class="clear" (click)="clearSearch()"><app-icon name="close" [size]="14"></app-icon></button>
+      }
+    </div>
+  </div>
+
+  <!-- Loading -->
+  @if (isLoading()) {
+    <div class="loading">
+      <div class="spinner"></div>
+      <span>Loading events...</span>
+    </div>
+  }
+
+  <!-- Events Grid -->
+  @if (!isLoading()) {
+    <div class="events-grid">
+      @for (event of paginatedEvents(); track event.id) {
+        <article class="event-card" [class.registered]="event.registered" [class.completed]="event.status === 'Completed'" [class.active-event]="event.status === 'Active'">
+          <!-- Card Header with Image -->
+          <div class="card-header">
+            <img [src]="event.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=400&h=200&fit=crop'" [alt]="event.name" />
+            <div class="overlay">
+              <span class="status" [class]="event.status.toLowerCase()">{{ event.status }}</span>
+              @if (event.registered) {
+                <span class="reg-badge"><app-icon name="check" [size]="14"></app-icon> Registered</span>
+              }
+            </div>
+          </div>
+
+          <!-- Card Body -->
+          <div class="card-body">
+            <h3 class="title">{{ event.name }}</h3>
+            <p class="desc">{{ event.description | slice:0:80 }}{{ event.description.length > 80 ? '...' : '' }}</p>
+
+            <!-- Quick Info -->
+            <div class="info-row">
+              <span class="info"><app-icon name="calendar" [size]="14"></app-icon> {{ formatDate(event.eventDate) }}</span>
+              @if (event.location) {
+                <span class="info"><app-icon name="location" [size]="14"></app-icon> {{ event.location | slice:0:20 }}{{ event.location.length > 20 ? '...' : '' }}</span>
+              }
+            </div>
+
+            <!-- Prize & Participants -->
+            <div class="meta-row">
+              <div class="prizes">
+                @if (event.firstPlacePoints) {
+                  <span class="prize gold">🥇 {{ event.firstPlacePoints }}</span>
+                }
+                @if (event.secondPlacePoints) {
+                  <span class="prize silver">🥈 {{ event.secondPlacePoints }}</span>
+                }
+                @if (event.thirdPlacePoints) {
+                  <span class="prize bronze">🥉 {{ event.thirdPlacePoints }}</span>
+                }
+              </div>
+              <span class="participants"><app-icon name="users" [size]="14"></app-icon> {{ event.participantCount }}@if (event.maxParticipants) {/{{ event.maxParticipants }}}</span>
+            </div>
+
+            <!-- Winners for Completed Events -->
+            @if (event.status === 'Completed' && event.winners && event.winners.length > 0) {
+              <div class="winners-row">
+                @for (winner of event.winners.slice(0, 3); track winner.userId) {
+                  <span class="winner" [class]="'rank-' + winner.rank">
+                    <app-icon [name]="getRankIcon(winner.rank)" [size]="14"></app-icon> {{ winner.userName.split(' ')[0] }}
+                  </span>
+                }
+              </div>
+            }
+          </div>
+
+          <!-- Card Footer -->
+          <div class="card-footer">
+            <button class="btn-details" (click)="openDetailsModal(event)">Details</button>
+            @switch (getRegistrationStatus(event)) {
+              @case ('registered') {
+                <span class="status-label registered"><app-icon name="check" [size]="14"></app-icon> Registered</span>
+              }
+              @case ('open') {
+                <button class="btn-register" (click)="registerForEvent(event)">Register</button>
+              }
+              @case ('full') {
+                <span class="status-label full">Full</span>
+              }
+              @case ('not-started') {
+                <span class="status-label waiting">Opens Soon</span>
+              }
+              @case ('ended') {
+                <span class="status-label closed">Closed</span>
+              }
+              @case ('closed') {
+                <span class="status-label">{{ event.status === 'Active' ? 'In Progress' : 'Completed' }}</span>
+              }
+            }
+          </div>
+        </article>
+      }
+    </div>
+    
+    <!-- Pagination -->
+    @if (filteredEvents().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          Showing {{ paginatedEvents().length }} of {{ filteredEvents().length }} events
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()">
+            <app-icon name="arrow-left" [size]="14"></app-icon> Prev
+          </button>
+          
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+          }
+          
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()">
+            Next <app-icon name="arrow-right" [size]="14"></app-icon>
+          </button>
+        </div>
+        
+        <div class="pagination-summary">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+    }
+  }
+
+  <!-- Empty State -->
+  @if (!isLoading() && filteredEvents().length === 0) {
+    <div class="empty-state">
+      <span class="icon"><app-icon name="calendar" [size]="48"></app-icon></span>
+      <h3>No events found</h3>
+      @if (searchQuery()) {
+        <p>No results for "{{ searchQuery() }}"</p>
+        <button (click)="clearSearch()">Clear Search</button>
+      } @else {
+        <p>Check back soon for new events!</p>
+      }
+    </div>
+  }
+</div>
+
+<!-- Compact Details Modal -->
+@if (showDetailsModal() && selectedEvent()) {
+  <div class="modal-backdrop" (click)="closeDetailsModal()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <!-- Modal Header -->
+      <div class="modal-header">
+        <div class="header-info">
+          <span class="modal-status" [class]="selectedEvent()!.status.toLowerCase()">{{ selectedEvent()!.status }}</span>
+          <h2>{{ selectedEvent()!.name }}</h2>
+        </div>
+        <button class="close-btn" (click)="closeDetailsModal()"><app-icon name="close" [size]="20"></app-icon></button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="modal-content">
+        <!-- Banner Image -->
+        <div class="banner">
+          <img [src]="selectedEvent()!.imageUrl || 'https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=600'" [alt]="selectedEvent()!.name" />
+          @if (selectedEvent()!.registered) {
+            <div class="registered-overlay"><app-icon name="check" [size]="16"></app-icon> You're Registered</div>
+          }
+        </div>
+
+        <!-- Description -->
+        <div class="section">
+          <p class="description">{{ selectedEvent()!.description }}</p>
+        </div>
+
+        <!-- Info Grid -->
+        <div class="info-grid">
+          <div class="info-item">
+            <span class="icon"><app-icon name="calendar" [size]="20"></app-icon></span>
+            <div>
+              <label>Event Date</label>
+              <span>{{ formatDate(selectedEvent()!.eventDate) }}</span>
+            </div>
+          </div>
+          @if (selectedEvent()!.eventEndDate) {
+            <div class="info-item">
+              <span class="icon"><app-icon name="flag" [size]="20"></app-icon></span>
+              <div>
+                <label>End Date</label>
+                <span>{{ formatDate(selectedEvent()!.eventEndDate) }}</span>
+              </div>
+            </div>
+          }
+          @if (selectedEvent()!.location) {
+            <div class="info-item">
+              <span class="icon"><app-icon name="location" [size]="20"></app-icon></span>
+              <div>
+                <label>Location</label>
+                <span>{{ selectedEvent()!.location }}</span>
+              </div>
+            </div>
+          }
+          <div class="info-item">
+            <span class="icon"><app-icon name="users" [size]="20"></app-icon></span>
+            <div>
+              <label>Participants</label>
+              <span>{{ selectedEvent()!.participantCount }}@if (selectedEvent()!.maxParticipants) { / {{ selectedEvent()!.maxParticipants }}}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Registration Period -->
+        @if (selectedEvent()!.status === 'Upcoming' && (selectedEvent()!.registrationStartDate || selectedEvent()!.registrationEndDate)) {
+          <div class="section reg-period">
+            <h4><app-icon name="edit" [size]="18"></app-icon> Registration Period</h4>
+            <p>
+              @if (selectedEvent()!.registrationStartDate && selectedEvent()!.registrationEndDate) {
+                {{ formatDate(selectedEvent()!.registrationStartDate) }} - {{ formatDate(selectedEvent()!.registrationEndDate) }}
+              } @else if (selectedEvent()!.registrationEndDate) {
+                Until {{ formatDate(selectedEvent()!.registrationEndDate) }}
+              } @else {
+                From {{ formatDate(selectedEvent()!.registrationStartDate) }}
+              }
+            </p>
+          </div>
+        }
+
+        <!-- Prize Distribution -->
+        @if (hasPrizeDistribution(selectedEvent()!)) {
+          <div class="section prizes-section">
+            <h4><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution</h4>
+            <div class="prizes-grid">
+              @if (selectedEvent()!.firstPlacePoints) {
+                <div class="prize-item gold">
+                  <span class="medal"><app-icon name="medal-gold" [size]="24"></app-icon></span>
+                  <span class="place">1st Place</span>
+                  <span class="points">{{ selectedEvent()!.firstPlacePoints }} pts</span>
+                </div>
+              }
+              @if (selectedEvent()!.secondPlacePoints) {
+                <div class="prize-item silver">
+                  <span class="medal"><app-icon name="medal-silver" [size]="24"></app-icon></span>
+                  <span class="place">2nd Place</span>
+                  <span class="points">{{ selectedEvent()!.secondPlacePoints }} pts</span>
+                </div>
+              }
+              @if (selectedEvent()!.thirdPlacePoints) {
+                <div class="prize-item bronze">
+                  <span class="medal"><app-icon name="medal-bronze" [size]="24"></app-icon></span>
+                  <span class="place">3rd Place</span>
+                  <span class="points">{{ selectedEvent()!.thirdPlacePoints }} pts</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Winners -->
+        @if (selectedEvent()!.status === 'Completed' && selectedEvent()!.winners && selectedEvent()!.winners!.length > 0) {
+          <div class="section winners-section">
+            <h4><app-icon name="celebrate" [size]="18"></app-icon> Event Winners</h4>
+            <div class="winners-list">
+              @for (winner of selectedEvent()!.winners; track winner.userId) {
+                <div class="winner-item" [class]="'rank-' + winner.rank">
+                  <span class="medal"><app-icon [name]="getRankIcon(winner.rank)" [size]="20"></app-icon></span>
+                  <span class="name">{{ winner.userName }}</span>
+                  <span class="pts">{{ winner.pointsAwarded }} pts</span>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Points Pool -->
+        <div class="points-pool">
+          <span>Total Rewards Pool</span>
+          <strong><app-icon name="trophy" [size]="18"></app-icon> {{ selectedEvent()!.pointsPool }} points</strong>
+        </div>
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="modal-footer">
+        <button class="btn-secondary" (click)="closeDetailsModal()">Close</button>
+        @switch (getRegistrationStatus(selectedEvent()!)) {
+          @case ('registered') {
+            <span class="footer-status registered"><app-icon name="check" [size]="16"></app-icon> Already Registered</span>
+          }
+          @case ('open') {
+            <button class="btn-primary" (click)="registerForEvent(selectedEvent()!); closeDetailsModal()">Register Now</button>
+          }
+          @case ('full') {
+            <span class="footer-status">Event Full</span>
+          }
+          @case ('not-started') {
+            <span class="footer-status">Registration Opens {{ formatDate(selectedEvent()!.registrationStartDate) }}</span>
+          }
+          @case ('ended') {
+            <span class="footer-status">Registration Closed</span>
+          }
+          @case ('closed') {
+            <span class="footer-status">
+              @if (selectedEvent()!.status === 'Active') {
+                <app-icon name="fire" [size]="16"></app-icon> In Progress
+              } @else {
+                <app-icon name="check" [size]="16"></app-icon> Completed
+              }
+            </span>
+          }
+        }
+      </div>
+    </div>
+  </div>
+}

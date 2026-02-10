@@ -1,0 +1,976 @@
+<div class="events-container">
+  <!-- Quick Actions -->
+  <div class="quick-actions-bar">
+    <button class="quick-action-btn primary" (click)="openCreateModal()">
+      <span class="action-icon"><app-icon name="add" [size]="18"></app-icon></span>
+      <span>Create New Event</span>
+    </button>
+    <button class="quick-action-btn award-btn" (click)="openDirectAwardModal()">
+      <span class="action-icon"><app-icon name="trophy" [size]="18"></app-icon></span>
+      <span>Award Points</span>
+    </button>
+    <!-- <button class="quick-action-btn secondary" (click)="refreshData()">
+      <span class="action-icon"><app-icon name="refresh" [size]="16"></app-icon></span>
+      <span>Refresh</span>
+    </button> -->
+  </div>
+
+  <app-card>
+    <!-- Header with Create Button -->
+    <div header class="events-header">
+      <div>
+        <h2>Events Management</h2>
+        <p class="subtitle">Manage all events and reward activities</p>
+      </div>
+      <app-button (clicked)="openCreateModal()">
+        <app-icon name="add" [size]="16"></app-icon> Create Event
+      </app-button>
+    </div>
+
+    <!-- Filters & Search -->
+    <div class="filters-section">
+      <div class="filter-tabs">
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter() === 'all'"
+          (click)="onFilterChange('all')">
+          All Events
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter() === 'Draft'"
+          (click)="onFilterChange('Draft')">
+          Draft
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter() === 'Upcoming'"
+          (click)="onFilterChange('Upcoming')">
+          Upcoming
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter() === 'Active'"
+          (click)="onFilterChange('Active')">
+          Active
+        </button>
+        <button
+          class="filter-tab"
+          [class.active]="selectedFilter() === 'Completed'"
+          (click)="onFilterChange('Completed')">
+          Completed
+        </button>
+        <button
+          class="filter-tab pending-awards"
+          [class.active]="selectedFilter() === 'PendingAwards'"
+          (click)="onFilterChange('PendingAwards')">
+          <app-icon name="trophy" [size]="14"></app-icon>
+          Pending Awards
+        </button>
+      </div>
+
+      <div class="search-row">
+        <div class="search-box">
+          <input
+            type="text"
+            placeholder="Search events..."
+            [(ngModel)]="searchQuery"
+            (input)="onSearchChange()"
+            class="search-input"
+          />
+          <span class="search-icon"><app-icon name="search" [size]="18"></app-icon></span>
+        </div>
+        <div class="results-info">
+          Showing {{ paginatedEvents().length }} of {{ filteredEvents().length }} events
+        </div>
+      </div>
+    </div>
+
+    <!-- Events Table -->
+    <div class="table-container">
+      <table class="events-table">
+        <thead>
+          <tr>
+            <th class="sortable" (click)="toggleSort('name')">
+              Event Name <span class="sort-icon">{{ getSortIcon('name') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('eventDate')">
+              Date <span class="sort-icon">{{ getSortIcon('eventDate') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('status')">
+              Status <span class="sort-icon">{{ getSortIcon('status') }}</span>
+            </th>
+            <th class="sortable" (click)="toggleSort('pointsPool')">
+              Points Pool <span class="sort-icon">{{ getSortIcon('pointsPool') }}</span>
+            </th>
+            <th>Prizes</th>
+            <th class="sortable centered-header" (click)="toggleSort('participantCount')">
+              Participants <span class="sort-icon">{{ getSortIcon('participantCount') }}</span>
+            </th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (event of paginatedEvents(); track event.id) {
+            <tr>
+              <td>
+                <div class="event-name">
+                  <strong>{{ event.name }}</strong>
+                  <span class="event-description">{{ event.description }}</span>
+                </div>
+              </td>
+              <td>{{ event.eventDate | date: 'MMM dd, yyyy' }}</td>
+              <td>
+                <app-badge [variant]="getStatusVariant(event.status)">
+                  {{ event.status }}
+                </app-badge>
+              </td>
+              <td>
+                <span class="points-value">{{ event.pointsPool }} pts</span>
+              </td>
+              <td>
+                @if (event.firstPlacePoints || event.secondPlacePoints || event.thirdPlacePoints) {
+                  <div class="prize-badges">
+                    @if (event.firstPlacePoints) {
+                      <span class="prize-badge gold">🥇 {{ event.firstPlacePoints }}</span>
+                    }
+                    @if (event.secondPlacePoints) {
+                      <span class="prize-badge silver">🥈 {{ event.secondPlacePoints }}</span>
+                    }
+                    @if (event.thirdPlacePoints) {
+                      <span class="prize-badge bronze">🥉 {{ event.thirdPlacePoints }}</span>
+                    }
+                  </div>
+                } @else {
+                  <span class="no-prizes">-</span>
+                }
+              </td>
+              <td class="centered-cell">
+                <span class="participant-count">{{ event.participantCount }}</span>
+              </td>
+              <td>
+                <div class="action-buttons">
+                  <button class="action-btn edit-btn" (click)="openEditModal(event)" title="Edit">
+                    <app-icon name="edit" [size]="16"></app-icon>
+                  </button>
+                  <button class="action-btn participants-btn" (click)="openParticipantsModal(event)" title="View Participants">
+                    <app-icon name="users" [size]="16"></app-icon>
+                  </button>
+                  <button class="action-btn delete-btn" (click)="deleteEvent(event.id)" title="Delete">
+                    <app-icon name="delete" [size]="16"></app-icon>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          }
+          
+          @if (filteredEvents().length === 0) {
+            <tr>
+              <td colspan="7" class="no-results">
+                <div class="no-results-content">
+                  <span class="no-results-icon"><app-icon name="celebrate" [size]="32"></app-icon></span>
+                  @if (searchQuery()) {
+                    <p>No events found matching "{{ searchQuery() }}"</p>
+                    <button class="clear-filters-link" (click)="clearFilters()">Clear filters</button>
+                  } @else {
+                    <p>No {{ selectedFilter() === 'all' ? '' : selectedFilter().toLowerCase() }} events at the moment.</p>
+                  }
+                </div>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    
+    <!-- Pagination -->
+    @if (filteredEvents().length > 0) {
+      <div class="pagination-container">
+        <div class="pagination-info">
+          <span>Show</span>
+          <select [ngModel]="pageSize()" (ngModelChange)="onPageSizeChange($event)" class="page-size-select">
+            <option [value]="5">5</option>
+            <option [value]="10">10</option>
+            <option [value]="20">20</option>
+            <option [value]="50">50</option>
+          </select>
+          <span>per page</span>
+        </div>
+        
+        <div class="pagination-controls">
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === 1"
+            (click)="previousPage()">
+            <app-icon name="arrow-left" [size]="14"></app-icon> Prev
+          </button>
+          
+          @for (page of getPageNumbers(); track $index) {
+            @if (page === -1) {
+              <span class="pagination-ellipsis">...</span>
+            } @else {
+              <button 
+                class="pagination-btn page-number" 
+                [class.active]="page === currentPage()"
+                (click)="goToPage(page)">
+                {{ page }}
+              </button>
+            }
+          }
+          
+          <button 
+            class="pagination-btn" 
+            [disabled]="currentPage() === totalPages()"
+            (click)="nextPage()">
+            Next <app-icon name="arrow-right" [size]="14"></app-icon>
+          </button>
+        </div>
+        
+        <div class="pagination-summary">
+          Page {{ currentPage() }} of {{ totalPages() }}
+        </div>
+      </div>
+    }
+  </app-card>
+</div>
+
+<!-- Event Modal -->
+@if (showModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ modalMode() === 'create' ? 'Create New Event' : 'Edit Event' }}</h3>
+      </div>
+
+    <div class="modal-body">
+      <form>
+        <!-- Validation Errors -->
+        @if (eventModalValidationErrors.length > 0) {
+          <div class="error-list">
+            @for (error of eventModalValidationErrors; track $index) {
+              <div class="error">{{ error }}</div>
+            }
+          </div>
+        }
+        
+        <div class="form-group">
+          <label for="eventName">Event Name *</label>
+          <input
+            id="eventName"
+            type="text"
+            [(ngModel)]="selectedEvent.name"
+            (ngModelChange)="validateEventModalRealtime()"
+            name="name"
+            placeholder="Enter event name"
+            required
+            minlength="3"
+            maxlength="200"
+            [class.invalid]="selectedEvent.name !== undefined && (selectedEvent.name.trim().length || 0) < 3"
+          />
+          <small class="form-hint">3-200 characters required</small>
+        </div>
+
+        <div class="form-group">
+          <label for="eventDescription">Description</label>
+          <textarea
+            id="eventDescription"
+            [(ngModel)]="selectedEvent.description"
+            (ngModelChange)="validateEventModalRealtime()"
+            name="description"
+            placeholder="Enter event description"
+            rows="3"
+            maxlength="1000"
+          ></textarea>
+          <small class="form-hint">Max 1000 characters</small>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="eventDate">Event Start Date *</label>
+            <input
+              id="eventDate"
+              type="date"
+              [(ngModel)]="selectedEvent.eventDate"
+              (ngModelChange)="validateEventModalRealtime()"
+              name="eventDate"
+              required
+              placeholder="YYYY-MM-DD"
+              [class.invalid]="!selectedEvent.eventDate"
+            />
+            <small class="form-hint">Must be a future date</small>
+          </div>
+
+          <div class="form-group">
+            <label for="eventEndDate">Event End Date *</label>
+            <input
+              id="eventEndDate"
+              type="date"
+              [(ngModel)]="selectedEvent.eventEndDate"
+              (ngModelChange)="validateEventModalRealtime()"
+              name="eventEndDate"
+              placeholder="YYYY-MM-DD"
+              required
+              [min]="selectedEvent.eventDate"
+            />
+            <small class="form-hint">Must be after start date. Event becomes Completed after this date.</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="eventStatus">Status *</label>
+            <select
+              id="eventStatus"
+              [(ngModel)]="selectedEvent.status"
+              (ngModelChange)="validateEventModalRealtime()"
+              name="status"
+              required
+            >
+              @for (status of getAvailableStatuses(); track status) {
+                <option [value]="status">{{ status }}</option>
+              }
+            </select>
+            @if (modalMode() === 'create') {
+              <small class="form-hint">New events start as Draft. Change to Upcoming when ready for employees to see.</small>
+            } @else {
+              <small class="form-hint">Only Draft → Upcoming can be changed manually. Other status changes are automatic.</small>
+            }
+          </div>
+
+          <div class="form-group">
+            <label for="maxParticipants">Max Participants</label>
+            <input
+              id="maxParticipants"
+              type="number"
+              [(ngModel)]="selectedEvent.maxParticipants"
+              (ngModelChange)="validateEventModalRealtime()"
+              name="maxParticipants"
+              placeholder="Leave empty for unlimited"
+              min="1"
+            />
+            <small class="form-hint">Leave empty for unlimited participants</small>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="pointsPool">Points Pool *</label>
+            <input
+              id="pointsPool"
+              type="number"
+              [(ngModel)]="selectedEvent.pointsPool"
+              (ngModelChange)="validateEventModalRealtime()"
+              name="pointsPool"
+              placeholder="Enter points pool"
+              required
+              min="1"
+              max="1000000"
+              [class.invalid]="selectedEvent.pointsPool !== undefined && (selectedEvent.pointsPool || 0) <= 0"
+            />
+            <small class="form-hint">Must be greater than 0, max 1,000,000</small>
+          </div>
+        </div>
+
+        <!-- Prize Distribution Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="trophy" [size]="18"></app-icon> Prize Distribution (Required)</h4>
+          <p class="form-section-hint">Sum of all prizes must equal the points pool. 1st > 2nd > 3rd place.</p>
+          
+          <div class="form-row prize-row">
+            <div class="form-group prize-input first-place">
+              <label for="firstPlacePoints">🥇 1st Place *</label>
+              <input
+                id="firstPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.firstPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
+                name="firstPlacePoints"
+                placeholder="Points for 1st place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.firstPlacePoints !== undefined && (selectedEvent.firstPlacePoints || 0) <= 0"
+              />
+            </div>
+
+            <div class="form-group prize-input second-place">
+              <label for="secondPlacePoints">🥈 2nd Place *</label>
+              <input
+                id="secondPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.secondPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
+                name="secondPlacePoints"
+                placeholder="Points for 2nd place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.secondPlacePoints !== undefined && (selectedEvent.secondPlacePoints || 0) <= 0"
+              />
+            </div>
+
+            <div class="form-group prize-input third-place">
+              <label for="thirdPlacePoints">🥉 3rd Place *</label>
+              <input
+                id="thirdPlacePoints"
+                type="number"
+                [(ngModel)]="selectedEvent.thirdPlacePoints"
+                (ngModelChange)="validateEventModalRealtime()"
+                name="thirdPlacePoints"
+                placeholder="Points for 3rd place"
+                min="1"
+                required
+                [class.invalid]="selectedEvent.thirdPlacePoints !== undefined && (selectedEvent.thirdPlacePoints || 0) <= 0"
+              />
+            </div>
+          </div>
+          
+          <!-- Prize Summary -->
+          @if ((selectedEvent.pointsPool || 0) > 0) {
+            @let totalPrizes = (selectedEvent.firstPlacePoints || 0) + (selectedEvent.secondPlacePoints || 0) + (selectedEvent.thirdPlacePoints || 0);
+            @let remainingPool = (selectedEvent.pointsPool || 0) - totalPrizes;
+            <div class="prize-summary" [class.valid]="remainingPool === 0 && totalPrizes > 0" [class.invalid]="remainingPool !== 0">
+              <div class="pool-info">
+                <span class="pool-label">Remaining Pool:</span>
+                <span class="pool-value" [class.negative]="remainingPool < 0">{{ remainingPool }} pts</span>
+              </div>
+              <small class="pool-detail">Assigned: {{ totalPrizes }} / {{ selectedEvent.pointsPool }} pts</small>
+              @if (remainingPool === 0 && totalPrizes > 0) {
+                <app-icon name="check" [size]="16"></app-icon>
+              }
+              @if (remainingPool < 0) {
+                <small class="pool-error">⚠️ Prize total exceeds points pool!</small>
+              }
+              @if (remainingPool > 0) {
+                <small class="pool-warning">⚠️ {{ remainingPool }} pts still unassigned</small>
+              }
+            </div>
+          }
+        </div>
+
+        <!-- Registration Period Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="calendar" [size]="18"></app-icon> Registration Period *</h4>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label for="registrationStartDate">Registration Opens *</label>
+              <input
+                id="registrationStartDate"
+                type="date"
+                [(ngModel)]="selectedEvent.registrationStartDate"
+                (ngModelChange)="validateEventModalRealtime()"
+                name="registrationStartDate"
+                placeholder="YYYY-MM-DD"
+                required
+              />
+              <small class="form-hint">When employees can see and register for event</small>
+            </div>
+
+            <div class="form-group">
+              <label for="registrationEndDate">Registration Closes *</label>
+              <input
+                id="registrationEndDate"
+                type="date"
+                [(ngModel)]="selectedEvent.registrationEndDate"
+                (ngModelChange)="validateEventModalRealtime()"
+                name="registrationEndDate"
+                placeholder="YYYY-MM-DD"
+                required
+                [max]="selectedEvent.eventDate"
+              />
+              <small class="form-hint">Must close before or on event start</small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Location Section -->
+        <div class="form-section">
+          <h4 class="form-section-title"><app-icon name="location" [size]="18"></app-icon> Event Location (Optional)</h4>
+          
+          <div class="form-group">
+            <label for="location">Physical Location</label>
+            <input
+              id="location"
+              type="text"
+              [(ngModel)]="selectedEvent.location"
+              name="location"
+              placeholder="e.g., Conference Room A, Building 1"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="virtualLink">Virtual Meeting Link</label>
+            <input
+              id="virtualLink"
+              type="url"
+              [(ngModel)]="selectedEvent.virtualLink"
+              name="virtualLink"
+              placeholder="https://zoom.us/j/meeting-id"
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="imageUrl">Event Image URL</label>
+          <input
+            id="imageUrl"
+            type="url"
+            [(ngModel)]="selectedEvent.imageUrl"
+            name="imageUrl"
+            placeholder="https://example.com/image.jpg"
+          />
+        </div>
+      </form>
+    </div>
+
+    <div class="modal-footer">
+      <app-button variant="secondary" (clicked)="closeModal()">
+        Cancel
+      </app-button>
+      <app-button 
+        (clicked)="saveEvent()" 
+        [disabled]="!isEventFormValid()"
+        [class.disabled-btn]="!isEventFormValid()">
+        {{ modalMode() === 'create' ? 'Create Event' : 'Save Changes' }}
+      </app-button>
+    </div>
+    </div>
+  </div>
+}
+
+<!-- Participants Modal -->
+@if (showParticipantsModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content participants-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3>{{ selectedEventForParticipants()?.name }} - Participants</h3>
+          <p class="participants-count">Total Participants: {{ filteredParticipants().length }}</p>
+          <p class="remaining-pool-info">
+            <strong>Remaining Points Pool:</strong> 
+            <span [class.low-points]="(selectedEventForParticipants()?.remainingPoints ?? 0) < (selectedEventForParticipants()?.pointsPool ?? 0) * 0.2">
+              {{ selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool }} / {{ selectedEventForParticipants()?.pointsPool }} pts
+            </span>
+          </p>
+        </div>
+      </div>
+      
+      <!-- Event Not Completed Warning -->
+      @if (selectedEventForParticipants()?.status !== 'Completed') {
+        <div class="event-status-banner warning">
+          <app-icon name="clock" [size]="16"></app-icon>
+          <span><strong>Event Not Completed:</strong> Points can only be awarded after the event has ended. Current status: {{ selectedEventForParticipants()?.status }}</span>
+        </div>
+      }
+      
+    <div class="modal-body">
+      <!-- Search Bar -->
+      <div class="search-container">
+        <input
+          type="text"
+          class="search-input"
+          [ngModel]="participantSearchQuery()"
+          (ngModelChange)="participantSearchQuery.set($event); filterParticipants()"
+          placeholder="Search by name or email..."
+        />
+      </div>
+
+      <!-- Participants Table -->
+      <div class="participants-table-container">
+        <table class="participants-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Registration Date</th>
+              <th>Status</th>
+              <th>Rank</th>
+              <th>Points</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+            <tbody>
+              @for (participant of filteredParticipants(); track participant.userId) {
+                <tr [class.awarded-row]="participant.pointsAwarded || participant.status === 'Awarded'">
+                  <td>
+                    <strong>{{ participant.userName }}</strong>
+                  </td>
+                  <td>{{ participant.userEmail }}</td>
+                  <td>{{ participant.registeredAt | date: 'MMM dd, yyyy' }}</td>
+                  <td>
+                    <app-badge [variant]="getParticipantStatusVariant(participant.status)">
+                      {{ participant.pointsAwarded ? 'Awarded' : participant.status }}
+                    </app-badge>
+                  </td>
+                  <td>
+                    @if (participant.eventRank) {
+                      <span class="rank-badge">
+                        <app-icon name="trophy" [size]="14"></app-icon> #{{ participant.eventRank }}
+                      </span>
+                    } @else {
+                      <span>-</span>
+                    }
+                  </td>
+                  <td>
+                    @if (participant.pointsAwarded) {
+                      <span class="points-awarded">
+                        {{ participant.pointsAwarded }} pts
+                      </span>
+                    } @else {
+                      <span>-</span>
+                    }
+                  </td>
+                  <td>
+                    <button 
+                      class="select-winner-btn"
+                      (click)="openWinnerSelectionModal(participant)"
+                      [disabled]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      [class.disabled-btn]="participant.pointsAwarded || participant.status === 'Awarded' || selectedEventForParticipants()?.status !== 'Completed' || allRanksAwarded()"
+                      title="{{ (participant.pointsAwarded || participant.status === 'Awarded') ? 'Points already awarded' : (selectedEventForParticipants()?.status !== 'Completed' ? 'Event must be completed first' : (allRanksAwarded() ? 'All prize positions awarded' : 'Award points to this participant')) }}">
+                      @if (participant.pointsAwarded || participant.status === 'Awarded') {
+                          <app-icon name="check" [size]="14"></app-icon> Awarded
+                        } @else if (selectedEventForParticipants()?.status !== 'Completed') {
+                          <app-icon name="clock" [size]="14"></app-icon> Event Not Complete
+                        } @else if (allRanksAwarded()) {
+                          <app-icon name="check-circle" [size]="14"></app-icon> All Awarded
+                        } @else {
+                          <app-icon name="trophy" [size]="14"></app-icon> Award Points
+                        }
+                    </button>
+                  </td>
+                </tr>
+              }
+              @if (filteredParticipants().length === 0) {
+                <tr>
+                  <td colspan="7" style="text-align: center; padding: 32px; color: #7A7A7A;">
+                    No participants found
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Close Button at Bottom -->
+        <div class="modal-footer">
+          <app-button variant="secondary" (clicked)="closeParticipantsModal()">
+            Close
+          </app-button>
+        </div>
+      </div>
+    </div>
+  </div>
+}
+<!-- Winner Selection Modal -->
+@if (showWinnerModal()) {
+  <div class="modal-overlay">
+    <div class="modal-content winner-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3><app-icon name="trophy" [size]="20"></app-icon> Award Points</h3>
+      </div>
+
+      <div class="modal-body">
+        <div class="winner-info">
+          <p><strong>Participant:</strong> {{ selectedParticipant()?.userName }}</p>
+          <p><strong>Email:</strong> {{ selectedParticipant()?.userEmail }}</p>
+          <p><strong>Event:</strong> {{ selectedEventForParticipants()?.name }}</p>
+        </div>
+
+        <div class="form-group">
+          <label for="winnerRank">Select Rank Position *</label>
+          <select
+            id="winnerRank"
+            [ngModel]="winnerRank()"
+            (ngModelChange)="onRankChange($event)"
+            name="winnerRank"
+            required
+            class="rank-select"
+          >
+            @if (availableRanks().includes(1)) {
+              <option [value]="1">🥇 1st Place - {{ selectedEventForParticipants()?.firstPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(2)) {
+              <option [value]="2">🥈 2nd Place - {{ selectedEventForParticipants()?.secondPlacePoints || 0 }} pts</option>
+            }
+            @if (availableRanks().includes(3)) {
+              <option [value]="3">🥉 3rd Place - {{ selectedEventForParticipants()?.thirdPlacePoints || 0 }} pts</option>
+            }
+          </select>
+          <span class="input-hint">Select rank to auto-assign points ({{ availableRanks().length }} position(s) remaining)</span>
+        </div>
+
+        <div class="points-display">
+          <div class="points-label">Points to Award:</div>
+          <div class="points-value-large">{{ pointsToAward() }} pts</div>
+          <div class="points-remaining">
+            Remaining pool after award: {{ (selectedEventForParticipants()?.remainingPoints ?? selectedEventForParticipants()?.pointsPool ?? 0) - pointsToAward() }} / {{ selectedEventForParticipants()?.pointsPool ?? 0 }} pts
+          </div>
+        </div>
+
+        @if (winnerValidationError()) {
+          <div class="error-message-box">
+            {{ winnerValidationError() }}
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <app-button variant="secondary" (clicked)="closeWinnerModal()">
+          Cancel
+        </app-button>
+        <app-button (clicked)="confirmWinnerSelection()">
+          Confirm & Award Points
+        </app-button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- Direct Award Points Modal -->
+@if (showDirectAwardModal()) {
+  <div class="modal-overlay" (click)="closeDirectAwardModal()">
+    <div class="modal-content direct-award-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div class="header-content">
+          <div class="header-icon">
+            <app-icon name="trophy" [size]="24"></app-icon>
+          </div>
+          <div>
+            <h3>Award Points Directly</h3>
+            <p class="header-subtitle">Recognize employees with bonus points (Max: {{ MAX_AWARD_POINTS | number }} pts)</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-body">
+        <!-- Step indicator -->
+        <div class="step-indicator">
+          <div class="step" [class.active]="!selectedUserForAward()" [class.completed]="selectedUserForAward()">
+            <div class="step-number">1</div>
+            <span>Select Employee</span>
+          </div>
+          <div class="step-connector" [class.active]="selectedUserForAward()"></div>
+          <div class="step" [class.active]="selectedUserForAward()">
+            <div class="step-number">2</div>
+            <span>Award Details</span>
+          </div>
+        </div>
+
+        <!-- Step 1: User Selection -->
+        @if (!selectedUserForAward()) {
+          <div class="user-selection-section">
+            <div class="search-container">
+              <div class="search-input-wrapper">
+                <app-icon name="search" [size]="18" class="search-icon"></app-icon>
+                <input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  [(ngModel)]="userSearchQuery"
+                  (input)="onUserSearchChange()"
+                  class="user-search-input"
+                />
+                @if (userSearchQuery()) {
+                  <button class="clear-search" (click)="userSearchQuery.set(''); onUserSearchChange()">
+                    <app-icon name="close" [size]="16"></app-icon>
+                  </button>
+                }
+              </div>
+            </div>
+
+            @if (isLoadingUsers()) {
+              <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading employees...</p>
+              </div>
+            } @else if (filteredUsers().length === 0) {
+              <div class="empty-state">
+                <app-icon name="search" [size]="48"></app-icon>
+                <p>No employees found matching your search</p>
+              </div>
+            } @else {
+              <div class="users-list">
+                @for (user of filteredUsers(); track user.id) {
+                  <div class="user-card" (click)="selectUserForAward(user)">
+                    <div class="user-avatar">
+                      {{ user.firstName.charAt(0) }}{{ user.lastName.charAt(0) }}
+                    </div>
+                    <div class="user-info">
+                      <div class="user-name">{{ user.firstName }} {{ user.lastName }}</div>
+                      <div class="user-email">{{ user.email }}</div>
+                    </div>
+                    <div class="user-balance">
+                      @if (user.pointsBalance !== undefined) {
+                        <span class="balance-value">{{ user.pointsBalance | number }}</span>
+                        <span class="balance-label">pts</span>
+                      }
+                    </div>
+                    <div class="select-indicator">
+                      <app-icon name="chevron-right" [size]="20"></app-icon>
+                    </div>
+                  </div>
+                }
+              </div>
+              <div class="users-count">
+                Showing {{ filteredUsers().length }} of {{ allUsers().length }} employees
+              </div>
+            }
+          </div>
+        } @else {
+          <!-- Step 2: Award Details -->
+          <div class="award-details-section">
+            <!-- Selected User Card -->
+            <div class="selected-user-card">
+              <div class="user-avatar large">
+                {{ selectedUserForAward()?.firstName?.charAt(0) }}{{ selectedUserForAward()?.lastName?.charAt(0) }}
+              </div>
+              <div class="user-details">
+                <div class="user-name">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</div>
+                <div class="user-email">{{ selectedUserForAward()?.email }}</div>
+                @if (selectedUserForAward()?.pointsBalance !== undefined) {
+                  <div class="current-balance">
+                    Current Balance: <strong>{{ selectedUserForAward()?.pointsBalance | number }} pts</strong>
+                  </div>
+                }
+              </div>
+              <button class="change-user-btn" (click)="deselectUser()">
+                <app-icon name="edit" [size]="16"></app-icon>
+                Change
+              </button>
+            </div>
+
+            <!-- Award Form -->
+            <div class="award-form">
+              <div class="form-group">
+                <label for="directPoints">
+                  <app-icon name="star" [size]="16"></app-icon>
+                  Points to Award *
+                </label>
+                <div class="points-input-wrapper">
+                  <input
+                    type="number"
+                    id="directPoints"
+                    [(ngModel)]="directAwardPoints"
+                    (ngModelChange)="onPointsInputChange()"
+                    name="directPoints"
+                    min="1"
+                    [max]="MAX_AWARD_POINTS"
+                    placeholder="Enter points (1 - {{ MAX_AWARD_POINTS | number }})"
+                    class="points-input"
+                    [class.invalid]="directAwardPoints() < 0 || directAwardPoints() > MAX_AWARD_POINTS"
+                  />
+                  <span class="points-suffix">pts</span>
+                  @if (isValidatingBudget()) {
+                    <span class="validating-indicator">
+                      <span class="mini-spinner"></span>
+                    </span>
+                  }
+                </div>
+                <div class="input-hint">
+                  Maximum {{ MAX_AWARD_POINTS | number }} points per award
+                  @if (budgetValidation() && budgetValidation()!.remainingBudget !== 2147483647) {
+                    <span class="budget-hint">
+                      • Your remaining budget: {{ budgetValidation()!.remainingBudget | number }} pts
+                    </span>
+                  }
+                </div>
+                
+                <!-- Budget Warning/Info -->
+                @if (budgetValidation()) {
+                  @if (budgetValidation()!.isWarning && budgetValidation()!.message) {
+                    <div class="budget-warning">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message }}
+                    </div>
+                  }
+                  @if (!budgetValidation()!.isAllowed) {
+                    <div class="budget-error">
+                      <app-icon name="alert" [size]="14"></app-icon>
+                      {{ budgetValidation()!.message || 'Budget limit exceeded' }}
+                    </div>
+                  }
+                }
+              </div>
+
+              <div class="form-group">
+                <label for="directDescription">
+                  <app-icon name="edit" [size]="16"></app-icon>
+                  Reason for Award *
+                </label>
+                <textarea
+                  id="directDescription"
+                  [(ngModel)]="directAwardDescription"
+                  name="directDescription"
+                  rows="3"
+                  [minlength]="MIN_DESCRIPTION_LENGTH"
+                  [maxlength]="MAX_DESCRIPTION_LENGTH"
+                  placeholder="e.g., Outstanding performance on Q4 project, Going above and beyond... (min {{ MIN_DESCRIPTION_LENGTH }} characters)"
+                  class="description-input"
+                  [class.invalid]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH"
+                ></textarea>
+                <div class="input-hint" [class.error]="directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH">
+                  {{ directAwardDescription().length }}/{{ MAX_DESCRIPTION_LENGTH }} characters
+                  @if (directAwardDescription().length > 0 && directAwardDescription().length < MIN_DESCRIPTION_LENGTH) {
+                    <span class="min-chars-hint">(minimum {{ MIN_DESCRIPTION_LENGTH }} required)</span>
+                  }
+                </div>
+              </div>
+
+              <!-- Preview Card -->
+              @if (directAwardPoints() > 0 && directAwardDescription()) {
+                <div class="award-preview">
+                  <div class="preview-header">
+                    <app-icon name="eye" [size]="16"></app-icon>
+                    Award Preview
+                  </div>
+                  <div class="preview-content">
+                    <div class="preview-row">
+                      <span class="preview-label">Recipient:</span>
+                      <span class="preview-value">{{ selectedUserForAward()?.firstName }} {{ selectedUserForAward()?.lastName }}</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">Points:</span>
+                      <span class="preview-value highlight">+{{ directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row">
+                      <span class="preview-label">New Balance:</span>
+                      <span class="preview-value">{{ (selectedUserForAward()?.pointsBalance || 0) + directAwardPoints() | number }} pts</span>
+                    </div>
+                    <div class="preview-row description">
+                      <span class="preview-label">Reason:</span>
+                      <span class="preview-value">{{ directAwardDescription() }}</span>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- Error Message -->
+        @if (directAwardValidationError()) {
+          <div class="error-message-box">
+            <app-icon name="alert" [size]="16"></app-icon>
+            {{ directAwardValidationError() }}
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @if (selectedUserForAward()) {
+          <app-button variant="secondary" (clicked)="deselectUser()">
+            <app-icon name="arrow-left" [size]="16"></app-icon> Back
+          </app-button>
+        }
+        <app-button variant="secondary" (clicked)="closeDirectAwardModal()">
+          Cancel
+        </app-button>
+        @if (selectedUserForAward()) {
+          <app-button 
+            (clicked)="confirmDirectAward()"
+            [disabled]="isAwardButtonDisabled()">
+            <app-icon name="trophy" [size]="16"></app-icon> Award Points
+          </app-button>
+        }
+      </div>
+    </div>
+  </div>
+}

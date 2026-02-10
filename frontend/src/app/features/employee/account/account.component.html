@@ -1,0 +1,270 @@
+﻿<div class="employee-account">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1 class="page-title"> My Account</h1>
+    <p class="page-subtitle">View your points and redemption history</p>
+  </div>
+
+  <!-- Loading State -->
+  @if (isLoading()) {
+  <div class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading your account data...</p>
+  </div>
+  }
+
+  <!-- Summary Cards -->
+  @if (!isLoading()) {
+  <div class="summary-section">
+    <div class="summary-card earned">
+      <div class="summary-icon"><app-icon name="rupee" [size]="24"></app-icon></div>
+      <div class="summary-info">
+        <span class="summary-label">Earned Points</span>
+        <span class="summary-value">{{ totalEarned() }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card balance">
+      <div class="summary-icon"><app-icon name="wallet" [size]="24"></app-icon></div>
+      <div class="summary-info">
+        <span class="summary-label">Current Balance</span>
+        <span class="summary-value">{{ currentBalance() }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card pending">
+      <div class="summary-icon"><app-icon name="pending" [size]="24"></app-icon></div>
+      <div class="summary-info">
+        <span class="summary-label">Pending Points</span>
+        <span class="summary-value">{{ pendingPoints() }}</span>
+      </div>
+    </div>
+
+    <div class="summary-card redeemed">
+      <div class="summary-icon"><app-icon name="gift" [size]="24"></app-icon></div>
+      <div class="summary-info">
+        <span class="summary-label">Total Redeemed</span>
+        <span class="summary-value">{{ totalRedeemed() }}</span>
+      </div>
+    </div>
+  </div>
+  }
+
+  <!-- Tabs -->
+  @if (!isLoading()) {
+  <div class="tabs-container">
+    <div class="tabs-header">
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'points'"
+        (click)="switchTab('points')"
+      >
+        <app-icon name="rupee" [size]="18"></app-icon> Earning History
+      </button>
+      <button
+        class="tab-btn"
+        [class.active]="activeTab === 'redemptions'"
+        (click)="switchTab('redemptions')"
+      >
+        <app-icon name="cart" [size]="18"></app-icon> Redemption History
+      </button>
+    </div>
+
+    <!-- Earning History Tab -->
+    @if (activeTab === 'points') {
+    <div class="tab-content">
+      <!-- Empty State for Earnings -->
+      @if (pointsHistory().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon"><app-icon name="chart" [size]="48"></app-icon></span>
+        <h3>No earnings yet</h3>
+        <p>Your earned points will appear here once you participate in events or receive rewards.</p>
+      </div>
+      }
+
+      @if (pointsHistory().length > 0) {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th class="col-date">Date</th>
+              <th class="col-description">Description</th>
+              <th class="col-source">Source</th>
+              <th class="col-event">Event</th>
+              <th class="col-rank">Rank</th>
+              <th class="col-points">Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (transaction of paginatedPointsHistory(); track transaction.id) {
+            <tr>
+              <td class="col-date">{{ transaction.date }}</td>
+              <td class="col-description">{{ transaction.description }}</td>
+              <td class="col-source">
+                <span class="source-badge" [ngClass]="'source-' + (transaction.source?.toLowerCase() || 'direct')">
+                  {{ transaction.source || 'Direct' }}
+                </span>
+              </td>
+              <td class="col-event">
+                @if (transaction.eventName) {
+                <span class="event-badge">{{ transaction.eventName }}</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
+              </td>
+              <td class="col-rank">
+                @if (transaction.rank) {
+                <span class="rank-badge"><app-icon name="trophy" [size]="14"></app-icon> #{{ transaction.rank }}</span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
+              </td>
+              <td class="col-points">
+                <span class="points-value positive">+{{ transaction.points }}</span>
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        
+        <!-- Pagination for Earnings -->
+        @if (earningsTotalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="earningsCurrentPage() === 1" (click)="previousEarningsPage()">
+              <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getEarningsPageNumbers(); track $index) {
+                @if (page === -1) {
+                  <span class="ellipsis">...</span>
+                } @else {
+                  <button 
+                    class="page-num" 
+                    [class.active]="page === earningsCurrentPage()"
+                    (click)="goToEarningsPage(page)">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            
+            <button class="page-btn" [disabled]="earningsCurrentPage() === earningsTotalPages()" (click)="nextEarningsPage()">
+              Next <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        }
+      </div>
+      }
+    </div>
+    }
+
+    <!-- Redemption History Tab -->
+    @if (activeTab === 'redemptions') {
+    <div class="tab-content">
+      <!-- Empty State for Redemptions -->
+      @if (redemptionHistory().length === 0) {
+      <div class="empty-state">
+        <span class="empty-icon"><app-icon name="gift" [size]="48"></app-icon></span>
+        <h3>No redemptions yet</h3>
+        <p>Your product redemptions will appear here once you redeem your points.</p>
+      </div>
+      }
+
+      @if (redemptionHistory().length > 0) {
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Product</th>
+              <th>Qty</th>
+              <th>Points</th>
+              <th>Status</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (redemption of paginatedRedemptionHistory(); track redemption.id) {
+            <tr>
+              <td>{{ redemption.date }}</td>
+              <td>
+                <span class="product-name">{{ redemption.productName }}</span>
+              </td>
+              <td>{{ redemption.quantity }}</td>
+              <td>
+                <span class="points-value" [ngClass]="redemption.isRefunded ? 'refunded' : 'negative'">
+                  {{ redemption.isRefunded ? '+' : '-' }}{{ redemption.points }}
+                </span>
+                @if (redemption.isRefunded) {
+                <span class="refund-badge" title="Points refunded to your balance">
+                  ↩ Refunded
+                </span>
+                }
+              </td>
+              <td>
+                <span class="status-badge" [ngClass]="getStatusClass(redemption.status)">
+                  {{ redemption.status | titlecase }}
+                </span>
+              </td>
+              <td>
+                @if (redemption.rejectionReason) {
+                <span class="rejection-reason">
+                  {{ redemption.rejectionReason }}
+                </span>
+                } @else {
+                <span class="text-muted">-</span>
+                }
+              </td>
+              <td>
+                @if (redemption.status === 'pending') {
+                <button 
+                  class="cancel-btn"
+                  (click)="cancelRedemption(redemption)"
+                >
+                  Cancel
+                </button>
+                } @else {
+                <span class="text-muted">-</span>
+                }
+              </td>
+            </tr>
+            }
+          </tbody>
+        </table>
+        
+        <!-- Pagination for Redemptions -->
+        @if (redemptionsTotalPages() > 1) {
+          <div class="pagination">
+            <button class="page-btn" [disabled]="redemptionsCurrentPage() === 1" (click)="previousRedemptionsPage()">
+              <app-icon name="chevron-left" [size]="16"></app-icon> Previous
+            </button>
+            
+            <div class="page-numbers">
+              @for (page of getRedemptionsPageNumbers(); track $index) {
+                @if (page === -1) {
+                  <span class="ellipsis">...</span>
+                } @else {
+                  <button 
+                    class="page-num" 
+                    [class.active]="page === redemptionsCurrentPage()"
+                    (click)="goToRedemptionsPage(page)">
+                    {{ page }}
+                  </button>
+                }
+              }
+            </div>
+            
+            <button class="page-btn" [disabled]="redemptionsCurrentPage() === redemptionsTotalPages()" (click)="nextRedemptionsPage()">
+              Next <app-icon name="chevron-right" [size]="16"></app-icon>
+            </button>
+          </div>
+        }
+      </div>
+      }
+    </div>
+    }
+  </div>
+  }
+</div>

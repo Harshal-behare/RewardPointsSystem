@@ -1,0 +1,86 @@
+<div class="employee-layout">
+  <!-- Sidebar -->
+  <aside class="sidebar" [class.collapsed]="isSidebarCollapsed">
+    <div class="sidebar-header">
+      @if (!isSidebarCollapsed) {
+        <img
+          src="assets/Agdata_logo.png"
+          alt="AGDATA Logo"
+          class="sidebar-logo"
+        />
+      }
+    </div>
+
+    <nav class="sidebar-nav">
+      @for (item of menuItems; track item.route) {
+        <a
+          [routerLink]="item.route"
+          routerLinkActive="active"
+          class="nav-item"
+          (click)="setActiveMenu(item)"
+        >
+          <span class="nav-icon"><app-icon [name]="item.icon" [size]="20"></app-icon></span>
+          @if (!isSidebarCollapsed) {
+            <span class="nav-text">{{ item.name }}</span>
+          }
+        </a>
+      }
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="collapse-btn" (click)="toggleSidebar()">
+        <app-icon [name]="isSidebarCollapsed ? 'chevron-right' : 'chevron-left'" [size]="18"></app-icon>
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Top Bar -->
+    <header class="topbar">
+      <div class="topbar-left">
+        <h1 class="page-title">{{ pageTitle }}</h1>
+      </div>
+
+      <div class="topbar-right">
+
+        <!-- Profile Dropdown -->
+        <div class="profile-dropdown" (click)="toggleProfileDropdown()">
+          <div class="profile-avatar">
+            <span class="avatar-initials">{{ userInitials }}</span>
+          </div>
+          <div class="profile-info">
+            <span class="profile-name">{{ userName }}</span>
+            <span class="profile-role">Employee</span>
+          </div>
+          <span class="dropdown-arrow"><app-icon name="chevron-down" [size]="14"></app-icon></span>
+
+          @if (showProfileDropdown) {
+            <div class="dropdown-menu">
+              @if (isAdmin) {
+                <a (click)="switchToAdmin()" class="dropdown-item admin-switch">
+                  <app-icon name="users" [size]="16"></app-icon> Switch to Admin
+                </a>
+              }
+              <a [routerLink]="['/employee/profile']" class="dropdown-item">
+                <app-icon name="user" [size]="16"></app-icon> My Profile
+              </a>
+              <a [routerLink]="['/employee/account']" class="dropdown-item">
+                <app-icon name="wallet" [size]="16"></app-icon> My Points
+              </a>
+              <hr />
+              <a (click)="logout()" class="dropdown-item logout">
+                <app-icon name="logout" [size]="16"></app-icon> Logout
+              </a>
+            </div>
+          }
+        </div>
+      </div>
+    </header>
+
+    <!-- Page Content -->
+    <main class="page-content">
+      <router-outlet></router-outlet>
+    </main>
+  </div>
+</div>

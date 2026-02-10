@@ -1,0 +1,187 @@
+<div class="profile-container">
+  <div class="profile-grid">
+    <!-- Profile Information Card -->
+    <app-card title="Profile Information" class="profile-card">
+      <form (ngSubmit)="updateProfile()">
+        <div class="avatar-section">
+          <div class="avatar-large">
+            {{ profileData().firstName.charAt(0) }}{{ profileData().lastName.charAt(0) }}
+          </div>
+          <div class="avatar-info">
+            <h3>{{ profileData().firstName }} {{ profileData().lastName }}</h3>
+            <p class="role-badge">{{ profileData().role }}</p>
+            <p class="join-date">Member since {{ profileData().joinedDate | date: 'MMMM yyyy' }}</p>
+          </div>
+        </div>
+
+        <div class="form-divider"></div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="firstName">First Name</label>
+            <input
+              id="firstName"
+              type="text"
+              [ngModel]="profileData().firstName"
+              (ngModelChange)="updateFirstName($event)"
+              name="firstName"
+              placeholder="Enter first name"
+              required
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name</label>
+            <input
+              id="lastName"
+              type="text"
+              [ngModel]="profileData().lastName"
+              (ngModelChange)="updateLastName($event)"
+              name="lastName"
+              placeholder="Enter last name"
+              required
+            />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            [value]="profileData().email"
+            name="email"
+            disabled
+            class="disabled-input"
+          />
+          <small class="form-help">Email cannot be changed</small>
+        </div>
+
+        <div class="form-actions">
+          <app-button type="submit" [fullWidth]="true" [disabled]="isSaving()">
+            <app-icon name="save" [size]="16"></app-icon> Save Changes
+          </app-button>
+        </div>
+      </form>
+    </app-card>
+
+    <!-- Change Password Card -->
+    <app-card title="Change Password" class="password-card">
+      <form (ngSubmit)="changePassword()">
+        <div class="security-notice">
+          <span class="notice-icon"><app-icon name="lock" [size]="20"></app-icon></span>
+          <div>
+            <strong>Password Requirements:</strong>
+            <ul>
+              <li>8-20 characters long</li>
+              <li>At least one uppercase letter (A-Z)</li>
+              <li>At least one lowercase letter (a-z)</li>
+              <li>At least one number (0-9)</li>
+              <li>At least one special character (!&#64;#$%^&amp;*)</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="currentPassword">Current Password</label>
+          <div class="password-input-wrapper">
+            <input
+              id="currentPassword"
+              [type]="showCurrentPassword ? 'text' : 'password'"
+              [(ngModel)]="passwordData.currentPassword"
+              name="currentPassword"
+              placeholder="Enter current password"
+              (ngModelChange)="validateNewPassword()"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('current')"
+            >
+              <app-icon [name]="showCurrentPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="newPassword">New Password</label>
+          <div class="password-input-wrapper">
+            <input
+              id="newPassword"
+              [type]="showNewPassword ? 'text' : 'password'"
+              [(ngModel)]="passwordData.newPassword"
+              name="newPassword"
+              placeholder="Enter new password"
+              (ngModelChange)="validateNewPassword()"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('new')"
+            >
+              <app-icon [name]="showNewPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+            </button>
+          </div>
+          <!-- Real-time password validation -->
+          @if (passwordData.newPassword) {
+            <div class="password-validation">
+              <div class="validation-item" [class.valid]="passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20">
+                <span class="validation-icon">{{ passwordData.newPassword.length >= 8 && passwordData.newPassword.length <= 20 ? '✓' : '✗' }}</span>
+                8-20 characters
+              </div>
+              <div class="validation-item" [class.valid]="hasUppercase(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasUppercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one uppercase letter
+              </div>
+              <div class="validation-item" [class.valid]="hasLowercase(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasLowercase(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one lowercase letter
+              </div>
+              <div class="validation-item" [class.valid]="hasNumber(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasNumber(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one number
+              </div>
+              <div class="validation-item" [class.valid]="hasSpecialChar(passwordData.newPassword)">
+                <span class="validation-icon">{{ hasSpecialChar(passwordData.newPassword) ? '✓' : '✗' }}</span>
+                At least one special character
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="confirmPassword">Confirm New Password</label>
+          <div class="password-input-wrapper">
+            <input
+              id="confirmPassword"
+              [type]="showConfirmPassword ? 'text' : 'password'"
+              [(ngModel)]="passwordData.confirmPassword"
+              name="confirmPassword"
+              placeholder="Confirm new password"
+              (ngModelChange)="validateNewPassword()"
+              required
+            />
+            <button
+              type="button"
+              class="password-toggle"
+              (click)="togglePasswordVisibility('confirm')"
+            >
+              <app-icon [name]="showConfirmPassword ? 'eye-off' : 'eye'" [size]="18"></app-icon>
+            </button>
+          </div>
+          @if (passwordData.confirmPassword && passwordData.newPassword !== passwordData.confirmPassword) {
+            <span class="error-text">Passwords do not match</span>
+          }
+        </div>
+
+        <div class="form-actions">
+          <app-button type="submit" [fullWidth]="true" [disabled]="!isPasswordFormValid()">
+            <app-icon name="lock" [size]="16"></app-icon> Change Password
+          </app-button>
+        </div>
+      </form>
+    </app-card>
+  </div>
+</div>

@@ -11,12 +11,19 @@
 *.sln.docstates
 *.md
 gitignore.sql
+!Validation.md
+!PROJECT_Workflow_documentation.md
+!Database/DemoData.sql
+!Database/Database_RPS.sql
+!UI_design-system.md
 !README.md
 !agdata-srp-architecture.md
 !Project_Description.md 
 !SYSTEM_DOCUMENTATION.md
+!API_DOCUMENTATION.md
 *.txt
 Database/
+Database/*.sql
 
 # User-specific files (MonoDevelop/Xamarin Studio)
 *.userprefs
