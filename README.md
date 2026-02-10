@@ -1,153 +1,264 @@
 # RewardPointsSystem
 
-A production-grade, event-based reward points management system built with C# .NET 8.0. This system enables employees to earn points by participating in events and redeem those points for products from a catalog.
+A production-grade, full-stack reward points management system featuring an Angular 21 frontend and .NET 8.0 backend. This enterprise-ready application enables employees to earn points by participating in events and redeem those points for products from a catalog.
 
 [![.NET](https://img.shields.io/badge/.NET-8.0-blue.svg)](https://dotnet.microsoft.com/download)
-[![Tests](https://img.shields.io/badge/tests-132%20passing-brightgreen.svg)](/)
+[![Angular](https://img.shields.io/badge/Angular-21-red.svg)](https://angular.dev/)
+[![SQL Server](https://img.shields.io/badge/SQL%20Server-2019+-orange.svg)](https://www.microsoft.com/sql-server)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 
 ## 🎯 Overview
 
-RewardPointsSystem demonstrates clean architecture principles with strict adherence to the Single Responsibility Principle (SRP). It features a complete event-driven workflow where:
+RewardPointsSystem is a complete full-stack web application demonstrating clean architecture principles with a modern, responsive UI. It features:
 
+- 🌐 **Modern Web Application** with separate Admin and Employee portals
 - 👥 **Employees** register and participate in company events
 - 🎁 **Event Winners** receive reward points based on their performance
 - 🛍️ **Point Redemption** allows employees to exchange points for products
-- 📊 **Full Audit Trail** tracks all point movements and transactions
-- 🔐 **Role-Based Access** supports Admin and Employee roles
+- 📊 **Interactive Dashboards** with charts and real-time statistics
+- 🔐 **JWT Authentication** with role-based access control (Admin/Employee)
+- 🎨 **Responsive Design** with modern UI components
+
+## 🖥️ Live Application
+
+| Portal | URL | Description |
+|--------|-----|-------------|
+| **Frontend** | `http://localhost:4200` | Angular web application |
+| **Backend API** | `http://localhost:5000` | .NET REST API with Swagger |
 
 ## ✨ Key Features
+
+### Admin Portal
+
+- **Dashboard** - KPI cards, charts, recent activity, quick actions
+- **Events Management** - Create, edit, manage event lifecycle, award points
+- **Products Management** - Categories, product catalog, inventory control
+- **Users Management** - Create users, assign roles, manage accounts
+- **Redemptions** - Approve, reject, and track all redemption requests
+- **Profile** - Admin profile settings and preferences
+
+### Employee Portal
+
+- **Dashboard** - Personal points summary, upcoming events, featured products
+- **Events** - Browse and register for upcoming events
+- **Products Catalog** - Browse products, redeem points with live balance
+- **My Account** - Transaction history, pending redemptions, points breakdown
+- **Profile** - Personal settings and preferences
 
 ### Event Management
 
 - Create and manage events with dedicated point pools
-- Track event lifecycle (Upcoming → Active → Completed/Cancelled)
+- Track event lifecycle (Draft → Upcoming → Active → Completed/Cancelled)
 - Register participants and track attendance
-- Award points to event winners with validation
+- Award points to top performers (1st, 2nd, 3rd place with custom points)
 
 ### Points & Accounts
 
 - Automatic reward account creation for users
-- Real-time balance tracking
+- Real-time balance tracking with pending points support
 - Point earning and redemption workflows
-- Complete transaction history with timestamps
+- Complete transaction history with timestamps and event references
 
 ### Product Catalog
 
-- Product catalog management
-- Dynamic pricing with history support
+- Category-based product organization
+- Product catalog with images and descriptions
 - Real-time inventory tracking
-- Stock reservation system
+- Search, filter, and pagination
 
 ### Redemption Workflow
 
 - Multi-stage redemption process (Pending → Approved → Delivered)
 - Stock reservation during redemption
-- Automatic refunds on cancellation
+- Automatic refunds on cancellation (Rejected/Cancelled)
 - Full transaction auditing
 
 ## 🏗️ Architecture
 
-### Clean Architecture (4-Layer Design)
+### Full-Stack Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│        API Layer (Entry Point)           │
-│    Program.cs + Configuration            │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│    Application Layer (14 Services)       │
-│  ┌────────────┐ ┌──────────────────┐   │
-│  │  Business  │ │   Orchestrators  │   │
-│  │  Services  │ │  (Coordination)  │   │
-│  └────────────┘ └──────────────────┘   │
-│      Interfaces + DTOs                   │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│       Domain Layer (11 Entities)         │
-│    Pure business models - no logic       │
-└─────────────────────────────────────────┘
-                    ↓
-┌─────────────────────────────────────────┐
-│  Infrastructure Layer (Data Access)      │
-│   Repository Pattern + Unit of Work      │
-│        In-Memory Data Storage            │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Frontend (Angular 21)                         │
+│  ┌───────────┐  ┌───────────┐  ┌───────────┐  ┌───────────┐    │
+│  │  Admin    │  │ Employee  │  │  Shared   │  │   Core    │    │
+│  │  Portal   │  │  Portal   │  │Components │  │ Services  │    │
+│  └───────────┘  └───────────┘  └───────────┘  └───────────┘    │
+└────────────────────────────┬────────────────────────────────────┘
+                             │ HTTP/REST
+                             ▼
+┌─────────────────────────────────────────────────────────────────┐
+│               Backend API (.NET 8.0 Web API)                     │
+│              JWT Authentication + CORS + Swagger                 │
+└────────────────────────────┬────────────────────────────────────┘
+                             │
+┌────────────────────────────┴────────────────────────────────────┐
+│                   Clean Architecture Layers                      │
+├─────────────────────────────────────────────────────────────────┤
+│  API Layer         │ Controllers, Auth, Middleware              │
+├─────────────────────────────────────────────────────────────────┤
+│  Application Layer │ Services, DTOs, Validators, Use Cases      │
+├─────────────────────────────────────────────────────────────────┤
+│  Domain Layer      │ Entities, Value Objects, Exceptions        │
+├─────────────────────────────────────────────────────────────────┤
+│  Infrastructure    │ EF Core, Repositories, SQL Server          │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-### Core Components
+### Frontend Structure (Angular 21)
 
-**11 Domain Models** organized by domain:
+```
+frontend/src/app/
+├── auth/                    # Authentication (Login, Guards, JWT)
+├── core/                    # Core services (API, Toast, Modals)
+├── features/
+│   ├── admin/               # Admin-only pages
+│   │   ├── dashboard/       # Admin dashboard with KPIs & charts
+│   │   ├── events/          # Event management
+│   │   ├── products/        # Product & category management
+│   │   ├── users/           # User management
+│   │   ├── redemptions/     # Redemption approvals
+│   │   └── profile/         # Admin profile
+│   └── employee/            # Employee pages
+│       ├── dashboard/       # Employee dashboard
+│       ├── events/          # Event registration
+│       ├── products/        # Product catalog & redemption
+│       ├── account/         # Points & transaction history
+│       └── profile/         # Employee profile
+├── layouts/                 # Admin & Employee layout components
+└── shared/                  # Reusable components (Button, Card, Badge, etc.)
+```
 
-- Core: `User`, `Role`, `UserRole`
-- Events: `Event`, `EventParticipant`
-- Accounts: `PointsAccount`, `PointsTransaction`
-- Products: `Product`, `ProductPricing`, `InventoryItem`
-- Operations: `Redemption`
+### Backend Structure (.NET Clean Architecture)
 
-**14 Services** with single responsibilities:
-
-- **User Management**: UserService, RoleService, UserRoleService
-- **Event Operations**: EventService, EventParticipationService, PointsAwardingService
-- **Account Management**: PointsAccountService, TransactionService
-- **Product Catalog**: ProductCatalogService, PricingService, InventoryService
-- **Orchestrators**: EventRewardOrchestrator, RedemptionOrchestrator
-- **Administration**: AdminDashboardService
+```
+backend/
+├── RewardPointsSystem.Api/           # API Layer (Controllers, Auth)
+│   ├── Controllers/                   # REST API endpoints
+│   │   ├── AuthController.cs         # Login, Register, JWT
+│   │   ├── AdminController.cs        # Admin dashboard endpoints
+│   │   ├── EmployeeController.cs     # Employee dashboard endpoints
+│   │   ├── EventsController.cs       # Event CRUD + management
+│   │   ├── ProductsController.cs     # Products + Categories
+│   │   ├── UsersController.cs        # User management
+│   │   ├── PointsController.cs       # Points & transactions
+│   │   └── RedemptionsController.cs  # Redemption workflows
+│   └── Configuration/                 # DI, CORS, JWT setup
+│
+├── RewardPointsSystem.Application/   # Business Logic Layer
+│   ├── Services/                      # Business services
+│   │   ├── Admin/                     # Admin dashboard service
+│   │   ├── Employee/                  # Employee dashboard service
+│   │   ├── Events/                    # Event services
+│   │   ├── Products/                  # Product services
+│   │   └── Orchestrators/             # Workflow coordinators
+│   ├── DTOs/                          # Data Transfer Objects
+│   ├── Validators/                    # FluentValidation validators
+│   └── Interfaces/                    # Service interfaces
+│
+├── RewardPointsSystem.Domain/        # Core Business Models
+│   └── Entities/                      # Domain entities
+│       ├── User, Role, UserRole       # User management
+│       ├── Event, EventParticipant    # Event system
+│       ├── PointsAccount, PointsTransaction  # Points system
+│       ├── Product, Category          # Product catalog
+│       └── Redemption                 # Redemption operations
+│
+├── RewardPointsSystem.Infrastructure/ # Data Access Layer
+│   ├── Data/                          # EF Core DbContext
+│   ├── Repositories/                  # Repository implementations
+│   └── Migrations/                    # Database migrations
+│
+└── RewardPointsSystem.Tests/         # Unit & Integration Tests
+```
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 
 - [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-- Any IDE supporting C# (Visual Studio, VS Code, Rider)
+- [Node.js 18+](https://nodejs.org/) with npm
+- [SQL Server 2019+](https://www.microsoft.com/sql-server) (Express edition works)
+- Angular CLI: `npm install -g @angular/cli`
 
-### Installation
+### Quick Start
 
-1. **Clone the repository**
+#### 1. Clone and Setup
 
-   ```bash
-   git clone <repository-url>
-   cd RewardPointsSystem
-   ```
+```bash
+git clone <repository-url>
+cd RewardPointsSystem
+```
 
-2. **Restore dependencies**
+#### 2. Database Setup
 
-   ```bash
-   dotnet restore
-   ```
+```bash
+# Update connection string in backend/RewardPointsSystem.Api/appsettings.json
+# Run migrations
+cd backend/RewardPointsSystem.Api
+dotnet ef database update
+```
 
-3. **Build the solution**
+#### 3. Start Backend API
 
-   ```bash
-   dotnet build
-   ```
+```bash
+cd backend/RewardPointsSystem.Api
+dotnet run
+```
 
-4. **Run the application**
-   ```bash
-   dotnet run --project RewardPointsSystem.Api/RewardPointsSystem.Api.csproj
-   ```
+The API will be available at `http://localhost:5000` with Swagger UI.
+
+#### 4. Start Frontend
+
+```bash
+cd frontend
+npm install
+npm start
+```
+
+The application will be available at `http://localhost:4200`.
+
+### Default Login Credentials
+
+| Role | Email | Password |
+|------|-------|----------|
+| Admin | system@agdata.com | System@123 |
+| Employee | Harshal.Behare@agdata.com | Harshal@123 |
 
 ### Running Tests
 
 ```bash
-# Run all tests (132 tests)
+# Backend tests
+cd backend
 dotnet test
 
-# Run with detailed output
-dotnet test --verbosity normal
-
-# Run specific test class
-dotnet test --filter "FullyQualifiedName~UserServiceTests"
-
-# Run with code coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Frontend tests
+cd frontend
+npm test
 ```
+
+## 🔑 API Documentation
+
+The API includes comprehensive Swagger documentation available at `http://localhost:5000` when running.
+
+### Key API Endpoints
+
+| Category | Endpoints | Description |
+|----------|-----------|-------------|
+| **Auth** | `/api/v1/auth/*` | Login, Register, Refresh Token |
+| **Users** | `/api/v1/users/*` | User CRUD, Role Assignment |
+| **Events** | `/api/v1/events/*` | Event Management, Participants |
+| **Products** | `/api/v1/products/*` | Product Catalog, Categories |
+| **Points** | `/api/v1/points/*` | Points Accounts, Transactions |
+| **Redemptions** | `/api/v1/redemptions/*` | Redemption Workflow |
+| **Admin** | `/api/v1/admin/*` | Admin Dashboard Data |
+| **Employee** | `/api/v1/employee/*` | Employee Dashboard Data |
+
+See [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for complete API reference.
 
 ## 📊 Test Coverage
 
-The project includes **132 comprehensive unit tests** with **100% pass rate**:
+The project includes comprehensive unit tests:
 
 | Test File                      | Tests | Coverage                          |
 | ------------------------------ | ----- | --------------------------------- |
@@ -359,61 +470,76 @@ Comprehensive documentation is available in the repository:
 
 ```
 RewardPointsSystem/
-├── RewardPointsSystem.Api/            # API Layer (Presentation)
-│   ├── Configuration/                 # DI service registration
-│   │   └── ServiceConfiguration.cs    # Composition root
-│   └── Program.cs                     # Application entry point
+├── frontend/                          # Angular 21 Frontend
+│   ├── src/app/
+│   │   ├── auth/                      # Authentication module
+│   │   ├── core/                      # Core services
+│   │   ├── features/
+│   │   │   ├── admin/                 # Admin portal pages
+│   │   │   └── employee/              # Employee portal pages
+│   │   ├── layouts/                   # Layout components
+│   │   └── shared/                    # Shared components
+│   └── package.json
 │
-├── RewardPointsSystem.Application/    # Application Layer (Business Logic)
-│   ├── Services/                      # Service implementations (14 services)
-│   │   ├── Users/                     # User management services
-│   │   ├── Events/                    # Event management services
-│   │   ├── Accounts/                  # Account & transaction services
-│   │   ├── Products/                  # Product & inventory services
-│   │   ├── Orchestrators/             # Workflow orchestrators
-│   │   └── Admin/                     # Administrative services
-│   ├── Interfaces/                    # Service interfaces (14 interfaces)
-│   │   ├── IRepository.cs             # Generic repository interface
-│   │   └── IUnitOfWork.cs             # Unit of Work pattern
-│   └── DTOs/                          # Data Transfer Objects
+├── backend/
+│   ├── RewardPointsSystem.Api/        # API Layer (REST Controllers)
+│   │   ├── Controllers/               # API endpoints
+│   │   └── Configuration/             # DI, JWT, CORS setup
+│   │
+│   ├── RewardPointsSystem.Application/ # Business Logic Layer
+│   │   ├── Services/                  # Business services
+│   │   ├── DTOs/                      # Data Transfer Objects
+│   │   ├── Validators/                # FluentValidation
+│   │   └── Interfaces/                # Service contracts
+│   │
+│   ├── RewardPointsSystem.Domain/     # Domain Layer
+│   │   └── Entities/                  # Core domain models
+│   │
+│   ├── RewardPointsSystem.Infrastructure/ # Data Access Layer
+│   │   ├── Data/                      # EF Core DbContext
+│   │   ├── Repositories/              # Repository pattern
+│   │   └── Migrations/                # Database migrations
+│   │
+│   └── RewardPointsSystem.Tests/      # Test Project
+│       ├── UnitTests/                 # Unit tests
+│       └── IntegrationTests/          # Integration tests
 │
-├── RewardPointsSystem.Domain/         # Domain Layer (Core Business Models)
-│   └── Entities/                      # Domain models (11 classes)
-│       ├── Core/                      # User, Role, UserRole
-│       ├── Events/                    # Event, EventParticipant
-│       ├── Accounts/                  # PointsAccount, PointsTransaction
-│       ├── Products/                  # Product, ProductPricing, InventoryItem
-│       └── Operations/                # Redemption
-│
-├── RewardPointsSystem.Infrastructure/ # Infrastructure Layer (Data Access)
-│   └── Repositories/                  # Repository implementations
-│       ├── InMemoryRepository.cs      # Generic in-memory repository
-│       ├── InMemoryUnitOfWork.cs      # In-memory Unit of Work
-│       └── InMemoryUserRoleRepository.cs # Specialized repository
-│
-├── RewardPointsSystem.Tests/          # Test project
-│   ├── UnitTests/                     # Unit tests (132 tests)
-│   └── Helpers/                       # Test utilities
-│
-├── docs/                              # Documentation & diagrams
-├── agdata-srp-architecture.md         # SRP architecture guide
-├── Project_Description.md             # Business requirements
+├── Database/                          # SQL Scripts & Migrations
+├── docs/                              # Additional documentation
+├── API_DOCUMENTATION.md               # Complete API reference
+├── DEMO_GUIDE.md                      # Demo walkthrough
 └── README.md                          # This file
 ```
 
 ## 🔄 Technology Stack
 
+### Frontend
+- **Angular 21** - Modern TypeScript framework
+- **Tailwind CSS** - Utility-first CSS framework
+- **ApexCharts** - Interactive charts and graphs
+- **Angular Material** - UI component library
+- **RxJS** - Reactive programming
+
+### Backend
 - **.NET 8.0** - Modern C# framework
-- **Microsoft.Extensions.DependencyInjection** - Built-in DI container
-- **Microsoft.Extensions.Hosting** - Generic host for console apps
-- **xUnit** - Testing framework
+- **ASP.NET Core Web API** - RESTful API framework
+- **Entity Framework Core** - ORM for SQL Server
+- **FluentValidation** - Input validation
+- **AutoMapper** - Object mapping
+- **JWT Bearer** - Authentication
+
+### Database
+- **SQL Server 2019+** - Relational database
+- **EF Core Migrations** - Database versioning
+
+### Testing
+- **xUnit** - Backend testing framework
+- **Vitest** - Frontend testing framework
 - **FluentAssertions** - Readable assertions
-- **Moq** - Mocking framework
-- **AutoFixture** - Test data generation
 
 ## 🎨 Naming Conventions
 
-The project follows C# production-grade naming conventions:
+The project follows standard naming conventions:
 
 | Element                      | Convention                 | Example                            |
 | ---------------------------- | -------------------------- | ---------------------------------- |
@@ -421,31 +547,30 @@ The project follows C# production-grade naming conventions:
 | Interfaces                   | PascalCase with 'I' prefix | `IUserService`                     |
 | Local variables, parameters  | camelCase                  | `userId`, `pointsAwarded`          |
 | Private fields               | \_camelCase                | `_unitOfWork`, `_logger`           |
-| Constants                    | ALL_CAPS                   | `MAX_POINTS`                       |
-| Async methods                | Suffix with "Async"        | `ProcessRedemptionAsync()`         |
-| Booleans                     | Is/Has/Can/Should prefix   | `IsActive`, `HasBalance`           |
+| Angular Components           | kebab-case files           | `user-list.component.ts`           |
+| CSS Classes                  | kebab-case                 | `.user-card`, `.points-badge`      |
 
 ## 📈 Future Enhancements
 
 Potential areas for expansion:
 
-- [ ] Database integration (Entity Framework Core)
-- [ ] RESTful API layer (ASP.NET Core Web API)
-- [ ] Authentication & Authorization (JWT tokens)
 - [ ] Email notifications for events and redemptions
-- [ ] Reporting and analytics dashboard
 - [ ] Point expiration policies
 - [ ] Tiered reward levels
 - [ ] External payment integration for hybrid redemptions
+- [ ] Mobile application (React Native / Flutter)
+- [ ] Advanced reporting and analytics
+- [ ] Bulk user import/export
+- [ ] Event calendar integration
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please follow these guidelines:
 
-1. Maintain SRP - each class should have one responsibility
+1. Maintain Clean Architecture principles
 2. Follow naming conventions strictly
 3. Write unit tests for new features
-4. Update documentation (WARP.md) for significant changes
+4. Update documentation for significant changes
 5. Use async/await consistently
 6. Validate inputs at service boundaries
 
@@ -455,23 +580,23 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👨‍💻 Author
 
-Created as a demonstration of production-grade C# architecture with emphasis on:
+Created as a demonstration of production-grade full-stack development with emphasis on:
 
-- Clean code principles
-- Single Responsibility Principle
+- Clean Architecture principles
+- Modern Angular development
+- RESTful API design
+- Enterprise security patterns
 - Test-driven development
-- Enterprise-level design patterns
 
 ## 📞 Support
 
 For questions or issues, please:
 
+- Check the [API_DOCUMENTATION.md](API_DOCUMENTATION.md) for API reference
+- Check the [DEMO_GUIDE.md](DEMO_GUIDE.md) for demo walkthrough
 - Check the [Project_Description.md](Project_Description.md) for business logic
-- Examine the unit tests for usage examples
 - Open an issue in the repository
 
 ---
 
-"Server=LAPTOP-TJP69TAG\\SQLEXPRESS;Database=RewardPointsDB;Trusted_Connection=True;TrustServerCertificate=True;"
-
-**Built with ❤️ using C# and .NET 8.0**
+**Built with ❤️ using Angular 21, .NET 8.0, and SQL Server**
