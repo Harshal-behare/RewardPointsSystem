@@ -1,59 +1,102 @@
-# Client
+# Reward Points System - Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.5.
+Modern Angular 21 frontend for the Reward Points System, featuring separate Admin and Employee portals with responsive design.
 
-## Development server
+## Technology Stack
 
-To start a local development server, run:
+- **Angular 21** - Latest Angular framework
+- **Tailwind CSS** - Utility-first CSS framework
+- **ApexCharts** - Interactive charts and visualizations
+- **Angular Material** - UI component library
+- **RxJS** - Reactive programming
+
+## Features
+
+### Admin Portal (`/admin`)
+- **Dashboard** - KPIs, charts, recent activity, quick actions
+- **Events** - Full event lifecycle management
+- **Products** - Category and product management
+- **Users** - User and role management
+- **Redemptions** - Approve/reject redemption requests
+
+### Employee Portal (`/employee`)
+- **Dashboard** - Personal points summary, upcoming events
+- **Events** - Browse and register for events
+- **Products** - Browse catalog and redeem points
+- **Account** - Transaction history and pending redemptions
+
+## Getting Started
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Angular CLI: `npm install -g @angular/cli`
+
+### Installation
 
 ```bash
+npm install
+```
+
+### Development Server
+
+```bash
+npm start
+# or
 ng serve
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Navigate to `http://localhost:4200/`. The app reloads on source changes.
 
-## Code scaffolding
-
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+### Build
 
 ```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
-
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
-
-```bash
+npm run build
+# or
 ng build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Build artifacts are stored in `dist/`.
 
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### Running Tests
 
 ```bash
+npm test
+# or
 ng test
 ```
 
-## Running end-to-end tests
+## Project Structure
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
+```
+src/app/
+├── auth/                  # Authentication (login, guards, JWT)
+├── core/                  # Core services (API, toast, modals)
+├── features/
+│   ├── admin/             # Admin pages
+│   │   ├── dashboard/
+│   │   ├── events/
+│   │   ├── products/
+│   │   ├── users/
+│   │   ├── redemptions/
+│   │   └── profile/
+│   └── employee/          # Employee pages
+│       ├── dashboard/
+│       ├── events/
+│       ├── products/
+│       ├── account/
+│       └── profile/
+├── layouts/               # Admin & Employee layouts
+└── shared/                # Reusable components
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Environment
 
-## Additional Resources
+Configure API URL in `src/environments/`:
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:5000/api/v1'
+};
+```

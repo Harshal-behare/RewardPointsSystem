@@ -2,16 +2,20 @@
 
 ## What This Project Is
 
-This is a **Points-Based Redemption System** built in C# using **Clean Architecture** principles. It's a business application where users can earn points through various events and redeem those points for products from a catalog.
+This is a **full-stack Points-Based Redemption System** featuring an **Angular 21 frontend** and **.NET 8.0 backend** with **SQL Server** database. It's an enterprise-ready business application where employees can earn points through company events and redeem those points for products from a catalog.
+
+### Technology Stack
+- **Frontend**: Angular 21, Tailwind CSS, ApexCharts
+- **Backend**: .NET 8.0 Web API, Entity Framework Core
+- **Database**: SQL Server with EF Core Migrations
+- **Authentication**: JWT Bearer Tokens with Role-Based Access Control
 
 ### Architecture
 The system follows a **4-layer Clean Architecture** design:
-- **API Layer**: Entry point and dependency injection configuration
-- **Application Layer**: Business logic, services, and interfaces
+- **API Layer**: REST Controllers, JWT Authentication, CORS configuration
+- **Application Layer**: Business logic, services, DTOs, and validators
 - **Domain Layer**: Core business entities (pure models with no dependencies)
-- **Infrastructure Layer**: Data access implementation (in-memory repositories)
-
-The entire system runs in-memory without any database, making it perfect for demonstrating clean code principles and enterprise architecture patterns.
+- **Infrastructure Layer**: Entity Framework Core with SQL Server
 
 ---
 
@@ -25,26 +29,39 @@ Represents a person who uses the system. Users can:
 - Have account status (active/inactive)
 
 ### Event
-Represents activities or actions that trigger point allocation. Events:
-- Have a name and description
-- Are associated with point values
-- Can be linked to multiple point transactions
-- Track when and why points were earned
+Represents company activities where employees can earn points. Events have:
+- Name, description, and location (physical or virtual)
+- Event dates and registration period
+- Points pool for distribution to winners
+- 1st, 2nd, 3rd place point allocations
+- Maximum participant limit
+- Lifecycle status (Draft → Upcoming → Active → Completed/Cancelled)
+- Image URL for display
+
+### Category
+Product categories for organization:
+- Name and description
+- Active/Inactive status
+- Display order
 
 ### Product
 Items available in the catalog that users can redeem with their points. Products have:
 - Name and description
-- Required points for redemption
-- Stock quantity
-- Availability status
+- Points price for redemption
+- Stock quantity with real-time tracking
+- Category association
+- Featured flag for homepage display
+- Image URL
+- Active/Inactive status
 
 ### Redemption
 A transaction record when a user exchanges points for a product. Each redemption captures:
 - Which user made the redemption
 - Which product was redeemed
-- How many points were spent
-- When the redemption occurred
-- Transaction status
+- Quantity and total points spent
+- Redemption status (Pending → Approved → Delivered, or Rejected/Cancelled)
+- Notes and delivery information
+- Timestamps for each status change
 
 ### Points Transaction
 A record of points earned or spent. Tracks:
@@ -68,9 +85,16 @@ The system needs to manage users by:
 
 ### Event Management
 The system handles events by:
-- Creating new events
-- Managing event details
-- Linking events to point allocations
+- Creating new events with full details (Draft status)
+- Managing event lifecycle:
+  - **Draft**: Initial creation, can be edited freely
+  - **Upcoming**: Published for employee registration
+  - **Active**: Event is ongoing
+  - **Completed**: Event finished, awards can be distributed
+  - **Cancelled**: Event was cancelled
+- Registering and unregistering participants
+- Awarding points to top performers (1st, 2nd, 3rd place)
+- Tracking event statistics
 
 ### Product Catalog Management
 The system manages products by:
@@ -163,16 +187,27 @@ Different classes can be treated through common interfaces, allowing for flexibl
 
 ---
 
-## In-Memory Data Storage
+## Database
 
-The system uses in-memory collections (like List<T> or Dictionary<TKey, TValue>) to store data:
-- All users are stored in memory
-- All products are stored in memory
-- All events are stored in memory
-- All redemptions are stored in memory
-- All points transactions are stored in memory
+The system uses **SQL Server** with **Entity Framework Core** for data persistence:
 
-The data simulates CRUD operations (Create, Read, Update, Delete) without connecting to a database. When the application stops, all data is lost.
+### Tables
+- **Users** - User accounts with hashed passwords
+- **Roles** - Admin and Employee roles
+- **UserRoles** - Many-to-many user-role mapping
+- **Events** - Event definitions and details
+- **EventParticipants** - Event registrations and awards
+- **PointsAccounts** - User point balances
+- **PointsTransactions** - All point movements
+- **Categories** - Product categories
+- **Products** - Product catalog
+- **Redemptions** - Redemption requests and status
+
+### Features
+- EF Core migrations for schema versioning
+- Repository pattern for data access
+- Unit of Work pattern for transactions
+- Optimized queries with includes and filtering
 
 ---
 
@@ -214,6 +249,39 @@ The data simulates CRUD operations (Create, Read, Update, Delete) without connec
 
 ---
 
+## Web Application
+
+### Admin Portal Features
+- **Dashboard**: KPI cards, charts (pie, donut), recent activity, quick actions
+- **Events**: Full CRUD, lifecycle management, participant management, award points
+- **Products**: Category management, product CRUD, stock management
+- **Users**: User management, role assignments
+- **Redemptions**: Approve, reject, deliver redemptions
+- **Profile**: Admin profile settings
+
+### Employee Portal Features
+- **Dashboard**: Points summary, upcoming events, featured products, transaction chart
+- **Events**: Browse events, register/unregister
+- **Products**: Browse catalog, filter by category, redeem products
+- **Account**: Transaction history, pending redemptions, cancel pending
+- **Profile**: Employee profile settings
+
+### UI Components
+- Card, Button, Badge, Icon components
+- Modal dialogs for forms
+- Toast notifications
+- Pagination and filtering
+- Responsive design with Tailwind CSS
+- ApexCharts for data visualization
+
+---
+
 ## Notes
 
-This project demonstrates C# programming concepts including classes, objects, inheritance, interfaces, collections, and business logic implementation. It focuses on building a working system entirely in memory, without external dependencies like databases or APIs.
+This project demonstrates full-stack development including:
+- Clean Architecture in .NET
+- Modern Angular development with signals
+- JWT authentication and authorization
+- RESTful API design
+- Entity Framework Core with SQL Server
+- Responsive web design
