@@ -5,21 +5,23 @@ using FluentAssertions;
 using RewardPointsSystem.Domain.Entities.Accounts;
 using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.Services.Accounts;
 using RewardPointsSystem.Application.Services.Core;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
     public class UserPointsAccountServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
         private readonly UserPointsAccountService _accountService;
 
         public UserPointsAccountServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
         }
@@ -188,14 +190,14 @@ namespace RewardPointsSystem.Tests.UnitTests
 
     public class UserPointsTransactionServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
         private readonly UserPointsAccountService _accountService;
         private readonly UserPointsTransactionService _transactionService;
 
         public UserPointsTransactionServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
             _transactionService = new UserPointsTransactionService(_unitOfWork);

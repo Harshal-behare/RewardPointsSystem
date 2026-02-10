@@ -14,6 +14,7 @@ using RewardPointsSystem.Application.Services.Orchestrators;
 using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.IntegrationTests
@@ -56,7 +57,7 @@ namespace RewardPointsSystem.Tests.IntegrationTests
                 .Options;
 
             _context = new RewardPointsDbContext(options);
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);

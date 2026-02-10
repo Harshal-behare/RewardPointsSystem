@@ -3,23 +3,25 @@ using System.Linq;
 using System.Threading.Tasks;
 using FluentAssertions;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.Services.Events;
 using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Domain.Exceptions;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
     public class EventParticipationServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly EventService _eventService;
         private readonly UserService _userService;
         private readonly EventParticipationService _participationService;
 
         public EventParticipationServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _eventService = new EventService(_unitOfWork);
             _userService = new UserService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);

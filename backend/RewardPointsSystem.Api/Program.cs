@@ -17,9 +17,7 @@ namespace RewardPointsSystem.Api
     {
         public static async Task Main(string[] args)
         {
-            // =====================================================
-            // SERILOG BOOTSTRAP LOGGER (for startup errors)
-            // =====================================================
+           
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
                 .WriteTo.File("Logs/startup-.txt", rollingInterval: RollingInterval.Day)
@@ -31,54 +29,39 @@ namespace RewardPointsSystem.Api
 
                 var builder = WebApplication.CreateBuilder(args);
 
-                // =====================================================
-                // SERILOG CONFIGURATION (reads from appsettings.json)
-                // =====================================================
+               
                 builder.Host.UseSerilog((context, services, configuration) => configuration
                     .ReadFrom.Configuration(context.Configuration)
                     .ReadFrom.Services(services)
                     .Enrich.FromLogContext());
 
-                // =====================================================
-                // 1. CONFIGURATION
-                // =====================================================
+               
                 var configuration = builder.Configuration;
 
-            // =====================================================
-            // 2. CLEAN ARCHITECTURE - DEPENDENCY INJECTION
-            // =====================================================
-            // Infrastructure layer (DbContext, Repositories, External Services)
+          
             builder.Services.AddInfrastructure(configuration);
             
-            // Application layer (Business Services, AutoMapper, FluentValidation)
+           
             builder.Services.AddApplication();
 
-            // HTTP Context Accessor for ICurrentUserContext
+           
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddScoped<RewardPointsSystem.Application.Interfaces.ICurrentUserContext, 
                 RewardPointsSystem.Api.Services.HttpCurrentUserContext>();
 
-            // =====================================================
-            // 3. FLUENTVALIDATION ASP.NET CORE INTEGRATION
-            // =====================================================
+            
             builder.Services.AddFluentValidationAutoValidation();
             builder.Services.AddFluentValidationClientsideAdapters();
 
-            // =====================================================
-            // 4. HEALTH CHECKS (MVP)
-            // =====================================================
+           
             builder.Services.AddHealthChecks()
                 .AddDbContextCheck<RewardPointsDbContext>("database");
 
-            // =====================================================
-            // 5. CONTROLLERS & API EXPLORER
-            // =====================================================
+         
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
 
-            // =====================================================
-            // 6. SWAGGER/OPENAPI CONFIGURATION
-            // =====================================================
+           
             builder.Services.AddSwaggerGen(options =>
             {
                 options.SwaggerDoc("v1", new OpenApiInfo
@@ -125,7 +108,7 @@ namespace RewardPointsSystem.Api
                     }
                 });
 
-                // XML Documentation
+               
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
                 var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
                 if (File.Exists(xmlPath))
@@ -134,9 +117,7 @@ namespace RewardPointsSystem.Api
                 }
             });
 
-            // =====================================================
-            // 7. JWT AUTHENTICATION
-            // =====================================================
+           
             var jwtSettings = configuration.GetSection("JwtSettings").Get<JwtSettings>();
             if (jwtSettings == null)
                 throw new InvalidOperationException("JwtSettings section is missing in appsettings.json");
@@ -166,9 +147,7 @@ namespace RewardPointsSystem.Api
                 };
             });
 
-            // =====================================================
-            // 8. AUTHORIZATION POLICIES
-            // =====================================================
+         
             builder.Services.AddAuthorization(options =>
             {
                 // Admin-only policy
@@ -179,14 +158,12 @@ namespace RewardPointsSystem.Api
                 options.AddPolicy("EmployeeOrAdmin", policy => 
                     policy.RequireRole("Admin", "Employee"));
 
-                // Require authenticated user
+               
                 options.AddPolicy("RequireAuthenticatedUser", policy => 
                     policy.RequireAuthenticatedUser());
             });
 
-            // =====================================================
-            // 9. CORS CONFIGURATION
-            // =====================================================
+           
             var allowedOrigins = configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
             builder.Services.AddCors(options =>
             {
@@ -199,9 +176,7 @@ namespace RewardPointsSystem.Api
                 });
             });
 
-            // =====================================================
-            // 10. BUILD THE APPLICATION
-            // =====================================================
+          
             var app = builder.Build();
 
             // =====================================================
@@ -213,37 +188,53 @@ namespace RewardPointsSystem.Api
             {
                 errorApp.Run(async context =>
                 {
-                    context.Response.StatusCode = 500;
-                    context.Response.ContentType = "application/json";
-
                     var exceptionHandlerFeature = context.Features.Get<IExceptionHandlerFeature>();
                     if (exceptionHandlerFeature != null)
                     {
                         var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
-                        logger.LogError(exceptionHandlerFeature.Error, "Unhandled exception occurred");
+                        var exception = exceptionHandlerFeature.Error;
+                        
+                        // Determine status code and message based on exception type
+                        int statusCode = 500;
+                        string message = "An unexpected error occurred. Please try again.";
+                        
+                        // Domain exceptions should return 400 with actual message
+                        if (exception is RewardPointsSystem.Domain.Exceptions.DomainException domainEx)
+                        {
+                            statusCode = 400;
+                            message = domainEx.Message;
+                            logger.LogWarning(exception, "Domain exception: {Message}", message);
+                        }
+                        else
+                        {
+                            logger.LogError(exception, "Unhandled exception occurred");
+                        }
+                        
+                        context.Response.StatusCode = statusCode;
+                        context.Response.ContentType = "application/json";
 
                         await context.Response.WriteAsJsonAsync(new
                         {
                             success = false,
-                            message = "An unexpected error occurred. Please try again.",
+                            message = message,
                             timestamp = DateTime.UtcNow
                         });
                     }
                 });
             });
 
-            // Swagger (Development and Production for testing)
+          
             app.UseSwagger();
             app.UseSwaggerUI(options =>
             {
                 options.SwaggerEndpoint("/swagger/v1/swagger.json", "Reward Points API v1");
-                options.RoutePrefix = string.Empty; // Swagger UI at root URL
+                options.RoutePrefix = string.Empty; 
                 options.DocumentTitle = "Reward Points API Documentation";
             });
 
-            // =====================================================
+           
             // SERILOG REQUEST LOGGING (logs all HTTP requests)
-            // =====================================================
+           
             app.UseSerilogRequestLogging(options =>
             {
                 options.MessageTemplate = "HTTP {RequestMethod} {RequestPath} responded {StatusCode} in {Elapsed:0.0000} ms";
@@ -255,19 +246,17 @@ namespace RewardPointsSystem.Api
             // CORS
             app.UseCors("AllowSpecificOrigins");
 
-            // Authentication & Authorization
+           
             app.UseAuthentication();
             app.UseAuthorization();
 
             // Map Controllers
             app.MapControllers();
 
-            // Health Check Endpoint (MVP)
+       
             app.MapHealthChecks("/health");
 
-             //=====================================================
-             //12.DATABASE SEEDING
-             //=====================================================
+             
             //using (var scope = app.Services.CreateScope())
             //{
             //    var services = scope.ServiceProvider;
@@ -282,9 +271,7 @@ namespace RewardPointsSystem.Api
             //    }
             //}
 
-            // =====================================================
-            // 13. RUN THE APPLICATION
-            // =====================================================
+            
             Log.Information("========================================");
             Log.Information("  Reward Points System API Started");
             Log.Information("========================================");

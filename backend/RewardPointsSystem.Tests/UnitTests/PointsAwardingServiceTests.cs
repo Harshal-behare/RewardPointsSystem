@@ -8,13 +8,14 @@ using RewardPointsSystem.Application.Services.Core;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.DTOs.Admin;
 using RewardPointsSystem.Domain.Exceptions;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
 {
     public class PointsAwardingServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly UserService _userService;
         private readonly EventService _eventService;
         private readonly EventParticipationService _participationService;
@@ -23,7 +24,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public PointsAwardingServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);

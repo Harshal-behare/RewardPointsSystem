@@ -1,12 +1,10 @@
-
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 
 namespace RewardPointsSystem.Domain.Entities.Accounts
 {
     /// <summary>
-    /// Represents a user's points account with points balance
-    /// Rich domain model with business logic for point operations
+    /// Represents a user's points account with points balance for points operation
     /// </summary>
     public class UserPointsAccount
     {

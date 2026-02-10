@@ -6,9 +6,11 @@ using RewardPointsSystem.Domain.Entities.Products;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Exceptions;
 using RewardPointsSystem.Infrastructure.Repositories;
+using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Application.Services.Products;
 using RewardPointsSystem.Application.DTOs.Products;
 using RewardPointsSystem.Application.DTOs;
+using RewardPointsSystem.Tests.TestHelpers;
 using Xunit;
 
 namespace RewardPointsSystem.Tests.UnitTests
@@ -31,13 +33,13 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class ProductCatalogServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ProductCatalogService _productService;
         private Guid _systemUserId;
 
         public ProductCatalogServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             
             // Create a system user for product creation
@@ -260,14 +262,14 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class PricingServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ProductCatalogService _productService;
         private readonly PricingService _pricingService;
         private Guid _systemUserId;
 
         public PricingServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             _pricingService = new PricingService(_unitOfWork);
             
@@ -392,14 +394,14 @@ namespace RewardPointsSystem.Tests.UnitTests
     /// </summary>
     public class InventoryServiceTests : IDisposable
     {
-        private readonly InMemoryUnitOfWork _unitOfWork;
+        private readonly IUnitOfWork _unitOfWork;
         private readonly ProductCatalogService _productService;
         private readonly InventoryService _inventoryService;
         private Guid _systemUserId;
 
         public InventoryServiceTests()
         {
-            _unitOfWork = new InMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             _inventoryService = new InventoryService(_unitOfWork);
             
