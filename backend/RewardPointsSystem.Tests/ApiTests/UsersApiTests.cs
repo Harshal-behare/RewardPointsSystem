@@ -13,7 +13,7 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Functional Tests for Users API Endpoints
+    /// API Tests for Users API Endpoints
     /// 
     /// These tests verify the HTTP API behavior for user operations:
     /// - User listing (Admin only)

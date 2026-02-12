@@ -397,10 +397,11 @@ namespace RewardPointsSystem.Tests.UnitTests
         /// <summary>
         /// SCENARIO: Revert a published event back to draft (hide from employees)
         /// EXPECTED: Event status changes from Upcoming back to Draft
-        /// WHY: Admins may need to hide an event to make changes before re-publishing
+        /// WHY: Backward status transitions are NO LONGER ALLOWED
+        /// Note: RevertToDraftAsync is deprecated - all calls throw InvalidEventStateException
         /// </summary>
         [Fact]
-        public async Task RevertToDraft_FromUpcomingStatus_ShouldHideEventFromEmployees()
+        public async Task RevertToDraft_FromUpcomingStatus_ShouldThrowException()
         {
             // Arrange - Create and publish an event
             var eventEntity = await _eventService.CreateEventAsync(
@@ -414,18 +415,18 @@ namespace RewardPointsSystem.Tests.UnitTests
             var upcomingEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
             upcomingEvent.Status.Should().Be(EventStatus.Upcoming);
 
-            // Act - Revert to draft
-            await _eventService.RevertToDraftAsync(eventEntity.Id);
-
-            // Assert - Verify status reverted
-            var draftEvent = await _eventService.GetEventByIdAsync(eventEntity.Id);
-            draftEvent.Status.Should().Be(EventStatus.Draft, "status should revert to Draft");
+#pragma warning disable CS0618 // Type or member is obsolete
+            // Act & Assert - Backward transitions are no longer allowed
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+                await _eventService.RevertToDraftAsync(eventEntity.Id));
+#pragma warning restore CS0618
         }
 
         /// <summary>
         /// SCENARIO: Try to revert a completed event
         /// EXPECTED: System rejects the operation with appropriate error
         /// WHY: Completed events cannot be reverted (they're finalized)
+        /// Note: RevertToDraftAsync is deprecated
         /// </summary>
         [Fact]
         public async Task RevertToDraft_FromCompletedStatus_ShouldRejectOperation()
@@ -435,9 +436,11 @@ namespace RewardPointsSystem.Tests.UnitTests
             await _eventService.PublishEventAsync(eventEntity.Id);
             await _eventService.CompleteEventAsync(eventEntity.Id);
 
+#pragma warning disable CS0618 // Type or member is obsolete
             // Act & Assert - Try to revert completed event
-            await Assert.ThrowsAsync<InvalidEventStateException>(async () =>
+            await Assert.ThrowsAsync<InvalidOperationException>(async () =>
                 await _eventService.RevertToDraftAsync(eventEntity.Id));
+#pragma warning restore CS0618
         }
 
         #endregion

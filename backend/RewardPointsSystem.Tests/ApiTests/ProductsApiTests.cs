@@ -15,7 +15,7 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Functional Tests for Products API Endpoints
+    /// API Tests for Products API Endpoints
     /// 
     /// These tests verify the HTTP API behavior end-to-end:
     /// - Request/Response serialization

@@ -14,7 +14,7 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Functional Tests for Authentication API Endpoints
+    /// API Tests for Authentication API Endpoints
     /// 
     /// These tests verify the HTTP API behavior for authentication:
     /// - Login endpoint

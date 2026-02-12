@@ -1,0 +1,251 @@
+Test Case ID,Module,Page/Component,Test Case Title,Description,Preconditions,Test Steps,Test Data,Expected Result,Priority,Type,Status,Browser,Comments
+TC-FE-LOGIN-001,Authentication,Login Page,Verify login page loads correctly,Test that login page displays all required elements,Application is running,"1. Navigate to http://localhost:4200/login
+2. Verify page elements are visible",URL: /login,"Login form displayed with: Email input field, Password input field, Login button, Register link",Critical,UI,Not Executed,Chrome,
+TC-FE-LOGIN-002,Authentication,Login Page,Verify successful login with valid credentials,Test login flow with correct credentials,Valid user account exists,"1. Navigate to login page
+2. Enter valid email
+3. Enter valid password
+4. Click Login button
+5. Verify redirect to dashboard","Email: admin@agdata.com, Password: SecurePass123!","User is redirected to dashboard, Welcome message displayed",Critical,Functional,Not Executed,Chrome,
+TC-FE-LOGIN-003,Authentication,Login Page,Verify login fails with invalid email,Test error handling for non-existent email,None,"1. Navigate to login page
+2. Enter non-existent email
+3. Enter any password
+4. Click Login
+5. Verify error message","Email: nonexistent@agdata.com, Password: AnyPass123!","Error message: Invalid credentials, User stays on login page",High,Negative,Not Executed,Chrome,
+TC-FE-LOGIN-004,Authentication,Login Page,Verify login fails with wrong password,Test error handling for incorrect password,Valid user account exists,"1. Navigate to login page
+2. Enter valid email
+3. Enter wrong password
+4. Click Login
+5. Verify error message","Email: admin@agdata.com, Password: WrongPassword!","Error message: Invalid credentials, User stays on login page",High,Negative,Not Executed,Chrome,
+TC-FE-LOGIN-005,Authentication,Login Page,Verify email field validation,Test client-side email validation,None,"1. Navigate to login page
+2. Enter invalid email format
+3. Click outside field or submit
+4. Verify validation message",Email: invalidemail or test@ or @domain.com,Validation error: Please enter a valid email address,High,Validation,Not Executed,Chrome,
+TC-FE-LOGIN-006,Authentication,Login Page,Verify required field validation,Test empty field validation,None,"1. Navigate to login page
+2. Leave email empty
+3. Leave password empty
+4. Click Login
+5. Verify validation messages",Empty fields,"Validation errors: Email is required, Password is required",High,Validation,Not Executed,Chrome,
+TC-FE-LOGIN-007,Authentication,Login Page,Verify password field masks input,Test password field security,None,"1. Navigate to login page
+2. Enter password in password field
+3. Verify input is masked",Password: SecurePass123!,"Password is displayed as dots/asterisks, Input is not visible as plain text",Medium,Security,Not Executed,Chrome,
+TC-FE-LOGIN-008,Authentication,Login Page,Verify Register link navigation,Test navigation to registration page,None,"1. Navigate to login page
+2. Click on Register link
+3. Verify navigation",None,"User is navigated to registration page, URL changes to /register",Medium,Navigation,Not Executed,Chrome,
+TC-FE-REG-001,Authentication,Register Page,Verify registration page loads correctly,Test that registration page displays all elements,Application is running,"1. Navigate to http://localhost:4200/register
+2. Verify page elements",URL: /register,"Registration form displayed with: First Name, Last Name, Email, Password, Confirm Password, Register button, Login link",Critical,UI,Not Executed,Chrome,
+TC-FE-REG-002,Authentication,Register Page,Verify successful registration,Test registration with valid data,No existing user with email,"1. Navigate to registration page
+2. Fill all fields with valid data
+3. Click Register
+4. Verify success","First Name: John, Last Name: Doe, Email: newuser@agdata.com, Password: SecurePass123!, Confirm: SecurePass123!","Registration successful, User redirected to dashboard or login, Success message displayed",Critical,Functional,Not Executed,Chrome,
+TC-FE-REG-003,Authentication,Register Page,Verify password requirements validation,Test password validation rules,None,"1. Navigate to registration page
+2. Enter weak password
+3. Verify validation message",Password: weak,"Validation error showing: Min 8 chars, Uppercase, Lowercase, Number, Special character required",High,Validation,Not Executed,Chrome,
+TC-FE-REG-004,Authentication,Register Page,Verify password confirmation mismatch,Test confirm password validation,None,"1. Navigate to registration page
+2. Enter password
+3. Enter different confirm password
+4. Verify validation","Password: SecurePass123!, Confirm: DifferentPass!",Validation error: Passwords do not match,High,Validation,Not Executed,Chrome,
+TC-FE-REG-005,Authentication,Register Page,Verify duplicate email error,Test registration with existing email,User with email exists,"1. Navigate to registration page
+2. Enter existing email
+3. Fill other fields
+4. Click Register
+5. Verify error",Email: admin@agdata.com,"Error message: Email already exists, User stays on registration page",High,Negative,Not Executed,Chrome,
+TC-FE-DASH-001,Admin Dashboard,Dashboard Page,Verify admin dashboard loads correctly,Test dashboard page elements,Admin is logged in,"1. Login as admin
+2. Navigate to dashboard
+3. Verify page elements",Admin account,"Dashboard displays: KPI cards (Users/Events/Points/Products), Recent Activity, Charts, Quick Actions",Critical,UI,Not Executed,Chrome,
+TC-FE-DASH-002,Admin Dashboard,Dashboard Page,Verify KPI cards show correct data,Test KPI cards data accuracy,Admin logged in with data,"1. Login as admin
+2. Navigate to dashboard
+3. Verify KPI values match database",Admin account,"KPI cards show accurate: Total Active Users, Total Events, Total Points issued, Total Products",High,Data,Not Executed,Chrome,
+TC-FE-DASH-003,Admin Dashboard,Dashboard Page,Verify quick actions work,Test quick action buttons,Admin is logged in,"1. Navigate to dashboard
+2. Click each quick action button
+3. Verify navigation",None,"Quick actions navigate to: Create Event, Add Product, Add User, View Redemptions",High,Functional,Not Executed,Chrome,
+TC-FE-DASH-004,Admin Dashboard,Dashboard Page,Verify recent activity displays,Test recent activity section,Admin logged in with activities,"1. Navigate to dashboard
+2. Verify recent activity list
+3. Verify activity details",None,"Recent activities displayed with: Activity type icon, Description, Timestamp, Related user/entity",Medium,UI,Not Executed,Chrome,
+TC-FE-DASH-005,Employee Dashboard,Dashboard Page,Verify employee dashboard loads,Test employee dashboard elements,Employee is logged in,"1. Login as employee
+2. Navigate to dashboard
+3. Verify page elements",Employee account,"Dashboard displays: Points balance card, Recent transactions, Upcoming events, Featured products",Critical,UI,Not Executed,Chrome,
+TC-FE-DASH-006,Employee Dashboard,Dashboard Page,Verify points balance display,Test points balance accuracy,Employee has points,"1. Login as employee
+2. Navigate to dashboard
+3. Verify points balance",Employee account,"Points balance shows: Current balance, Pending points, Total earned",High,Data,Not Executed,Chrome,
+TC-FE-EVENT-001,Events,Events List Page,Verify events list page loads,Test events page elements,User is logged in,"1. Login
+2. Navigate to Events
+3. Verify page loads",None,"Events page displays: Events list/grid, Search/filter options, Event cards with details",High,UI,Not Executed,Chrome,
+TC-FE-EVENT-002,Events,Events List Page,Verify event cards display info,Test event card content,Events exist in system,"1. Navigate to Events page
+2. Verify event card information",None,"Each event card shows: Event name, Date/Time, Status badge, Description preview, Participants count",High,UI,Not Executed,Chrome,
+TC-FE-EVENT-003,Events,Events List Page,Verify event status filtering,Test filter by status,Events with different statuses,"1. Navigate to Events
+2. Apply status filter (Upcoming)
+3. Verify filtered results",Filter: Upcoming,"Only Upcoming events displayed, Other status events hidden",Medium,Functional,Not Executed,Chrome,
+TC-FE-EVENT-004,Events,Events List Page,Verify event search functionality,Test search feature,Events exist,"1. Navigate to Events
+2. Enter search term
+3. Verify search results",Search: Team Building,"Events matching search term displayed, Non-matching events hidden",Medium,Functional,Not Executed,Chrome,
+TC-FE-EVENT-005,Events,Event Detail Page,Verify event detail page loads,Test event details display,Event exists,"1. Navigate to Events
+2. Click on an event
+3. Verify detail page",Event ID,"Event detail shows: Full name/description, Date/time, Location, Participants list, Registration button",High,UI,Not Executed,Chrome,
+TC-FE-EVENT-006,Events,Event Registration,Verify event registration (Employee),Test registration button,Employee logged in and event available,"1. Login as employee
+2. Navigate to event detail
+3. Click Register button
+4. Verify registration",Available event,"Registration successful message, Button changes to Unregister, Participant count increases",Critical,Functional,Not Executed,Chrome,
+TC-FE-EVENT-007,Events,Event Registration,Verify event unregistration,Test unregister functionality,Employee is registered for event,"1. Navigate to registered event
+2. Click Unregister button
+3. Confirm action
+4. Verify unregistration",Registered event,"Unregistration successful, Button changes to Register, Participant count decreases",High,Functional,Not Executed,Chrome,
+TC-FE-EVENT-008,Events,Admin Event Management,Verify create event form (Admin),Test event creation form,Admin is logged in,"1. Login as admin
+2. Navigate to Events management
+3. Click Create Event
+4. Verify form fields",None,"Create event form shows: Name, Description, Date picker, Points pool, Max participants, Prize fields",Critical,UI,Not Executed,Chrome,
+TC-FE-EVENT-009,Events,Admin Event Management,Verify event creation success,Test creating new event,Admin logged in,"1. Fill create event form
+2. Submit form
+3. Verify event created","Name: Test Event, Date: Future date, Points: 500","Event created successfully, Event appears in list, Success message displayed",Critical,Functional,Not Executed,Chrome,
+TC-FE-EVENT-010,Events,Admin Event Management,Verify event status change,Test changing event status,Admin logged in and event exists,"1. Navigate to event management
+2. Select an event
+3. Change status (Draft to Upcoming)
+4. Verify change",Draft event,"Status changed successfully, Event list reflects new status",High,Functional,Not Executed,Chrome,
+TC-FE-EVENT-011,Events,Admin Event Management,Verify award points to winners,Test awarding winner points,Completed event with participants,"1. Navigate to completed event
+2. Click Award Points
+3. Select winners
+4. Submit awards
+5. Verify points awarded","1st: 100pts, 2nd: 75pts, 3rd: 50pts","Points awarded successfully, Winners receive points, Transaction created",Critical,Functional,Not Executed,Chrome,
+TC-FE-PROD-001,Products,Products Catalog,Verify products page loads,Test products catalog display,Products exist,"1. Login
+2. Navigate to Products
+3. Verify page elements",None,"Products page displays: Product grid/list, Category filter, Search bar, Product cards",High,UI,Not Executed,Chrome,
+TC-FE-PROD-002,Products,Products Catalog,Verify product card information,Test product card content,Products exist,"1. Navigate to Products
+2. Verify product card details",None,"Product card shows: Product image, Name, Points cost, Stock status, Category",High,UI,Not Executed,Chrome,
+TC-FE-PROD-003,Products,Products Catalog,Verify category filtering,Test category filter,Products in different categories,"1. Navigate to Products
+2. Select a category filter
+3. Verify filtered results",Category: Electronics,Only products from selected category shown,Medium,Functional,Not Executed,Chrome,
+TC-FE-PROD-004,Products,Product Detail,Verify product detail page,Test product details display,Product exists,"1. Click on a product
+2. Verify detail page",Product ID,"Product detail shows: Full description, Large image, Points cost, Stock availability, Redeem button",High,UI,Not Executed,Chrome,
+TC-FE-PROD-005,Products,Product Redemption,Verify redemption modal/dialog,Test redemption initiation,Employee has sufficient points,"1. Navigate to product
+2. Click Redeem button
+3. Verify redemption dialog",Product with points <= user balance,"Redemption dialog shows: Product summary, Quantity selector, Points to deduct, Confirm/Cancel buttons",High,UI,Not Executed,Chrome,
+TC-FE-PROD-006,Products,Product Redemption,Verify successful redemption,Test complete redemption flow,Employee has points and product in stock,"1. Click Redeem on product
+2. Select quantity
+3. Confirm redemption
+4. Verify success",Quantity: 1,"Redemption successful message, Points balance decreased, Redemption appears in My Account",Critical,Functional,Not Executed,Chrome,
+TC-FE-PROD-007,Products,Product Redemption,Verify insufficient points error,Test redemption with low points,Employee has insufficient points,"1. Navigate to expensive product
+2. Attempt to redeem
+3. Verify error",Product cost > User balance,"Error: Insufficient points, Redeem button disabled or error message",High,Negative,Not Executed,Chrome,
+TC-FE-PROD-008,Products,Admin Product Management,Verify add product form,Test product creation form,Admin logged in,"1. Navigate to Products management
+2. Click Add Product
+3. Verify form fields",None,"Add product form shows: Name, Description, Category dropdown, Points cost, Stock quantity, Image upload",High,UI,Not Executed,Chrome,
+TC-FE-PROD-009,Products,Admin Product Management,Verify product creation,Test creating new product,Admin logged in,"1. Fill add product form
+2. Submit form
+3. Verify product created","Name: New Product, Points: 200, Stock: 50","Product created successfully, Product appears in catalog, Success message",Critical,Functional,Not Executed,Chrome,
+TC-FE-PROD-010,Products,Admin Product Management,Verify product edit,Test editing product,Admin logged in and product exists,"1. Navigate to product management
+2. Click Edit on product
+3. Update fields
+4. Save changes
+5. Verify update",Updated name/price,"Product updated successfully, Changes reflected in catalog",High,Functional,Not Executed,Chrome,
+TC-FE-PROD-011,Products,Admin Product Management,Verify product deactivation,Test deactivating product,Admin logged in and product exists,"1. Navigate to product management
+2. Click Deactivate on product
+3. Confirm action
+4. Verify deactivation",Active product,"Product deactivated, Product hidden from employee catalog, Admin can still see",High,Functional,Not Executed,Chrome,
+TC-FE-REDM-001,Redemptions,My Redemptions (Employee),Verify my redemptions page,Test redemptions history display,Employee has redemptions,"1. Login as employee
+2. Navigate to My Account/Redemptions
+3. Verify page elements",None,"My redemptions page shows: List of redemptions, Status column, Date column, Product name, Points spent",High,UI,Not Executed,Chrome,
+TC-FE-REDM-002,Redemptions,My Redemptions (Employee),Verify redemption status display,Test status badge colors,Employee has different status redemptions,"1. Navigate to My Redemptions
+2. Verify status badges",Various statuses,"Status badges: Pending-Yellow, Approved-Blue, Delivered-Green, Rejected-Red",Medium,UI,Not Executed,Chrome,
+TC-FE-REDM-003,Redemptions,My Redemptions (Employee),Verify cancel redemption,Test cancellation by owner,Employee has pending redemption,"1. Navigate to pending redemption
+2. Click Cancel
+3. Confirm cancellation
+4. Verify cancelled",Pending redemption,"Redemption cancelled, Status changed to Cancelled, Points refunded",High,Functional,Not Executed,Chrome,
+TC-FE-REDM-004,Redemptions,Admin Redemptions,Verify admin redemptions page,Test redemptions management display,Admin logged in and redemptions exist,"1. Login as admin
+2. Navigate to Redemptions management
+3. Verify page elements",None,"Admin redemptions page shows: All redemptions list, Filter by status, User info column, Action buttons",High,UI,Not Executed,Chrome,
+TC-FE-REDM-005,Redemptions,Admin Redemptions,Verify pending redemptions queue,Test pending queue display,Pending redemptions exist,"1. Navigate to Redemptions
+2. Filter by Pending
+3. Verify pending list",None,"Pending redemptions displayed, Approve/Reject buttons visible, User and product info shown",High,UI,Not Executed,Chrome,
+TC-FE-REDM-006,Redemptions,Admin Redemptions,Verify approve redemption,Test approval action,Admin logged in and pending redemption exists,"1. Navigate to pending redemption
+2. Click Approve
+3. Verify approval",Pending redemption,"Redemption approved, Status changed to Approved, Success message displayed",Critical,Functional,Not Executed,Chrome,
+TC-FE-REDM-007,Redemptions,Admin Redemptions,Verify reject redemption,Test rejection with reason,Admin logged in and pending redemption exists,"1. Navigate to pending redemption
+2. Click Reject
+3. Enter rejection reason
+4. Confirm rejection",Reason: Product unavailable,"Redemption rejected, Status changed to Rejected, Points refunded to user",Critical,Functional,Not Executed,Chrome,
+TC-FE-REDM-008,Redemptions,Admin Redemptions,Verify mark as delivered,Test delivery confirmation,Admin logged in and approved redemption exists,"1. Navigate to approved redemption
+2. Click Mark as Delivered
+3. Confirm action",Approved redemption,"Status changed to Delivered, Delivery timestamp recorded, Success message",High,Functional,Not Executed,Chrome,
+TC-FE-USER-001,Users,Admin User Management,Verify users list page,Test users management display,Admin logged in and users exist,"1. Login as admin
+2. Navigate to Users management
+3. Verify page elements",None,"Users page shows: Users table, Search bar, Add User button, User info columns, Action buttons",High,UI,Not Executed,Chrome,
+TC-FE-USER-002,Users,Admin User Management,Verify add user form,Test user creation form,Admin logged in,"1. Navigate to Users management
+2. Click Add User
+3. Verify form fields",None,"Add user form shows: Email, First Name, Last Name, Password, Role selection",High,UI,Not Executed,Chrome,
+TC-FE-USER-003,Users,Admin User Management,Verify user creation,Test creating new user,Admin logged in,"1. Fill add user form
+2. Submit form
+3. Verify user created","Email: newuser@agdata.com, Name: New User, Role: Employee","User created successfully, User appears in list, Success message",Critical,Functional,Not Executed,Chrome,
+TC-FE-USER-004,Users,Admin User Management,Verify user deactivation,Test deactivating user,Admin logged in and user exists (no pending redemptions),"1. Navigate to user
+2. Click Deactivate
+3. Confirm action
+4. Verify deactivation",Active user,"User deactivated, Status changed to Inactive, User cannot login",High,Functional,Not Executed,Chrome,
+TC-FE-USER-005,Users,Admin User Management,Verify user search,Test search functionality,Multiple users exist,"1. Navigate to Users
+2. Enter search term
+3. Verify search results",Search: John,"Users matching search displayed, Non-matching users hidden",Medium,Functional,Not Executed,Chrome,
+TC-FE-USER-006,Users,User Profile,Verify profile page display,Test profile page elements,User logged in,"1. Navigate to Profile
+2. Verify page elements",None,"Profile page shows: User details (name/email), Edit profile, Change password, Points summary",High,UI,Not Executed,Chrome,
+TC-FE-USER-007,Users,User Profile,Verify profile edit,Test updating profile info,User logged in,"1. Navigate to Profile
+2. Click Edit
+3. Update name
+4. Save changes
+5. Verify update",New name,"Profile updated successfully, New name displayed, Success message",Medium,Functional,Not Executed,Chrome,
+TC-FE-USER-008,Users,User Profile,Verify change password,Test password change flow,User logged in,"1. Navigate to Profile
+2. Click Change Password
+3. Enter current password
+4. Enter new password
+5. Confirm and save","Current: SecurePass123!, New: NewSecure456!","Password changed successfully, Can login with new password",High,Functional,Not Executed,Chrome,
+TC-FE-NAV-001,Navigation,Main Navigation,Verify admin navigation menu,Test admin menu items,Admin logged in,"1. Login as admin
+2. Verify navigation menu items",None,"Admin menu shows: Dashboard, Events, Products, Users, Redemptions, Profile, Logout",High,UI,Not Executed,Chrome,
+TC-FE-NAV-002,Navigation,Main Navigation,Verify employee navigation menu,Test employee menu items,Employee logged in,"1. Login as employee
+2. Verify navigation menu items",None,"Employee menu shows: Dashboard, Events, Products, My Account, Profile, Logout",High,UI,Not Executed,Chrome,
+TC-FE-NAV-003,Navigation,Main Navigation,Verify menu navigation works,Test all menu links,User logged in,"1. Click each menu item
+2. Verify correct page loads",None,"Each menu item navigates to correct page, URL changes appropriately",High,Functional,Not Executed,Chrome,
+TC-FE-NAV-004,Navigation,Logout,Verify logout functionality,Test logout action,User logged in,"1. Click Logout
+2. Verify logout",None,"User logged out, Redirected to login page, Session cleared, Protected pages inaccessible",Critical,Functional,Not Executed,Chrome,
+TC-FE-NAV-005,Navigation,Auth Guard,Verify protected route redirect,Test accessing protected page without login,Not logged in,"1. Clear session/cookies
+2. Navigate directly to /admin/dashboard
+3. Verify redirect",URL: /admin/dashboard,"Redirected to login page, Original URL preserved for redirect after login",Critical,Security,Not Executed,Chrome,
+TC-FE-NAV-006,Navigation,Role Guard,Verify admin-only page restriction,Test employee accessing admin page,Employee logged in,"1. Login as employee
+2. Try to navigate to /admin/users
+3. Verify access denied",URL: /admin/users,"Access denied, Redirected to employee dashboard, Error message or forbidden page",Critical,Security,Not Executed,Chrome,
+TC-FE-RESP-001,Responsive,Mobile View,Verify login page on mobile,Test responsive layout,Mobile viewport,"1. Set viewport to mobile (375px)
+2. Navigate to login page
+3. Verify layout",Viewport: 375x667,"Login form displays correctly, No horizontal scrolling, Buttons are tappable size",Medium,Responsive,Not Executed,Chrome Mobile,
+TC-FE-RESP-002,Responsive,Mobile View,Verify dashboard on mobile,Test responsive layout,Mobile viewport and logged in,"1. Set viewport to mobile
+2. Navigate to dashboard
+3. Verify layout",Viewport: 375x667,"Dashboard adapts to mobile, KPI cards stack vertically, Navigation collapses to hamburger",Medium,Responsive,Not Executed,Chrome Mobile,
+TC-FE-RESP-003,Responsive,Mobile View,Verify products grid on mobile,Test responsive product layout,Mobile viewport,"1. Set viewport to mobile
+2. Navigate to Products
+3. Verify grid layout",Viewport: 375x667,"Products display in single column, Product cards are full width, Images scale appropriately",Medium,Responsive,Not Executed,Chrome Mobile,
+TC-FE-RESP-004,Responsive,Tablet View,Verify admin pages on tablet,Test tablet responsive layout,Tablet viewport and admin logged in,"1. Set viewport to tablet (768px)
+2. Navigate through admin pages
+3. Verify layouts",Viewport: 768x1024,"Pages adapt to tablet size, Tables may have horizontal scroll, Navigation visible or hamburger",Medium,Responsive,Not Executed,Chrome Tablet,
+TC-FE-ERR-001,Error Handling,Error Display,Verify API error display,Test error message display,None,"1. Trigger an API error
+2. Verify error is displayed to user",Invalid action,"User-friendly error message displayed, Toast/snackbar notification, Technical details hidden",High,Error Handling,Not Executed,Chrome,
+TC-FE-ERR-002,Error Handling,404 Page,Verify 404 page for invalid route,Test not found page,None,"1. Navigate to invalid URL
+2. Verify 404 page",URL: /invalid-page-xyz,"404 Not Found page displayed, Link to return to dashboard/home",Medium,Error Handling,Not Executed,Chrome,
+TC-FE-ERR-003,Error Handling,Session Timeout,Verify session expired handling,Test token expiration,Token is expired,"1. Wait for token to expire
+2. Try to perform action
+3. Verify handling",Expired session,"User notified of session expiration, Redirected to login page, Can login again",High,Error Handling,Not Executed,Chrome,
+TC-FE-LOAD-001,Loading States,Loading Indicators,Verify loading spinner on data fetch,Test loading state display,None,"1. Navigate to page with data
+2. Observe loading state
+3. Verify spinner/skeleton",Slow network,"Loading indicator displayed while fetching, Indicator disappears when data loads",Medium,UX,Not Executed,Chrome,
+TC-FE-LOAD-002,Loading States,Button Loading,Verify button loading state,Test submit button state,None,"1. Click submit button
+2. Observe button state during submission",Form submission,"Button shows loading state, Button disabled during submission, Prevents double submission",Medium,UX,Not Executed,Chrome,
+TC-FE-VAL-001,Form Validation,Real-time Validation,Verify real-time field validation,Test validation feedback timing,None,"1. Start typing in validated field
+2. Enter invalid value
+3. Observe validation timing",Invalid input,"Validation message appears on blur, Clear indication of error, Field highlighted",High,Validation,Not Executed,Chrome,
+TC-FE-VAL-002,Form Validation,Form Submit Validation,Verify form-level validation,Test validation on submit,None,"1. Leave required fields empty
+2. Click submit
+3. Verify all validations shown",Empty required fields,"All validation errors displayed, Form not submitted, Focus moved to first error",High,Validation,Not Executed,Chrome,
+TC-FE-A11Y-001,Accessibility,Keyboard Navigation,Verify keyboard navigation,Test keyboard accessibility,None,"1. Navigate to login page
+2. Tab through all elements
+3. Verify focus order",Tab key navigation,"All interactive elements focusable, Logical tab order, Visible focus indicators",Medium,Accessibility,Not Executed,Chrome,
+TC-FE-A11Y-002,Accessibility,Form Labels,Verify form labels,Test form accessibility,None,"1. Navigate to form page
+2. Verify all inputs have labels
+3. Test screen reader",None,"All form inputs have associated labels, Labels are descriptive, Required fields indicated",Medium,Accessibility,Not Executed,Chrome,
+TC-FE-PERF-001,Performance,Page Load Time,Verify dashboard loads quickly,Test page load performance,User logged in,"1. Clear cache
+2. Navigate to dashboard
+3. Measure load time",None,"Dashboard loads within 3 seconds, No visible layout shifts, Content renders progressively",Medium,Performance,Not Executed,Chrome,
+TC-FE-PERF-002,Performance,Large Data Sets,Verify pagination with many records,Test performance with large data,Many records (100+),"1. Navigate to page with many records
+2. Verify pagination works
+3. Test page navigation",100+ records,"Pagination controls displayed, Page loads quickly, No browser freeze",Medium,Performance,Not Executed,Chrome,

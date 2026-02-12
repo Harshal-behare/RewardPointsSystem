@@ -13,7 +13,7 @@ using RewardPointsSystem.Tests.TestHelpers;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Custom WebApplicationFactory for functional testing
+    /// Custom WebApplicationFactory for API testing
     /// 
     /// This factory configures the application for testing by:
     /// - Replacing the production database with InMemory database

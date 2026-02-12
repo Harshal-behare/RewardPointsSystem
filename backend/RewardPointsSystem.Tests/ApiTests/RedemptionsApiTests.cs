@@ -12,7 +12,7 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Functional Tests for Redemptions API Endpoints
+    /// API Tests for Redemptions API Endpoints
     /// 
     /// These tests verify the HTTP API behavior for redemption operations:
     /// - Redemption listing

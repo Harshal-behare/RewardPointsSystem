@@ -5,8 +5,7 @@ using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using RewardPointsSystem.Api;
-using RewardPointsSystem.Application.DTOs.Common;
-using RewardPointsSystem.Application.DTOs.Events;
+
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Domain.Entities.Core;
 using RewardPointsSystem.Domain.Entities.Events;
@@ -15,7 +14,7 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// Functional Tests for Events API Endpoints
+    /// API Tests for Events API Endpoints
     /// 
     /// These tests verify the HTTP API behavior for event operations:
     /// - Event listing and retrieval

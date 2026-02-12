@@ -1,0 +1,286 @@
+Test Case ID,Module,Test Case Title,Description,Preconditions,Test Steps,Test Data,Expected Result,Priority,Type,Status,Comments
+TC-AUTH-001,Authentication,Verify user registration with valid data,Test that a new user can register successfully with valid information,No existing user with same email,"1. Navigate to /api/v1/auth/register
+2. Send POST request with valid registration data
+3. Verify response status and data","{""email"": ""testuser@agdata.com"", ""password"": ""SecurePass123!"", ""confirmPassword"": ""SecurePass123!"", ""firstName"": ""John"", ""lastName"": ""Doe""}","Status: 201 Created
+Response contains userId, email, accessToken, refreshToken, roles",Critical,Positive,Not Executed,
+TC-AUTH-002,Authentication,Verify registration fails with duplicate email,Test that registration fails when email already exists,User with email already registered,"1. Register a user with email X
+2. Try to register another user with same email X
+3. Verify error response","{""email"": ""existing@agdata.com"", ""password"": ""SecurePass123!"", ""confirmPassword"": ""SecurePass123!"", ""firstName"": ""Jane"", ""lastName"": ""Doe""}","Status: 409 Conflict
+Error message: Email already exists",High,Negative,Not Executed,
+TC-AUTH-003,Authentication,Verify registration fails with weak password,Test password validation rules,None,"1. Send registration request with weak password
+2. Verify validation error","{""email"": ""test@agdata.com"", ""password"": ""weak"", ""confirmPassword"": ""weak"", ""firstName"": ""Test"", ""lastName"": ""User""}","Status: 422 Unprocessable Entity
+Validation errors for password requirements",High,Negative,Not Executed,
+TC-AUTH-004,Authentication,Verify registration fails with mismatched passwords,Test password confirmation validation,None,"1. Send registration request where password != confirmPassword
+2. Verify validation error","{""email"": ""test@agdata.com"", ""password"": ""SecurePass123!"", ""confirmPassword"": ""DifferentPass123!"", ""firstName"": ""Test"", ""lastName"": ""User""}","Status: 422 Unprocessable Entity
+Error: Passwords do not match",High,Negative,Not Executed,
+TC-AUTH-005,Authentication,Verify login with valid credentials,Test successful login flow,User is registered,"1. Send POST to /api/v1/auth/login with valid credentials
+2. Verify response contains tokens","{""email"": ""admin@agdata.com"", ""password"": ""SecurePass123!""}","Status: 200 OK
+Response contains accessToken, refreshToken, userId, roles",Critical,Positive,Not Executed,
+TC-AUTH-006,Authentication,Verify login fails with invalid email,Test login with non-existent email,None,"1. Send login request with non-existent email
+2. Verify error response","{""email"": ""nonexistent@agdata.com"", ""password"": ""SecurePass123!""}","Status: 400 Bad Request
+Error: Invalid credentials",High,Negative,Not Executed,
+TC-AUTH-007,Authentication,Verify login fails with wrong password,Test login with incorrect password,User exists with different password,"1. Send login request with wrong password
+2. Verify error response","{""email"": ""admin@agdata.com"", ""password"": ""WrongPassword123!""}","Status: 400 Bad Request
+Error: Invalid credentials",High,Negative,Not Executed,
+TC-AUTH-008,Authentication,Verify token refresh functionality,Test refresh token generates new access token,User is logged in with valid refresh token,"1. Send POST to /api/v1/auth/refresh with valid refresh token
+2. Verify new tokens returned","{""refreshToken"": ""valid-refresh-token""}","Status: 200 OK
+Response contains new accessToken and refreshToken",Critical,Positive,Not Executed,
+TC-AUTH-009,Authentication,Verify logout revokes tokens,Test that logout invalidates tokens,User is logged in,"1. Send POST to /api/v1/auth/logout with valid token
+2. Verify success response
+3. Try to use old token - should fail",Bearer token in header,"Status: 200 OK
+Subsequent requests with old token should fail",High,Positive,Not Executed,
+TC-AUTH-010,Authentication,Verify get current user info,Test /auth/me returns current user details,User is authenticated,"1. Send GET to /api/v1/auth/me with valid token
+2. Verify user details returned",Bearer token in header,"Status: 200 OK
+Response contains userId, email, firstName, lastName, roles",High,Positive,Not Executed,
+TC-AUTH-011,Authentication,Verify change password with valid data,Test password change functionality,User is authenticated,"1. Send POST to /api/v1/auth/change-password
+2. Verify success
+3. Login with new password works","{""currentPassword"": ""OldPass123!"", ""newPassword"": ""NewPass456!""}","Status: 200 OK
+User can login with new password",High,Positive,Not Executed,
+TC-AUTH-012,Authentication,Verify change password fails with wrong current password,Test password change validation,User is authenticated,"1. Send change-password with incorrect current password
+2. Verify error","{""currentPassword"": ""WrongPass123!"", ""newPassword"": ""NewPass456!""}","Status: 400 Bad Request
+Error: Current password is incorrect",High,Negative,Not Executed,
+TC-USER-001,User Management,Verify get all users (Admin),Test admin can retrieve paginated user list,Admin is authenticated,"1. Send GET to /api/v1/users?page=1&pageSize=10
+2. Verify paginated response",Bearer token (Admin),Status: 200 OK with paginated user list including totalCount,Critical,Positive,Not Executed,
+TC-USER-002,User Management,Verify get all users unauthorized for Employee,Test employee cannot access all users,Employee is authenticated,"1. Send GET to /api/v1/users with Employee token
+2. Verify forbidden response",Bearer token (Employee),Status: 403 Forbidden,High,Security,Not Executed,
+TC-USER-003,User Management,Verify get user by ID,Test retrieve specific user details,User exists,"1. Send GET to /api/v1/users/{userId}
+2. Verify user details returned",userId: valid GUID,"Status: 200 OK
+Response contains user details with roles",High,Positive,Not Executed,
+TC-USER-004,User Management,Verify get user by ID - not found,Test 404 for non-existent user,None,"1. Send GET to /api/v1/users/{invalidId}
+2. Verify not found response",userId: non-existent GUID,"Status: 404 Not Found
+Error: User not found",Medium,Negative,Not Executed,
+TC-USER-005,User Management,Verify create user (Admin),Test admin can create new users,Admin is authenticated,"1. Send POST to /api/v1/users with user data
+2. Verify user created","{""email"": ""newuser@agdata.com"", ""password"": ""SecurePass123!"", ""firstName"": ""New"", ""lastName"": ""User"", ""roleIds"": [""employee-role-id""]}","Status: 201 Created
+User created with assigned roles",Critical,Positive,Not Executed,
+TC-USER-006,User Management,Verify create user fails with duplicate email,u,User with email exists,"1. Send POST to create user with existing email
+2. Verify conflict response","{""email"": ""existing@agdata.com"", ...}","Status: 409 Conflict
+Error: User with email already exists",High,Negative,Not Executed,
+TC-USER-007,User Management,Verify update user,Test user information update,User exists,"1. Send PUT to /api/v1/users/{userId} with updated data
+2. Verify update successful","{""firstName"": ""Updated"", ""lastName"": ""Name""}","Status: 200 OK
+User details updated",High,Positive,Not Executed,
+TC-USER-008,User Management,Verify deactivate user (Admin),Test admin can deactivate users,User exists and is active,"1. Send PATCH to /api/v1/users/{userId}/deactivate
+2. Verify user deactivated",userId: valid GUID,"Status: 200 OK
+User is now inactive",High,Positive,Not Executed,
+TC-USER-009,User Management,Verify cannot deactivate user with pending redemptions,Test business rule for deactivation,User has pending redemptions,"1. Try to deactivate user with pending redemptions
+2. Verify error",userId with pending redemptions,"Status: 400 Bad Request
+Error: Cannot deactivate user with pending redemptions",High,Business Rule,Not Executed,
+TC-USER-010,User Management,Verify cannot deactivate last admin,Test protection for last admin,Only one admin exists,"1. Try to deactivate the only admin user
+2. Verify error",Last admin userId,"Status: 400 Bad Request
+Error: Cannot deactivate last admin",Critical,Business Rule,Not Executed,
+TC-EVENT-001,Event Management,Verify get all visible events,Test retrieve events for employees,Events exist in system,"1. Send GET to /api/v1/events
+2. Verify returns Upcoming/Active/Completed events (not Draft)",None (public endpoint),"Status: 200 OK
+Returns events excluding Draft status",High,Positive,Not Executed,
+TC-EVENT-002,Event Management,Verify get event by ID,Test retrieve specific event details,Event exists,"1. Send GET to /api/v1/events/{eventId}
+2. Verify event details returned",eventId: valid GUID,"Status: 200 OK
+Response contains event details",High,Positive,Not Executed,
+TC-EVENT-003,Event Management,Verify create event (Admin),Test admin can create new events,Admin is authenticated,"1. Send POST to /api/v1/events with event data
+2. Verify event created in Draft status","{""name"": ""Team Building 2026"", ""description"": ""Annual team event"", ""eventDate"": ""2026-03-15"", ""totalPointsPool"": 1000, ""maxParticipants"": 50}","Status: 201 Created
+Event created with Draft status",Critical,Positive,Not Executed,
+TC-EVENT-004,Event Management,Verify create event unauthorized for Employee,Test employee cannot create events,Employee is authenticated,"1. Send POST to /api/v1/events with Employee token
+2. Verify forbidden",Bearer token (Employee),Status: 403 Forbidden,High,Security,Not Executed,
+TC-EVENT-005,Event Management,Verify update event (Admin),Test admin can update event details,"Event exists, Admin authenticated","1. Send PUT to /api/v1/events/{eventId} with updated data
+2. Verify update successful","{""name"": ""Updated Event Name"", ""description"": ""Updated description""}","Status: 200 OK
+Event updated successfully",High,Positive,Not Executed,
+TC-EVENT-006,Event Management,Verify delete/cancel event (Admin),Test admin can cancel events,"Event exists, Admin authenticated","1. Send DELETE to /api/v1/events/{eventId}
+2. Verify event cancelled",eventId: valid GUID,"Status: 200 OK
+Event cancelled",High,Positive,Not Executed,
+TC-EVENT-007,Event Management,Verify change event status: Draft to Upcoming,Test event status transition,Event in Draft status,"1. Send PATCH to /api/v1/events/{eventId}/status
+2. Verify status changed","{""status"": ""Upcoming""}","Status: 200 OK
+Event status is now Upcoming",Critical,Positive,Not Executed,
+TC-EVENT-008,Event Management,Verify change event status: Upcoming to Active,Test event status transition,Event in Upcoming status,"1. Send PATCH to /api/v1/events/{eventId}/status
+2. Verify status changed","{""status"": ""Active""}","Status: 200 OK
+Event status is now Active",Critical,Positive,Not Executed,
+TC-EVENT-009,Event Management,Verify change event status: Active to Completed,Test event status transition,Event in Active status,"1. Send PATCH to /api/v1/events/{eventId}/status
+2. Verify status changed","{""status"": ""Completed""}","Status: 200 OK
+Event status is now Completed",Critical,Positive,Not Executed,
+TC-EVENT-010,Event Management,Verify invalid status transition is rejected,Test status transition validation,Event in Draft status,"1. Try to change status from Draft directly to Completed
+2. Verify error","{""status"": ""Completed""}","Status: 400 Bad Request
+Error: Invalid status transition",High,Negative,Not Executed,
+TC-EVENT-011,Event Management,Verify get event participants,Test retrieve participants list,Event has participants,"1. Send GET to /api/v1/events/{eventId}/participants
+2. Verify participants list",eventId: valid GUID,"Status: 200 OK
+Returns list of participants",High,Positive,Not Executed,
+TC-EVENT-012,Event Management,Verify register participant for event,Test participant registration,Event is in Upcoming status,"1. Send POST to /api/v1/events/{eventId}/participants
+2. Verify registration successful","{""userId"": ""user-guid""}","Status: 200 OK
+Participant registered",Critical,Positive,Not Executed,
+TC-EVENT-013,Event Management,Verify registration fails when max participants reached,Test max participants limit,"Event is Upcoming, max participants reached","1. Try to register when event is full
+2. Verify error","{""userId"": ""user-guid""}","Status: 400 Bad Request
+Error: Event has reached maximum participants",High,Business Rule,Not Executed,
+TC-EVENT-014,Event Management,Verify award points to event winners,Test awarding points after event completion,Event is Completed with participants,"1. Award points to 1st, 2nd, 3rd place winners
+2. Verify points added to user accounts",Awards with placement and points,"Status: 200 OK
+Points awarded to winners, transactions created",Critical,Positive,Not Executed,
+TC-POINTS-001,Points Management,Verify get user points account,Test retrieve user's points balance,User has points account,"1. Send GET to /api/v1/points/accounts/{userId}
+2. Verify account details",userId: valid GUID,"Status: 200 OK
+Response contains balance, pending points, total earned",High,Positive,Not Executed,
+TC-POINTS-002,Points Management,Verify get user transactions (paginated),Test retrieve transaction history,User has transactions,"1. Send GET to /api/v1/points/transactions/{userId}?page=1&pageSize=20
+2. Verify paginated transactions",userId: valid GUID,"Status: 200 OK
+Paginated transaction list with totalCount",High,Positive,Not Executed,
+TC-POINTS-003,Points Management,Verify get all transactions (Admin),Test admin can view all transactions,Admin authenticated,"1. Send GET to /api/v1/points/transactions?page=1&pageSize=50
+2. Verify all transactions returned",Bearer token (Admin),"Status: 200 OK
+All system transactions paginated",High,Positive,Not Executed,
+TC-POINTS-004,Points Management,Verify award points (Admin),Test admin can award points to users,Admin authenticated & user exists,"1. Send POST to /api/v1/points/award with award data
+2. Verify points added to user account","{""userId"": ""user-guid"", ""points"": 100, ""description"": ""Bonus award""}","Status: 200 OK
+Points added, transaction created",Critical,Positive,Not Executed,
+TC-POINTS-005,Points Management,Verify award points to non-existent user fails,Test error for invalid user,Admin authenticated,"1. Send award request for non-existent userId
+2. Verify not found error","{""userId"": ""invalid-guid"", ""points"": 100, ""description"": ""Test""}","Status: 404 Not Found
+Error: User not found",High,Negative,Not Executed,
+TC-POINTS-006,Points Management,Verify deduct points (Admin),Test admin can deduct points from users,Admin authenticated & user has points,"1. Send POST to /api/v1/points/deduct
+2. Verify points deducted","{""userId"": ""user-guid"", ""points"": 50, ""reason"": ""Adjustment""}","Status: 200 OK
+Points deducted, transaction created",High,Positive,Not Executed,
+TC-POINTS-007,Points Management,Verify deduct fails with insufficient balance,Test insufficient points handling,User has less points than deduction amount,"1. Try to deduct more points than available
+2. Verify error","{""userId"": ""user-guid"", ""points"": 10000, ""reason"": ""Test""}","Status: 400 Bad Request
+Error: Insufficient balance",High,Business Rule,Not Executed,
+TC-POINTS-008,Points Management,Verify get leaderboard,Test points leaderboard retrieval,Multiple users with points,"1. Send GET to /api/v1/points/leaderboard?top=10
+2. Verify top users returned",top: 10,"Status: 200 OK
+Top 10 users by points balance",High,Positive,Not Executed,
+TC-POINTS-009,Points Management,Verify get points summary (Admin),Test admin dashboard statistics,Admin authenticated,"1. Send GET to /api/v1/points/summary
+2. Verify summary statistics",Bearer token (Admin),"Status: 200 OK
+Contains totalPointsIssued, totalPointsRedeemed, etc.",High,Positive,Not Executed,
+TC-PROD-001,Products,Verify get all active products,Test retrieve products for employees,Products exist,"1. Send GET to /api/v1/products
+2. Verify only active products returned",None,"Status: 200 OK
+Active products list",High,Positive,Not Executed,
+TC-PROD-002,Products,Verify get all products including inactive (Admin),Test admin sees all products,Admin authenticated,"1. Send GET to /api/v1/products/admin/all
+2. Verify all products including inactive",Bearer token (Admin),"Status: 200 OK
+All products including inactive",High,Positive,Not Executed,
+TC-PROD-003,Products,Verify get product by ID,Test retrieve specific product,Product exists,"1. Send GET to /api/v1/products/{productId}
+2. Verify product details",productId: valid GUID,"Status: 200 OK
+Product details with pricing",High,Positive,Not Executed,
+TC-PROD-004,Products,Verify create product (Admin),Test admin can create products,Admin authenticated,"1. Send POST to /api/v1/products with product data
+2. Verify product created","{""name"": ""Gift Card $50"", ""description"": ""Amazon gift card"", ""pointsCost"": 500, ""stock"": 100, ""categoryId"": ""category-guid""}","Status: 201 Created
+Product created successfully",Critical,Positive,Not Executed,
+TC-PROD-005,Products,Verify update product (Admin),Test admin can update products,"Admin authenticated, product exists","1. Send PUT to /api/v1/products/{productId}
+2. Verify product updated","{""name"": ""Updated Product Name"", ""pointsCost"": 600}","Status: 200 OK
+Product updated",High,Positive,Not Executed,
+TC-PROD-006,Products,Verify deactivate product (Admin),Test admin can deactivate products,"Admin authenticated, product exists","1. Send PATCH to /api/v1/products/{productId}/deactivate
+2. Verify product deactivated",productId: valid GUID,"Status: 200 OK
+Product is now inactive",High,Positive,Not Executed,
+TC-PROD-007,Products,Verify get products by category,Test filter products by category,Products exist in category,"1. Send GET to /api/v1/products/category/{categoryId}
+2. Verify filtered products",categoryId: valid GUID,"Status: 200 OK
+Products in specified category",High,Positive,Not Executed,
+TC-PROD-008,Products,Verify get all categories,Test retrieve product categories,Categories exist,"1. Send GET to /api/v1/products/categories
+2. Verify categories list",None,"Status: 200 OK
+Active categories list",High,Positive,Not Executed,
+TC-PROD-009,Products,Verify create category (Admin),Test admin can create categories,Admin authenticated,"1. Send POST to /api/v1/products/categories
+2. Verify category created","{""name"": ""Electronics"", ""description"": ""Electronic items""}","Status: 201 Created
+Category created",High,Positive,Not Executed,
+TC-PROD-010,Products,Verify update category (Admin),Test admin can update categories,"Admin authenticated, category exists","1. Send PUT to /api/v1/products/categories/{categoryId}
+2. Verify category updated","{""name"": ""Updated Category""}","Status: 200 OK
+Category updated",Medium,Positive,Not Executed,
+TC-REDM-001,Redemptions,Verify get all redemptions (Admin),Test admin can view all redemptions,Admin authenticated,"1. Send GET to /api/v1/redemptions
+2. Verify all redemptions returned",Bearer token (Admin),"Status: 200 OK
+All redemptions list",High,Positive,Not Executed,
+TC-REDM-002,Redemptions,Verify get redemption by ID,Test retrieve specific redemption,Redemption exists,"1. Send GET to /api/v1/redemptions/{redemptionId}
+2. Verify redemption details",redemptionId: valid GUID,"Status: 200 OK
+Redemption details",High,Positive,Not Executed,
+TC-REDM-003,Redemptions,Verify create redemption request,Test employee can request redemption,"User authenticated, has sufficient points, product in stock","1. Send POST to /api/v1/redemptions
+2. Verify redemption created with Pending status","{""productId"": ""product-guid"", ""quantity"": 1}","Status: 201 Created
+Redemption in Pending status, points deducted",Critical,Positive,Not Executed,
+TC-REDM-004,Redemptions,Verify redemption fails with insufficient points,Test points validation,"User authenticated, insufficient points","1. Try to redeem product with insufficient points
+2. Verify error","{""productId"": ""expensive-product-guid"", ""quantity"": 1}","Status: 400 Bad Request
+Error: Insufficient points",High,Business Rule,Not Executed,
+TC-REDM-005,Redemptions,Verify redemption fails when out of stock,Test stock validation,"User authenticated, product out of stock","1. Try to redeem out of stock product
+2. Verify error","{""productId"": ""out-of-stock-guid"", ""quantity"": 1}","Status: 400 Bad Request
+Error: Product out of stock",High,Business Rule,Not Executed,
+TC-REDM-006,Redemptions,Verify approve redemption (Admin),Test admin can approve redemptions,Admin authenticated & redemption is Pending,"1. Send PATCH to /api/v1/redemptions/{id}/approve
+2. Verify status changed to Approved",redemptionId: valid GUID,"Status: 200 OK
+Redemption approved",Critical,Positive,Not Executed,
+TC-REDM-007,Redemptions,Verify mark redemption as delivered (Admin),Test delivery confirmation,Admin authenticated & redemption is Approved,"1. Send PATCH to /api/v1/redemptions/{id}/deliver
+2. Verify status changed to Delivered",redemptionId: valid GUID,"Status: 200 OK
+Redemption marked as delivered",High,Positive,Not Executed,
+TC-REDM-008,Redemptions,Verify reject redemption with reason (Admin),Test admin can reject redemptions,Admin authenticated & redemption is Pending,"1. Send PATCH to /api/v1/redemptions/{id}/reject with reason
+2. Verify status changed, points refunded","{""rejectionReason"": ""Product no longer available""}","Status: 200 OK
+Redemption rejected, points refunded",Critical,Positive,Not Executed,
+TC-REDM-009,Redemptions,Verify cancel redemption (Owner),Test user can cancel own redemption,User authenticated & owns pending redemption,"1. Send PATCH to /api/v1/redemptions/{id}/cancel
+2. Verify cancelled, points refunded",redemptionId: valid GUID,"Status: 200 OK
+Redemption cancelled, points refunded",High,Positive,Not Executed,
+TC-REDM-010,Redemptions,Verify get my redemptions (paginated),Test user can view own redemptions,User authenticated,"1. Send GET to /api/v1/redemptions/my-redemptions?page=1&pageSize=10
+2. Verify user's redemptions",Bearer token,"Status: 200 OK
+User's redemptions paginated",High,Positive,Not Executed,
+TC-REDM-011,Redemptions,Verify get pending redemptions (Admin),Test admin can view pending queue,Admin authenticated,"1. Send GET to /api/v1/redemptions/pending
+2. Verify pending redemptions list",Bearer token (Admin),"Status: 200 OK
+List of pending redemptions",High,Positive,Not Executed,
+TC-REDM-012,Redemptions,Verify cannot cancel approved redemption,Test cancellation rules,Redemption is already approved,"1. Try to cancel approved redemption
+2. Verify error",redemptionId of approved redemption,"Status: 400 Bad Request
+Error: Cannot cancel approved redemption",High,Business Rule,Not Executed,
+TC-ROLE-001,Role Management,Verify get all roles,Test retrieve all roles,Roles exist,"1. Send GET to /api/v1/roles
+2. Verify roles list",None,"Status: 200 OK
+List of all roles",Medium,Positive,Not Executed,
+TC-ROLE-002,Role Management,Verify create role (Admin),Test admin can create roles,Admin authenticated,"1. Send POST to /api/v1/roles
+2. Verify role created","{""name"": ""Manager"", ""description"": ""Manager role""}","Status: 201 Created
+Role created",Medium,Positive,Not Executed,
+TC-ROLE-003,Role Management,Verify assign role to user (Admin),Test role assignment,"Admin authenticated, user & role exist","1. Assign role to user via appropriate endpoint
+2. Verify role assigned",userId and roleId,"Status: 200 OK
+Role assigned to user",High,Positive,Not Executed,
+TC-SEC-001,Security,Verify API requires authentication,Test protected endpoints require auth,Not authenticated,"1. Send request to protected endpoint without token
+2. Verify unauthorized",No Bearer token,Status: 401 Unauthorized,Critical,Security,Not Executed,
+TC-SEC-002,Security,Verify expired token is rejected,Test token expiration handling,JWT token is expired,"1. Send request with expired token
+2. Verify unauthorized",Expired Bearer token,Status: 401 Unauthorized,Critical,Security,Not Executed,
+TC-SEC-003,Security,Verify role-based access control,Test Admin-only endpoints with Employee role,Employee authenticated,"1. Try to access Admin-only endpoint with Employee token
+2. Verify forbidden",Bearer token (Employee),Status: 403 Forbidden,Critical,Security,Not Executed,
+TC-SEC-004,Security,Verify password is hashed in database,Test password security,User is registered,"1. Check database for user password
+2. Verify it's hashed not plaintext",Database query,"Password is stored as hash, not plaintext",Critical,Security,Not Executed,
+TC-SEC-005,Security,Verify SQL injection prevention,Test input sanitization,None,"1. Send malicious SQL in input fields
+2. Verify no SQL injection","{""email"": ""test@agdata.com'; DROP TABLE Users;--""}",Request is rejected or safely handled,Critical,Security,Not Executed,
+TC-SEC-006,Security,Verify XSS prevention,Test output encoding,None,"1. Submit XSS payload in text fields
+2. Verify not executed","{""description"": ""<script>alert('xss')</script>""}","Script is escaped/encoded, not executed",Critical,Security,Not Executed,
+TC-UI-001,Frontend - Auth,Verify login page displays correctly,Test login page UI,Application is running,"1. Navigate to /login
+2. Verify form fields and buttons visible",None,"Login form with email, password fields and login button",High,UI,Not Executed,
+TC-UI-002,Frontend - Auth,Verify successful login redirects to dashboard,Test login flow,Valid user credentials,"1. Enter valid credentials
+2. Click Login
+3. Verify redirect",admin@agdata.com / SecurePass123!,Redirected to dashboard page,High,UI,Not Executed,
+TC-UI-003,Frontend - Auth,Verify login form validation,Test client-side validation,None,"1. Click Login with empty fields
+2. Verify validation messages",Empty fields,Validation errors displayed,High,UI,Not Executed,
+TC-UI-004,Frontend - Dashboard,Verify admin dashboard displays KPIs,Test admin dashboard,Admin is logged in,"1. Navigate to admin dashboard
+2. Verify KPI cards visible",None,"Dashboard shows total users, events, points stats",High,UI,Not Executed,
+TC-UI-005,Frontend - Dashboard,Verify employee dashboard shows points balance,Test employee dashboard,Employee is logged in,"1. Navigate to employee dashboard
+2. Verify points balance visible",None,Dashboard shows current points balance,High,UI,Not Executed,
+TC-UI-006,Frontend - Events,Verify events list displays correctly,Test events page,Events exist,"1. Navigate to Events page
+2. Verify events list loads",None,Events displayed in list/grid format,High,UI,Not Executed,
+TC-UI-007,Frontend - Events,Verify event registration works,Test event registration UI,Employee logged in & event available,"1. Click Register on an event
+2. Confirm registration
+3. Verify success message",Event from list,Registration successful message,High,UI,Not Executed,
+TC-UI-008,Frontend - Products,Verify products catalog displays,Test products page,Products exist,"1. Navigate to Products page
+2. Verify products grid loads",None,"Products displayed with images, names, points cost",High,UI,Not Executed,
+TC-UI-009,Frontend - Products,Verify product filtering by category,Test category filter,Products in multiple categories,"1. Select a category filter
+2. Verify products filtered",Category selection,Only products from selected category shown,High,UI,Not Executed,
+TC-UI-010,Frontend - Redemption,Verify redemption request flow,Test redemption UI,"Employee logged in, has points, product available","1. Click Redeem on product
+2. Confirm quantity
+3. Submit request
+4. Verify success",Product selection,Redemption created successfully message,Critical,UI,Not Executed,
+TC-UI-011,Frontend - Admin,Verify admin can create product,Test product creation form,Admin logged in,"1. Navigate to Products management
+2. Click Add Product
+3. Fill form and submit
+4. Verify product created","{name: ""New Product"", points: 100, stock: 50}",Product appears in list,High,UI,Not Executed,
+TC-UI-012,Frontend - Admin,Verify admin can approve redemption,Test redemption approval UI,Admin logged in & pending redemptions exist,"1. Navigate to Redemptions
+2. Find pending redemption
+3. Click Approve
+4. Verify status changed",Pending redemption,Redemption status changed to Approved,High,UI,Not Executed,
+TC-UI-013,Frontend - Admin,Verify admin can create user,Test user creation form,Admin logged in,"1. Navigate to Users
+2. Click Add User
+3. Fill form and submit
+4. Verify user created","{email: ""new@agdata.com"", password: ""SecurePass123!""}",User appears in list,High,UI,Not Executed,
+TC-UI-014,Frontend - Navigation,Verify navigation menu works,Test menu navigation,User logged in,"1. Click each menu item
+2. Verify correct page loads",Menu items,Each menu navigates to correct page,High,UI,Not Executed,
+TC-UI-015,Frontend - Responsive,Verify responsive design on mobile,Test mobile responsiveness,Application running on mobile browser,"1. Open app on mobile screen size
+2. Verify layout adapts
+3. Test navigation menu",Mobile viewport (375px width),"UI is responsive, navigation usable",Medium,UI,Not Executed,
+TC-INT-001,Integration,Verify complete registration to points account flow,Test registration creates points account,None,"1. Register new user
+2. Verify points account created with 0 balance",New user registration,User created with points account (balance: 0),Critical,Integration,Not Executed,
+TC-INT-002,Integration,Verify event winner gets points,Test end-to-end points awarding,Event completed with participants,"1. Complete event
+2. Award points to winner
+3. Verify points in user account",Winner userId and points amount,Points reflected in user's account balance,Critical,Integration,Not Executed,
+TC-INT-003,Integration,Verify redemption deducts points and reduces stock,Test redemption workflow,"User has points, product in stock","1. Create redemption
+2. Verify points deducted
+3. Verify stock reduced (reserved)",Redemption request,"Points deducted, stock reserved",Critical,Integration,Not Executed,
+TC-INT-004,Integration,Verify rejected redemption refunds points,Test refund flow,Pending redemption exists,"1. Reject redemption
+2. Verify points refunded to user
+3. Verify stock restored",Rejection reason,"Points refunded, stock available again",Critical,Integration,Not Executed,
+TC-INT-005,Integration,Verify user deactivation restrictions,Test deactivation rules,User has pending redemptions,"1. Try to deactivate user with pending redemptions
+2. Verify prevented",userId with pending redemption,Deactivation blocked until redemptions resolved,High,Integration,Not Executed,
+TC-PERF-001,Performance,Verify API response time under load,Test API performance,Test environment ready,"1. Send 100 concurrent requests
+2. Measure response times",100 concurrent users,95% of responses under 500ms,Medium,Performance,Not Executed,
+TC-PERF-002,Performance,Verify large dataset pagination,Test pagination with many records,10000+ records in database,"1. Request paginated data
+2. Verify response time acceptable",page=1&pageSize=50,Response time under 1 second,Medium,Performance,Not Executed,
+TC-DB-001,Database,Verify foreign key constraints,Test referential integrity,Related entities exist,"1. Try to delete parent with children
+2. Verify constraint prevents deletion",Delete category with products,Delete blocked or cascades properly,High,Database,Not Executed,
+TC-DB-002,Database,Verify stored procedure GetTop3EmployeesByRewards,Test stored procedure,Multiple users with points,"1. Execute SP_GetTop3EmployeesByRewards
+2. Verify returns top 3 correctly",EXEC stored procedure,Returns exactly 3 top point earners,Medium,Database,Not Executed,
