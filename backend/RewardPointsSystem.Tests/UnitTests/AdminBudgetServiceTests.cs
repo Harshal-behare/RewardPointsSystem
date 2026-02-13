@@ -25,9 +25,15 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public AdminBudgetServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _budgetService = new AdminBudgetService(_unitOfWork);
-            _adminUserId = Guid.NewGuid();
+            
+            // Create a test admin user for FK constraints
+            var adminUser = User.Create($"admin_{Guid.NewGuid()}@test.com", "Test", "Admin");
+            adminUser.SetPasswordHash("testhash");
+            _unitOfWork.Users.AddAsync(adminUser).Wait();
+            _unitOfWork.SaveChangesAsync().Wait();
+            _adminUserId = adminUser.Id;
         }
 
         public void Dispose()

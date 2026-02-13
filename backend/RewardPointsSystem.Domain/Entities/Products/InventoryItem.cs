@@ -61,7 +61,7 @@ namespace RewardPointsSystem.Domain.Entities.Products
         /// <summary>
         /// Restocks inventory with additional quantity
         /// </summary>
-        public void Restock(int quantity, Guid updatedBy)
+        public void Restock(int quantity, Guid? updatedBy)
         {
             ValidateQuantity(quantity, nameof(quantity));
 

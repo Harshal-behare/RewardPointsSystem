@@ -39,7 +39,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public ProductCatalogServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             
             // Create a system user for product creation
@@ -269,7 +269,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public PricingServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             _pricingService = new PricingService(_unitOfWork);
             
@@ -401,7 +401,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public InventoryServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _productService = new ProductCatalogService(_unitOfWork);
             _inventoryService = new InventoryService(_unitOfWork);
             

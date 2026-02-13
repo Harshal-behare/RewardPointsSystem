@@ -21,7 +21,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public UserServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userService = new UserService(_unitOfWork);
         }
 

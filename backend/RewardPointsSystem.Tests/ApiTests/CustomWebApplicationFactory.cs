@@ -1,14 +1,13 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure;
-using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using RewardPointsSystem.Infrastructure.Data;
 using RewardPointsSystem.Application.Interfaces;
 using RewardPointsSystem.Infrastructure.Repositories;
-using RewardPointsSystem.Tests.TestHelpers;
+using System.IO;
 
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
@@ -16,21 +15,22 @@ namespace RewardPointsSystem.Tests.FunctionalTests
     /// Custom WebApplicationFactory for API testing
     /// 
     /// This factory configures the application for testing by:
-    /// - Replacing the production database with InMemory database
+    /// - Using InMemory database for API integration tests (quick, isolated tests)
     /// - Configuring authentication for testing
     /// 
     /// WHY: Allows testing API endpoints against a real ASP.NET Core pipeline
-    /// without external dependencies (database, external services, etc.)
+    /// with fast InMemory database for isolated API testing
     /// </summary>
     public class CustomWebApplicationFactory<TProgram> : WebApplicationFactory<TProgram> 
         where TProgram : class
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
+            builder.UseEnvironment("Testing");
+
             builder.ConfigureServices(services =>
             {
                 // Find and remove ALL DbContext-related services
-                // Need to remove by ServiceType to avoid conflicts
                 var descriptorsToRemove = services
                     .Where(d => 
                         d.ServiceType == typeof(DbContextOptions<RewardPointsDbContext>) ||
@@ -46,20 +46,17 @@ namespace RewardPointsSystem.Tests.FunctionalTests
                     services.Remove(descriptor);
                 }
 
-                // Now add InMemory database 
-                var databaseName = $"TestDatabase_{Guid.NewGuid()}";
+                // Use InMemory database for API tests (faster, isolated)
                 services.AddDbContext<RewardPointsDbContext>((sp, options) =>
                 {
-                    options.UseInMemoryDatabase(databaseName);
+                    options.UseInMemoryDatabase($"TestDb_{Guid.NewGuid()}");
                     options.EnableSensitiveDataLogging();
                 }, ServiceLifetime.Scoped);
 
-                // Replace UnitOfWork with InMemory version
+                // Ensure UnitOfWork is registered
                 services.RemoveAll<IUnitOfWork>();
                 services.AddScoped<IUnitOfWork, EfUnitOfWork>();
             });
-
-            builder.UseEnvironment("Testing");
         }
     }
 }

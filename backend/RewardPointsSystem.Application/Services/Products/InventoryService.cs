@@ -60,7 +60,7 @@ namespace RewardPointsSystem.Application.Services.Products
             if (inventory == null)
                 throw new ArgumentException($"No inventory found for product {productId}", nameof(productId));
 
-            inventory.Restock(quantity, Guid.Empty);
+            inventory.Restock(quantity, null);
 
             await _unitOfWork.SaveChangesAsync();
         }

@@ -49,7 +49,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public EventRewardOrchestratorTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);
@@ -201,7 +201,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public RedemptionOrchestratorTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
             _transactionService = new UserPointsTransactionService(_unitOfWork);

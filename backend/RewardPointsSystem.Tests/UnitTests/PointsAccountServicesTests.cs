@@ -21,7 +21,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public UserPointsAccountServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
         }
@@ -197,7 +197,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public UserPointsTransactionServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);
             _transactionService = new UserPointsTransactionService(_unitOfWork);

@@ -21,7 +21,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public EventParticipationServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _eventService = new EventService(_unitOfWork);
             _userService = new UserService(_unitOfWork);
             _participationService = new EventParticipationService(_unitOfWork);

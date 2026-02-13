@@ -34,7 +34,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public EventServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _eventService = new EventService(_unitOfWork);
         }
 

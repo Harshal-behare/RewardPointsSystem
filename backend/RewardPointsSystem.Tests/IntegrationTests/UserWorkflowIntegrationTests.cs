@@ -42,13 +42,9 @@ namespace RewardPointsSystem.Tests.IntegrationTests
 
         public UserWorkflowIntegrationTests()
         {
-            // Setup in-memory database for integration testing
-            var options = new DbContextOptionsBuilder<RewardPointsDbContext>()
-                .UseInMemoryDatabase(databaseName: $"UserWorkflowTests_{Guid.NewGuid()}")
-                .Options;
-
-            _context = new RewardPointsDbContext(options);
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            // Setup SQL Server database for integration testing
+            _context = TestDbContextFactory.CreateCleanSqlServerContext();
+            _unitOfWork = TestDbContextFactory.CreateSqlServerUnitOfWork();
             
             _userService = new UserService(_unitOfWork);
             _accountService = new UserPointsAccountService(_unitOfWork);

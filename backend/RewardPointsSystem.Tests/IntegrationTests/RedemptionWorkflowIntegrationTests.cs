@@ -51,12 +51,9 @@ namespace RewardPointsSystem.Tests.IntegrationTests
 
         public RedemptionWorkflowIntegrationTests()
         {
-            var options = new DbContextOptionsBuilder<RewardPointsDbContext>()
-                .UseInMemoryDatabase(databaseName: $"RedemptionWorkflowTests_{Guid.NewGuid()}")
-                .Options;
-
-            _context = new RewardPointsDbContext(options);
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            // Setup SQL Server database for integration testing
+            _context = TestDbContextFactory.CreateCleanSqlServerContext();
+            _unitOfWork = TestDbContextFactory.CreateSqlServerUnitOfWork();
             
             _userService = new UserService(_unitOfWork);
             _productService = new ProductCatalogService(_unitOfWork);

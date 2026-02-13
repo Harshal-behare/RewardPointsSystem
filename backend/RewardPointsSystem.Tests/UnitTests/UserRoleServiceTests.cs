@@ -23,7 +23,7 @@ namespace RewardPointsSystem.Tests.UnitTests
 
         public UserRoleServiceTests()
         {
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            _unitOfWork = TestDbContextFactory.CreateCleanSqlServerUnitOfWork();
             _userRoleService = new UserRoleService(_unitOfWork);
         }
 

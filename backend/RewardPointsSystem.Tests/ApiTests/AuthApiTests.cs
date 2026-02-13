@@ -14,18 +14,11 @@ using Xunit;
 namespace RewardPointsSystem.Tests.FunctionalTests
 {
     /// <summary>
-    /// API Tests for Authentication API Endpoints
-    /// 
     /// These tests verify the HTTP API behavior for authentication:
     /// - Login endpoint
     /// - Registration endpoint
     /// - Token refresh
     /// - Input validation
-    /// 
-    /// WHAT WE'RE TESTING:
-    /// The complete HTTP request/response cycle for auth endpoints
-    /// 
-    /// WHY THESE TESTS MATTER:
     /// Authentication is the gateway to all protected functionality
     /// </summary>
     public class AuthApiTests : IClassFixture<CustomWebApplicationFactory<Program>>

@@ -17,10 +17,9 @@ namespace RewardPointsSystem.Api
     {
         public static async Task Main(string[] args)
         {
-           
+            // Bootstrap logger - write to console only to avoid file permission issues during tests
             Log.Logger = new LoggerConfiguration()
                 .WriteTo.Console()
-                .WriteTo.File("Logs/startup-.txt", rollingInterval: RollingInterval.Day)
                 .CreateBootstrapLogger();
 
             try

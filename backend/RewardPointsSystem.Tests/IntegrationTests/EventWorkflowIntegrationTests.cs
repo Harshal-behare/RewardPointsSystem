@@ -52,12 +52,9 @@ namespace RewardPointsSystem.Tests.IntegrationTests
 
         public EventWorkflowIntegrationTests()
         {
-            var options = new DbContextOptionsBuilder<RewardPointsDbContext>()
-                .UseInMemoryDatabase(databaseName: $"EventWorkflowTests_{Guid.NewGuid()}")
-                .Options;
-
-            _context = new RewardPointsDbContext(options);
-            _unitOfWork = TestDbContextFactory.CreateInMemoryUnitOfWork();
+            // Setup SQL Server database for integration testing
+            _context = TestDbContextFactory.CreateCleanSqlServerContext();
+            _unitOfWork = TestDbContextFactory.CreateSqlServerUnitOfWork();
             
             _userService = new UserService(_unitOfWork);
             _eventService = new EventService(_unitOfWork);
